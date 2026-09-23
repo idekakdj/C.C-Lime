@@ -1,0 +1,15 @@
+# Cloud transaction proof
+
+The desktop uses a verified Firebase identity with Firestore REST requests. It has no administrator credential. Paths are isolated under `users/{uid}`; the emulator rejects cross-account reads and unverified writes.
+
+An atomic commit contains one to four domain-record writes, one immutable receipt, and one sync-head write. All records have the same incremented logical sequence and mutation UUID. Each record carries its prior `updateTime` precondition (or `exists:false` for a create), and the head carries its own precondition. The head and receipt name exactly the participating record IDs. Rules check all participating writes with `getAfter`. The four-record/six-document shape passed against the Firestore emulator with the committed rules.
+
+Before retrying an ambiguous request, the adapter reads the mutation receipt. A matching receipt and unchanged resulting records acknowledge the original logical change. Reusing a mutation ID with different data fails. A newer record produces a conflict rather than silently adopting that record as the local proposal's base.
+
+Firebase may evaluate authorization against a concurrently advanced head before reporting a failed precondition. A permission denial is retried only when a separate read proves that the head changed; a changed domain record is a conflict. A denial with an unchanged head remains an error. Retries are bounded to five head races per attempt.
+
+Pull captures a high-water sequence, queries `(lastCompletedSequence, highWater]`, orders by sequence then record ID, and pages using both fields. A record edited beyond the high-water mark will be read on the next pass. The completed cursor advances only when the pass finishes; replaying an interrupted page is harmless. Tombstones retain their sequence and remain visible to offline devices. An explicit undo can restore a tombstone only against its current version; a stale edit/delete conflict is restored under a new identity.
+
+The ordinary queue uses single-record groups. Bounded compound operations can use up to four; bulk import is a locally atomic batch with resumable ordered cloud mutations and can be visible progressively on another device. Related cloud records are fetched before rendering a completed pull.
+
+Evidence: `tests/cloud/protocol.test.ts`, run with `node scripts/emulators.mjs`. Initial nine cases passed on September 18, 2026, using the local demo project. Live-service verification is recorded separately; emulator success does not establish production authentication or quotas.

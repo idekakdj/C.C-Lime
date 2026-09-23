@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owns(uid) { return request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true; }
+    function recordPath(uid, id) { return /databases/$(database)/documents/users/$(uid)/records/$(id); }
+    function receiptPath(uid, id) { return /databases/$(database)/documents/users/$(uid)/receipts/$(id); }
+    function headPath(uid) { return /databases/$(database)/documents/users/$(uid)/system/sync; }
+    function validId(id) { return id is string && id.matches('^[0-9a-fA-F-]{36}$'); }
+    function validIds(ids) { return ids is list && ids.size() >= 1 && ids.size() <= 4 && ids.toSet().size() == ids.size() && validId(ids[0]) && (ids.size() < 2 || validId(ids[1])) && (ids.size() < 3 || validId(ids[2])) && (ids.size() < 4 || validId(ids[3])); }
+    function groupRecord(uid, id, seq, mutation) { return getAfter(recordPath(uid,id)).data.changeSeq == seq && getAfter(recordPath(uid,id)).data.lastMutationId == mutation; }
+    function groupRecords(uid, ids, seq, mutation) { return groupRecord(uid,ids[0],seq,mutation) && (ids.size() < 2 || groupRecord(uid,ids[1],seq,mutation)) && (ids.size() < 3 || groupRecord(uid,ids[2],seq,mutation)) && (ids.size() < 4 || groupRecord(uid,ids[3],seq,mutation)); }
+    function validPayload(data, id) {
+      return data.deleted == true ? data.payload == null : data.payload is map && data.payload.id == id && data.payload.kind == data.kind &&
+        ((data.kind == 'item' && data.payload.keys().hasOnly(['id','kind','title','itemType','timing','courseId','notes','location','status','priority','estimatedMinutes','assignmentId','recurrence','reminders','completedAt','sourceUid']) &&
+          data.payload.title is string && data.payload.title.size() > 0 && data.payload.title.size() <= 200 && data.payload.notes is string && data.payload.notes.size() <= 10000 && data.payload.location is string && data.payload.location.size() <= 300 &&
+          data.payload.itemType in ['class','event','assignment','exam','study','task'] && data.payload.status in ['open','in_progress','completed'] && data.payload.priority in ['high','normal','low'] &&
+          data.payload.reminders is list && data.payload.reminders.size() <= 5 && data.payload.timing is map && data.payload.timing.mode in ['timed','allDay','deadline','unscheduled'] && data.payload.timing.zone is string &&
+          (data.payload.courseId == null || validId(data.payload.courseId)) && (data.payload.assignmentId == null || validId(data.payload.assignmentId))) ||
+        (data.kind == 'course' && data.payload.keys().hasOnly(['id','kind','name','code','semesterId','instructor','location','color','archived']) && data.payload.name is string && data.payload.name.size() > 0 && data.payload.name.size() <= 200 && data.payload.code is string && data.payload.code.size() <= 30 && data.payload.archived is bool && (data.payload.semesterId == null || validId(data.payload.semesterId))) ||
+        (data.kind == 'semester' && data.payload.keys().hasOnly(['id','kind','name','startDate','endDate','zone','breaks','archived']) && data.payload.name is string && data.payload.name.size() > 0 && data.payload.name.size() <= 200 && data.payload.startDate is string && data.payload.endDate is string && data.payload.endDate >= data.payload.startDate && data.payload.breaks is list && data.payload.breaks.size() <= 100 && data.payload.archived is bool) ||
+        (data.kind == 'exception' && data.payload.keys().hasOnly(['id','kind','seriesId','originalDate','cancelled','override']) && validId(data.payload.seriesId) && data.payload.originalDate is string && data.payload.cancelled is bool && data.payload.override is map && data.payload.override.keys().hasOnly(['title','timing','notes','location','reminders'])) ||
+        (data.kind == 'occurrenceState' && data.payload.keys().hasOnly(['id','kind','seriesId','originalDate','status','completedAt']) && validId(data.payload.seriesId) && data.payload.originalDate is string && data.payload.status in ['open','in_progress','completed']) ||
+        (data.kind == 'preferences' && data.payload.keys().hasOnly(['id','kind','weekStart','zone','timeFormat','defaultEventReminder','defaultTaskReminder']) && data.payload.weekStart in [1,7] && data.payload.zone is string && data.payload.timeFormat in ['12','24']));
+    }
+    match /users/{uid}/records/{id} {
+      allow read: if owns(uid);
+      allow create, update: if owns(uid) && validId(id) && request.resource.data.keys().hasOnly(['ownerId','schemaVersion','kind','payload','deleted','changeSeq','lastMutationId','updatedAt']) &&
+        request.resource.data.ownerId == uid && request.resource.data.schemaVersion == 1 && request.resource.data.deleted is bool && validPayload(request.resource.data, id) &&
+        request.resource.data.changeSeq is int && request.resource.data.changeSeq > 0 && request.resource.data.updatedAt == request.time &&
+        getAfter(headPath(uid)).data.sequence == request.resource.data.changeSeq && id in getAfter(headPath(uid)).data.recordIds && getAfter(headPath(uid)).data.mutationId == request.resource.data.lastMutationId &&
+        !exists(receiptPath(uid, request.resource.data.lastMutationId)) && id in getAfter(receiptPath(uid, request.resource.data.lastMutationId)).data.recordIds &&
+        (!exists(recordPath(uid,id)) || resource.data.kind == request.resource.data.kind);
+      allow delete: if owns(uid) && exists(/databases/$(database)/documents/users/$(uid)/system/deletion) && get(/databases/$(database)/documents/users/$(uid)/system/deletion).data.enabled == true;
+    }
+    match /users/{uid}/receipts/{id} {
+      allow read: if owns(uid);
+      allow create: if owns(uid) && validId(id) && request.resource.data.keys().hasOnly(['ownerId','recordIds','sequence','payloadHash']) && request.resource.data.ownerId == uid && validIds(request.resource.data.recordIds) && request.resource.data.payloadHash is string && request.resource.data.payloadHash.size() == 64 &&
+        getAfter(headPath(uid)).data.sequence == request.resource.data.sequence && getAfter(headPath(uid)).data.mutationId == id && getAfter(headPath(uid)).data.recordIds == request.resource.data.recordIds &&
+        groupRecords(uid,request.resource.data.recordIds,request.resource.data.sequence,id);
+      allow delete: if owns(uid) && exists(/databases/$(database)/documents/users/$(uid)/system/deletion) && get(/databases/$(database)/documents/users/$(uid)/system/deletion).data.enabled == true;
+    }
+    match /users/{uid}/system/sync {
+      allow read: if owns(uid);
+      allow create, update: if owns(uid) && request.resource.data.keys().hasOnly(['ownerId','sequence','mutationId','recordIds']) && request.resource.data.ownerId == uid && validId(request.resource.data.mutationId) && validIds(request.resource.data.recordIds) && request.resource.data.sequence is int &&
+        (exists(headPath(uid)) ? request.resource.data.sequence == resource.data.sequence + 1 : request.resource.data.sequence == 1) &&
+        groupRecords(uid,request.resource.data.recordIds,request.resource.data.sequence,request.resource.data.mutationId) && getAfter(receiptPath(uid,request.resource.data.mutationId)).data.sequence == request.resource.data.sequence;
+      allow delete: if owns(uid) && exists(/databases/$(database)/documents/users/$(uid)/system/deletion);
+    }
+    match /users/{uid}/system/deletion {
+      allow read: if owns(uid);
+      allow create, update: if owns(uid) && request.resource.data.keys().hasOnly(['enabled']) && request.resource.data.enabled == true && request.auth.token.auth_time > (request.time.toMillis() / 1000 - 300);
+      allow delete: if owns(uid);
+    }
+  }
+}

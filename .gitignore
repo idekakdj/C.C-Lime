@@ -45,6 +45,7 @@ ui-debug.log*
 .codex/
 .agents/
 .idea/
+.tools/
 .vscode/
 .DS_Store
 Thumbs.db
