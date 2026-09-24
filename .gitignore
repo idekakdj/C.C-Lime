@@ -10,6 +10,9 @@ test-results/
 *.tsbuildinfo
 
 # Local configuration and credentials
+.local/
+cloud/client.json
+cloud-client.json
 .env
 .env.*
 !.env.example

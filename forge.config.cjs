@@ -2,7 +2,7 @@ module.exports = {
   packagerConfig: {
     asar: { unpack: '**/*.node' }, executableName: 'cc-lime', icon: 'assets/icon',
     appBundleId: 'app.cclime.desktop',
-    ignore: [/^\/(src|tests|docs|scripts|cloud|test-results|playwright-report|coverage)(\/|$)/, /^\/\.(git|env|codex|agents|tools)/, /PROJECT_PLAN\.md$/, /firebase-debug\.log$/],
+    ignore: [/^\/(src|tests|docs|scripts|cloud|test-results|playwright-report|coverage)(\/|$)/, /^\/\.(git|env|codex|agents|tools|local)/, /PROJECT_PLAN\.md$/, /.*-debug\.log$/, /cloud-client\.json$/],
     extraResource: ['assets/icon.png', 'assets/icon.ico'],
   },
   rebuildConfig: {},

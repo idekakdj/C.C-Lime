@@ -5,8 +5,7 @@ import { pathToFileURL } from 'node:url';
 import squirrelStartup from 'electron-squirrel-startup';
 import { ZodError } from 'zod';
 import { ApplicationService } from './service';
-import clientConfig from '../../cloud/client.json';
-import type { CloudConfiguration } from '../shared/model';
+import { loadCloudConfiguration } from './config';
 
 app.setName('C.C. Lime');app.setAppUserModelId('com.squirrel.cc_lime.cc-lime');
 if(process.env.CC_LIME_DATA_DIR&&!app.isPackaged)app.setPath('userData',path.resolve(process.env.CC_LIME_DATA_DIR));
@@ -30,8 +29,7 @@ else{
     session.defaultSession.setPermissionRequestHandler((_webContents,_permission,callback)=>callback(false));session.defaultSession.setPermissionCheckHandler(()=>false);
     const updateTray=()=>tray?.setContextMenu(Menu.buildFromTemplate([{label:'Open C.C. Lime',click:()=>show()},{label:'Add item',click:()=>show({action:'new'})},{label:service?.device.notifications?'Pause reminders':'Enable reminders',click:()=>void service?.command('device',{notifications:!service.device.notifications}).catch(()=>{})},{label:'Settings',click:()=>show({action:'settings'})},{type:'separator'},{label:'Quit C.C. Lime',click:()=>{void quitWithNotice();}}]));
     const changed=()=>{if(changeTimer)return;changeTimer=setTimeout(()=>{changeTimer=null;if(!window?.isDestroyed())window?.webContents.send('lime:changed');updateTray();},80);};
-    let config:CloudConfiguration|null=clientConfig;const configPath=path.join(root,'cloud-client.json');
-    if(fs.existsSync(configPath)){try{const custom=JSON.parse(fs.readFileSync(configPath,'utf8'));if(custom.projectId===clientConfig.projectId&&typeof custom.apiKey==='string')config=custom;}catch{}}
+    const config=loadCloudConfiguration(root,app.isPackaged?undefined:app.getAppPath());
     service=new ApplicationService(root,config,{
       secure:safeStorage,version:app.getVersion(),changed,
       openBrowser:async url=>{const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!=='accounts.google.com')throw new Error('Unsupported sign-in address.');await shell.openExternal(url);},
