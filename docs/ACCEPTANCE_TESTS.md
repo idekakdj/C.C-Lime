@@ -2,7 +2,7 @@
 
 **Baseline:** [project specification](../PROJECT_PLAN.md). **Work order:** [implementation task register](IMPLEMENTATION_TASKS.md).
 
-All tests in this document are **not run** at the end of the planning phase. Expected results are requirements, not reported observations. During implementation, record actual build/version, environment, date, result, and supporting evidence. An emulator or browser preview cannot substitute for a test explicitly requiring the installed app or a live identity provider.
+Expected results are requirements, not reported observations. Actual coverage and outstanding checks for all 52 scenarios are recorded in [implementation evidence](IMPLEMENTATION_STATUS.md). An emulator or browser preview cannot substitute for a test explicitly requiring the installed app or a live identity provider.
 
 ## Test environments and shared fixtures
 

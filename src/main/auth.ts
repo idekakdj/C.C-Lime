@@ -75,6 +75,10 @@ export class AuthService {
     z.string().email().max(254).parse(email); z.string().min(1).max(4096).parse(password);
     return this.exclusive(async () => this.accept(await this.request('signInWithPassword', { email, password, returnSecureToken: true })));
   }
+  async reauthenticate(password:string):Promise<void>{
+    const expected=this.session;if(!expected)throw new Error('Sign in first.');z.string().min(1).max(4096).parse(password);
+    await this.exclusive(async()=>this.accept(await this.request('signInWithPassword',{email:expected.email,password,returnSecureToken:true}),expected.uid));
+  }
   async signUp(email: string, password: string, displayName: string): Promise<Session> {
     z.string().email().max(254).parse(email); z.string().min(6).max(4096).parse(password); z.string().max(100).parse(displayName);
     return this.exclusive(async () => {
@@ -117,10 +121,10 @@ export class AuthService {
   }
   signOut(): void { this.generation++; this.cancelGoogle(); this.idToken = ''; this.refreshToken = ''; this.expires = 0; this.session = null; this.remembered = false; if (fs.existsSync(this.filename)) fs.unlinkSync(this.filename); this.changed(); }
   cancelGoogle(): void { this.cancelOAuth?.(); this.cancelOAuth = null; }
-  async google(link = false): Promise<Session> {
+  async google(link = false, expectedAccount?:string): Promise<Session> {
     if (!this.config?.googleClientId) throw new AuthError('Google sign-in is awaiting the owner’s desktop OAuth configuration.', 'GOOGLE_NOT_CONFIGURED');
     return this.exclusive(async () => {
-      const existingToken = link ? await this.token() : undefined; const existingUid = link ? this.session!.uid : undefined;
+      const existingToken = link ? await this.token() : undefined; const existingUid = link ? this.session!.uid : expectedAccount;
       const verifier = randomBytes(48).toString('base64url'), nonce = randomBytes(24).toString('base64url'), state = randomBytes(24).toString('base64url');
       const code = await new Promise<{ code: string; redirect: string }>((resolve, reject) => {
         let finished = false; let redirect = '';
@@ -128,7 +132,8 @@ export class AuthService {
           const url = new URL(req.url ?? '/', 'http://127.0.0.1');
           if (req.method !== 'GET' || url.pathname !== '/oauth/callback') { res.writeHead(404); res.end(); return; }
           const receivedState = url.searchParams.get('state') ?? '';
-          if (receivedState.length !== state.length || !timingSafeEqual(Buffer.from(receivedState), Buffer.from(state))) { res.writeHead(400); res.end('Invalid sign-in state. Return to C.C. Lime and try again.'); return; }
+          const receivedBytes = Buffer.from(receivedState), expectedBytes = Buffer.from(state);
+          if (receivedBytes.length !== expectedBytes.length || !timingSafeEqual(receivedBytes, expectedBytes)) { res.writeHead(400); res.end('Invalid sign-in state. Return to C.C. Lime and try again.'); return; }
           res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'none'" }); res.end('You can close this page and return to C.C. Lime.');
           if (url.searchParams.get('error') || !url.searchParams.get('code')) finish(new Error('Google sign-in was canceled.'));
           else finish(null, { code: url.searchParams.get('code')!, redirect });

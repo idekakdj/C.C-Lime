@@ -19,7 +19,7 @@ export class SyncEngine {
   async stop(): Promise<void> { this.stopped = true; if (this.timer) clearTimeout(this.timer); this.timer = null; await this.running; }
   async sync(): Promise<void> {
     if (this.stopped) return; if (this.running) return this.running;
-    this.running = this.run().finally(() => { this.running = null; if (!this.stopped && !this.timer) this.schedule(this.failures ? Math.min(300000, 5000 * 2 ** Math.min(this.failures, 6)) + Math.random()*1000 : this.visible ? 60000 : 300000); });
+    this.running = this.run().finally(() => { this.running = null; if (!this.stopped && !this.timer) this.schedule(this.failures ? [2000,5000,15000,30000,60000,300000][Math.min(this.failures-1,5)] + Math.random()*500 : this.visible ? 30000 : 120000); });
     return this.running;
   }
   async retry(): Promise<void> { this.store.retryFailed(); this.failures = 0; await this.sync(); }
@@ -29,18 +29,22 @@ export class SyncEngine {
     if (!session.verified) { this.update('verification', 'Verify your email to sync. Changes are saved on this computer.'); return; }
     this.update('syncing', 'Syncing your calendar…');
     try {
+      const deleting=this.store.metadata('deleting',false)||await this.cloud.deletionStarted?.();
+      if(this.stopped)return;
+      if(deleting){this.store.setMetadata('deleting',true);this.update('error','Account deletion has started. Resume it in Settings.');return;}
       let count = 0;
       while (!this.stopped && count++ < 1000) {
         const queue = this.store.queue();
-        const mutation = queue.find(m => m.state === 'pending' && !queue.some(earlier => earlier.recordId === m.recordId && earlier.order < m.order));
+        const ready=(m:typeof queue[number])=>m.state==='pending'&&!queue.some(earlier=>earlier.recordId===m.recordId&&earlier.order<m.order);
+        const mutation = queue.find(m => ready(m)&&(!m.groupId||queue.filter(v=>v.groupId===m.groupId).every(ready)));
         if (!mutation) break;
-        this.store.markSending(mutation.id);
-        try { const remote = await this.cloud.commit(mutation); if (this.stopped) return; this.store.acknowledge(mutation, remote); }
+        const group=mutation.groupId?queue.filter(m=>m.groupId===mutation.groupId):[mutation];group.forEach(m=>this.store.markSending(m.id));
+        try { const remotes = mutation.groupId ? await this.cloud.commitGroup!(group,mutation.groupId) : [await this.cloud.commit(mutation)]; if (this.stopped) return; this.store.acknowledgeGroup(group,remotes); }
         catch (error) {
           if (this.stopped) return;
-          if (error instanceof VersionConflict) { this.store.conflict(mutation, error.current); continue; }
+          if (error instanceof VersionConflict) {for(const member of group){const remote=group.length===1?error.current:await this.cloud.get(member.recordId);if(this.stopped)return;this.store.conflict(member,remote);}continue; }
           const permanent = error instanceof CloudError && ['INVALID_ARGUMENT','SCHEMA_MISMATCH','PERMISSION_DENIED'].includes(error.code);
-          this.store.resetMutation(mutation.id, permanent); throw error;
+          group.forEach(m=>this.store.resetMutation(m.id,permanent));throw error;
         }
       }
       if (this.stopped) return;

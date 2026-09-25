@@ -12,6 +12,14 @@ beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-lime-tests-'
 afterEach(() => { stores.forEach(store => store.close()); if (!path.resolve(root).startsWith(path.resolve(os.tmpdir()) + path.sep) || !path.basename(root).startsWith('cc-lime-tests-')) throw Error('Unsafe test cleanup path'); fs.rmSync(root, { recursive: true, force: true }); });
 
 describe('durable local storage and recovery', () => {
+  it('refreshes cached records after another connection commits and after a failed group',()=>{
+    const a=open(),first=item(),second=item();a.save(first);a.save(second);a.list();
+    const b=open();b.save({...first,title:'Changed elsewhere'});
+    expect(a.list().find(r=>r.id===first.id)).toMatchObject({title:'Changed elsewhere'});
+    expect(()=>a.saveGroup([{id:first.id,value:{...first,title:'Must roll back'}},{id:second.id,value:courseSchema.parse({id:second.id,kind:'course',name:'Invalid type replacement'})}])).toThrow('change its type');
+    expect(a.list().find(r=>r.id===first.id)).toMatchObject({title:'Changed elsewhere'});
+    expect(a.get(second.id)).toEqual(second);
+  });
   it('saves records and their outgoing mutations atomically across restart', () => {
     const store = open(); const value = item(); store.save(value); expect(store.queue()).toHaveLength(1); store.close();
     const reopened = open(); expect(reopened.get(value.id)).toEqual(value); expect(reopened.queue()[0].value).toEqual(value);

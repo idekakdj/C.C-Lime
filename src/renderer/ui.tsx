@@ -1,17 +1,21 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { X, CalendarDays, Check, Circle } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { timingLabel } from '../domain/calendar';
 import { isTask, type Occurrence, type Course, type Preferences } from '../shared/model';
 export function Logo(){return <div className="brand"><span className="brand-mark"><CalendarDays size={23}/><i/></span><span>C.C. Lime<span className="brand-caption">STUDENT PLANNER</span></span></div>;}
 export function Modal({title,subtitle,children,onClose,wide=false}:{title:string;subtitle?:string;children:ReactNode;onClose:()=>void;wide?:boolean}){
-  const ref=useRef<HTMLDialogElement>(null);
+  const ref=useRef<HTMLDialogElement>(null),headingId=useId();
   useEffect(()=>{const previous=document.activeElement as HTMLElement|null;ref.current?.showModal();return()=>{previous?.focus();};},[]);
-  return <dialog ref={ref} className={`modal ${wide?'wide':''}`} onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===ref.current){const box=ref.current.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)onClose();}}}><header><div><h2>{title}</h2>{subtitle&&<p>{subtitle}</p>}</div><button className="icon-button" aria-label="Close dialog" onClick={onClose}><X size={20}/></button></header>{children}</dialog>;
+  return <dialog ref={ref} aria-labelledby={headingId} className={`modal ${wide?'wide':''}`} onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===ref.current){const box=ref.current.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)onClose();}}}><header><div><h2 id={headingId}>{title}</h2>{subtitle&&<p>{subtitle}</p>}</div><button className="icon-button" aria-label="Close dialog" onClick={onClose}><X size={20}/></button></header>{children}</dialog>;
 }
 export function Empty({title,detail,action}:{title:string;detail:string;action?:ReactNode}){return <div className="empty"><span className="empty-icon"><CalendarDays size={26}/></span><h3>{title}</h3><p>{detail}</p>{action}</div>;}
 export const typeNames={class:'Class',event:'Event',assignment:'Assignment',exam:'Exam',study:'Study',task:'Task'};
 export const typeColors={class:'#b9a0f5',event:'#9baee8',assignment:'#e2bc78',exam:'#ee9eb9',study:'#7bc9b4',task:'#bba3df'};
+export function DayItems({items,render}:{items:Occurrence[];render:(item:Occurrence)=>ReactNode}){
+  const [count,setCount]=useState(50);
+  return <>{items.slice(0,count).map(render)}{items.length>50&&<p className="field-help" role="status">Showing {Math.min(count,items.length)} of {items.length} items.</p>}{count<items.length&&<button className="button secondary" onClick={()=>setCount(value=>value+50)}>Show {Math.min(50,items.length-count)} more items</button>}</>;
+}
 export function ItemRow({item,courses,prefs,onOpen,onComplete,compact=false,showDate=false}:{item:Occurrence;courses:Course[];prefs:Preferences;onOpen:(o:Occurrence)=>void;onComplete:(o:Occurrence)=>void;compact?:boolean;showDate?:boolean}){
   const course=courses.find(c=>c.id===item.courseId);const color=course?.color??typeColors[item.itemType];
   return <div className={`item-row ${compact?'compact':''} ${item.status==='completed'?'completed':''}`} style={{'--item-color':color} as React.CSSProperties}>

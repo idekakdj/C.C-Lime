@@ -29,8 +29,10 @@ export class VersionConflict extends Error { constructor(readonly current: Remot
 export interface CloudAdapter {
   get(id: string): Promise<RemoteRecord | null>;
   commit(mutation: Mutation): Promise<RemoteRecord>;
+  commitGroup?(mutations:Mutation[],groupId:string):Promise<RemoteRecord[]>;
   head(): Promise<number>;
   changes(after: number, through: number, afterId?: string): Promise<RemoteRecord[]>;
+  deletionStarted?():Promise<boolean>;
 }
 export class FirestoreCloud implements CloudAdapter {
   readonly base: string;
@@ -47,6 +49,7 @@ export class FirestoreCloud implements CloudAdapter {
   private async request(suffix: string, init: RequestInit = {}): Promise<any> {
     const response = await fetch(`${this.base}${suffix}`, { ...init, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await this.token()}`, ...init.headers }, signal: AbortSignal.timeout(20000) });
     if (response.status === 404) return null;
+    if (response.status === 204) return true;
     const body = await response.json();
     if (!response.ok) throw new CloudError(body.error?.message ?? 'Cloud request failed.', body.error?.status ?? 'UNKNOWN', response.status);
     return body;
@@ -122,5 +125,27 @@ export class FirestoreCloud implements CloudAdapter {
     if (afterId) query.startAt = { values: [encode(after), { referenceValue: this.name(`records/${afterId}`) }], before: false };
     const rows = await this.request(`/users/${this.uid}:runQuery`, { method: 'POST', body: JSON.stringify({ structuredQuery: query }) });
     const result = (rows ?? []).filter((row: any) => row.document).map((row: any) => this.fromDocument(row.document)); this.operations.reads += Math.max(1, result.length); return result;
+  }
+  async deletionStarted():Promise<boolean>{this.operations.reads++;return !!await this.request(`/users/${this.uid}/system/deletion`);}
+  async beginDeletion():Promise<void>{
+    await this.request(`/users/${this.uid}/system/deletion`,{method:'PATCH',body:JSON.stringify({fields:fields({enabled:true})})});this.operations.writes++;
+  }
+  async deleteCalendarData():Promise<void>{
+    if(!await this.deletionStarted())throw new Error('Confirm account deletion before removing cloud data.');
+    // Every batch is restartable. The immutable marker blocks old clients from
+    // re-creating records while deletion proceeds, including after identity deletion.
+    for(const collection of ['records','receipts']){
+      for(let page=0;page<10000;page++){
+        const result=await this.request(`/users/${this.uid}/${collection}?pageSize=100`);
+        const documents=result?.documents??[];this.operations.reads+=Math.max(1,documents.length);
+        if(!documents.length)break;
+        for(const document of documents)if(!document.name.startsWith(this.name(`${collection}/`)))throw new Error('Unexpected cloud deletion path.');
+        await this.request(':commit',{method:'POST',body:JSON.stringify({writes:documents.map((document:any)=>({delete:document.name}))})});this.operations.writes+=documents.length;
+        if(page===9999)throw new Error('Deletion paused after a large batch. Resume to finish.');
+      }
+      const verify=await this.request(`/users/${this.uid}/${collection}?pageSize=1`);this.operations.reads++;
+      if(verify?.documents?.length)throw new Error('Cloud data is still being removed. Resume deletion.');
+    }
+    await this.request(`/users/${this.uid}/system/sync`,{method:'DELETE'});this.operations.writes++;
   }
 }

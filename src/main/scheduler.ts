@@ -3,7 +3,7 @@ import { reminderCandidates } from '../domain/calendar';
 import { isTask, type DeviceSettings, type ReminderEntry } from '../shared/model';
 import { LocalStore } from './store';
 
-export interface ReminderNotice { title: string; body: string; itemId?: string; inbox?: boolean; onFailure: () => void; }
+export interface ReminderNotice { title: string; body: string; itemId?: string; occurrenceKey?:string; inbox?: boolean; onFailure: () => void; }
 export function inQuietHours(now: number, zone: string, start: string | null, end: string | null): boolean {
   if (!start || !end || start === end) return false;
   const time = DateTime.fromMillis(now, { zone }).toFormat('HH:mm');
@@ -23,7 +23,7 @@ export class ReminderScheduler {
     const relevant = (entry: ReminderEntry) => entry.task || entry.endMs > now;
     for (const candidate of candidates) {
       const prior = previous.get(candidate.id); const marker = this.store.delivered(candidate.id);
-      const movedFuture = !!prior && prior.dueMs !== candidate.dueMs && candidate.dueMs > now;
+      const movedFuture = !!prior && (prior.dueMs !== candidate.dueMs || prior.state === 'canceled') && candidate.dueMs > now && marker !== candidate.dueMs;
       if (prior && !movedFuture) {
         if (['pending','snoozed','suppressed'].includes(prior.state)) this.store.putReminder({ ...prior, title: candidate.item.title, anchorMs: candidate.item.startMs!, endMs: candidate.item.endMs!, dueMs: candidate.dueMs });
         continue;
@@ -32,7 +32,7 @@ export class ReminderScheduler {
       const entry: ReminderEntry = { id: candidate.id, itemId: candidate.item.id, occurrenceKey: candidate.item.occurrenceKey, ruleId: candidate.ruleId, title: candidate.item.title, dueMs: candidate.dueMs, anchorMs: candidate.item.startMs!, endMs: candidate.item.endMs!, task: isTask(candidate.item), state: candidate.dueMs < now - 86400000 ? 'missed' : 'pending', snoozeMs: null, createdMs: prior?.createdMs ?? now };
       this.store.putReminder(entry);
     }
-    for (const prior of previous.values()) if (!active.has(prior.id) && ['pending','snoozed','suppressed'].includes(prior.state)) this.store.putReminder({ ...prior, state: 'dismissed', snoozeMs: null });
+    for (const prior of previous.values()) if (!active.has(prior.id) && ['pending','snoozed','suppressed'].includes(prior.state)) this.store.putReminder({ ...prior, state: 'canceled', snoozeMs: null });
     const quiet = inQuietHours(now, this.zone(), device.quietStart, device.quietEnd);
     const due = this.store.reminders().filter(r => ['pending','snoozed'].includes(r.state) && (r.snoozeMs ?? r.dueMs) <= now);
     const eligible: ReminderEntry[] = [];
@@ -61,7 +61,7 @@ export class ReminderScheduler {
     let failed = false;
     const onFailure = () => { failed = true; if (this.stopped) return; for (const entry of entries) this.store.putReminder({ ...entry, state: 'failed' }); this.changed(); };
     try {
-      this.emit({ title: privacy ? 'C.C. Lime reminder' : summary ? `${entries.length} reminders to catch up on` : entries[0].title, body: privacy ? 'Open C.C. Lime to see the details.' : summary ? 'Open your reminder inbox to see what’s coming up.' : 'Your scheduled reminder is ready. Open C.C. Lime for details.', itemId: summary ? undefined : entries[0].itemId, inbox: summary, onFailure });
+      this.emit({ title: privacy ? 'C.C. Lime reminder' : summary ? `${entries.length} reminders to catch up on` : entries[0].title, body: privacy ? 'Open C.C. Lime to see the details.' : summary ? 'Open your reminder inbox to see what’s coming up.' : 'Your scheduled reminder is ready. Open C.C. Lime for details.', itemId: summary ? undefined : entries[0].itemId, occurrenceKey:summary?undefined:entries[0].occurrenceKey, inbox: summary, onFailure });
       if (!failed) for (const entry of entries) this.store.putReminder({ ...entry, state: 'emitted', snoozeMs: null });
     } catch { onFailure(); }
   }

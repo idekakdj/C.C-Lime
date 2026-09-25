@@ -5,7 +5,7 @@ import path from 'node:path';
 import { parseRecord, type Conflict, type DomainRecord, type ReminderEntry } from '../shared/model';
 import { recurringDates } from '../domain/calendar';
 
-export interface Mutation { id: string; order: number; recordId: string; baseVersion: string | null; base: DomainRecord | null; value: DomainRecord | null; state: string; attempts: number; }
+export interface Mutation { id: string; order: number; recordId: string; baseVersion: string | null; base: DomainRecord | null; value: DomainRecord | null; state: string; attempts: number; groupId?:string; }
 export interface RemoteRecord { id: string; value: DomainRecord | null; version: string; sequence: number; }
 const parse = <T>(value: string | null): T | null => value === null ? null : JSON.parse(value);
 export const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -16,6 +16,10 @@ export class LocalStore {
   readonly directory: string;
   readonly filename: string;
   private closed = false;
+  private revision=0;
+  private instance=randomUUID();
+  private cached:{key:string;records:DomainRecord[]}|null=null;
+  private parsed=new Map<string,{payload:string;record:DomainRecord}>();
   constructor(root: string, readonly accountId: string) {
     this.directory = path.join(root, 'accounts', createHash('sha256').update(accountId).digest('hex').slice(0, 32));
     fs.mkdirSync(this.directory, { recursive: true });
@@ -52,7 +56,19 @@ export class LocalStore {
       for (const entry of this.reminders()) if (entry.state === 'dispatching') this.putReminder({ ...entry, state: 'uncertain' });
     } catch (error) { this.db.close(); throw error; }
   }
-  list(): DomainRecord[] { return (this.db.prepare('SELECT payload FROM records WHERE deleted=0 ORDER BY id').all() as Array<{ payload: string }>).map(row => parseRecord(JSON.parse(row.payload))); }
+  listRevision():string{return `${this.instance}:${this.revision}:${this.db.pragma('data_version',{simple:true})}`;}
+  list(): DomainRecord[] {
+    const key=this.listRevision();if(this.cached?.key===key)return this.cached.records;
+    const next=new Map<string,{payload:string;record:DomainRecord}>();
+    const records=(this.db.prepare('SELECT id,payload FROM records WHERE deleted=0 ORDER BY id').all() as Array<{id:string;payload:string}>).map(row=>{
+      const previous=this.parsed.get(row.id);
+      const value=previous?.payload===row.payload?previous:{payload:row.payload,record:parseRecord(JSON.parse(row.payload))};
+      next.set(row.id,value);return value.record;
+    });
+    // Reuse only byte-identical database rows. Rolled-back writes and changes
+    // from another connection still read the authoritative committed payload.
+    this.parsed=next;this.cached={key,records};return records;
+  }
   get(id: string): DomainRecord | null { const row = this.db.prepare('SELECT payload FROM records WHERE id=? AND deleted=0').get(id) as { payload: string } | undefined; return row ? parseRecord(JSON.parse(row.payload)) : null; }
   metadata<T>(key: string, fallback: T): T { const row = this.db.prepare('SELECT value FROM metadata WHERE key=?').get(key) as { value: string } | undefined; return row ? JSON.parse(row.value) : fallback; }
   setMetadata(key: string, value: unknown): void { this.db.prepare('INSERT OR REPLACE INTO metadata VALUES (?,?)').run(key, JSON.stringify(value)); }
@@ -70,7 +86,7 @@ export class LocalStore {
     if (this.metadata('dailyBackupDate', '') !== today) { this.snapshot('daily'); this.setMetadata('dailyBackupDate', today); }
   }
   private validateRelations(record: DomainRecord, prospective?: Map<string, DomainRecord>): void {
-    const get = (id: string) => prospective?.get(id) ?? this.get(id);
+    const get = (id: string) => prospective ? prospective.get(id) : this.get(id);
     if (record.kind === 'item') {
       if (record.courseId && get(record.courseId)?.kind !== 'course') throw new Error('The selected course is unavailable.');
       if (record.assignmentId) { const assignment = get(record.assignmentId); if (assignment?.kind !== 'item' || assignment.itemType !== 'assignment') throw new Error('The linked assignment is unavailable.'); }
@@ -83,15 +99,26 @@ export class LocalStore {
       if (!recurringDates(series, record.originalDate, tomorrow.toISOString().slice(0, 10)).includes(record.originalDate)) throw new Error('This date is not an occurrence of the series.');
     }
   }
-  private write(recordId: string, value: DomainRecord | null, enqueue: boolean): void {
+  private write(recordId: string, value: DomainRecord | null, enqueue: boolean): string|null {
+    this.revision++;
     const existing = this.db.prepare('SELECT kind FROM records WHERE id=?').get(recordId) as { kind: string } | undefined;
     if (value && existing && existing.kind !== value.kind) throw new Error('A record cannot change its type.');
     this.db.prepare('INSERT INTO records(id,kind,payload,deleted) VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,deleted=excluded.deleted,local_revision=records.local_revision+1')
       .run(recordId, value?.kind ?? existing?.kind ?? 'item', value ? JSON.stringify(value) : null, value ? 0 : 1);
     if (enqueue) {
       const shadow = this.shadow(recordId);
-      this.db.prepare('INSERT INTO outbox(id,record_id,base_version,base_payload,payload) VALUES (?,?,?,?,?)').run(randomUUID(), recordId, shadow?.version ?? null, shadow?.value ? JSON.stringify(shadow.value) : null, value ? JSON.stringify(value) : null);
+      const mutationId=randomUUID();this.db.prepare('INSERT INTO outbox(id,record_id,base_version,base_payload,payload) VALUES (?,?,?,?,?)').run(mutationId, recordId, shadow?.version ?? null, shadow?.value ? JSON.stringify(shadow.value) : null, value ? JSON.stringify(value) : null);return mutationId;
     }
+    return null;
+  }
+  saveGroup(inputs:Array<{id:string;value:DomainRecord|null}>):{undoToken:string}{
+    if(!inputs.length||inputs.length>5000||new Set(inputs.map(v=>v.id)).size!==inputs.length)throw new Error('A linked change must contain at most 5,000 distinct records.');
+    const values=inputs.map(v=>({id:v.id,value:v.value?parseRecord(v.value):null})),prospective=new Map(this.list().map(r=>[r.id,r]));
+    for(const v of values){if(v.value){if(v.id!==v.value.id)throw new Error('Invalid linked identity.');prospective.set(v.id,v.value);}else prospective.delete(v.id);}
+    for(const v of values)if(v.value)this.validateRelations(v.value,prospective);
+    if(values.some(v=>this.conflicts().some(c=>c.recordId===v.id)))throw new Error('Resolve conflicts before changing these linked items.');
+    this.beforeMutation();const before=values.map(v=>({id:v.id,value:this.get(v.id)})),token=randomUUID();
+    this.db.transaction(()=>{const groups=this.metadata<Record<string,string[]>>('atomicGroups',{});for(let i=0;i<values.length;i+=4)groups[randomUUID()]=values.slice(i,i+4).map(v=>this.write(v.id,v.value,true)!);this.setMetadata('atomicGroups',groups);this.db.prepare('INSERT INTO undo VALUES (?,?,?,?)').run(token,Date.now()+10000,JSON.stringify(before),digest(values));})();return{undoToken:token};
   }
   save(input: unknown): { record: DomainRecord; undoToken: string } {
     const value = parseRecord(input); this.validateRelations(value);
@@ -124,7 +151,7 @@ export class LocalStore {
     this.db.transaction(() => { for (const old of before) this.write(old.id, old.value, true); this.db.prepare('DELETE FROM undo WHERE id=?').run(token); })();
   }
   importRecords(inputs: unknown[], batchId = randomUUID()): string {
-    const values = inputs.map(parseRecord); if (values.length > 5000) throw new Error('A batch may contain at most 5,000 records.');
+    const values = inputs.map(parseRecord); if (values.length > 50000) throw new Error('A backup batch may contain at most 50,000 records.');
     const prospective = new Map([...this.list(), ...values].map(r => [r.id, r])); for (const value of values) this.validateRelations(value, prospective);
     if (values.some(v => this.conflicts().some(c => c.recordId === v.id))) throw new Error('Resolve conflicts before importing updates to these records.');
     this.beforeMutation(); const before = values.map(v => ({ id: v.id, value: this.get(v.id) }));
@@ -138,7 +165,7 @@ export class LocalStore {
     const before = JSON.parse(batch.before_payload) as Array<{ id: string; value: DomainRecord | null }>;
     this.beforeMutation(); this.db.transaction(() => { for (const value of before) this.write(value.id, value.value, true); this.db.prepare('DELETE FROM import_batches WHERE id=?').run(batchId); })();
   }
-  queue(): Mutation[] { return (this.db.prepare('SELECT * FROM outbox ORDER BY position').all() as any[]).map(r => ({ id: r.id, order: r.position, recordId: r.record_id, baseVersion: r.base_version, base: parse<DomainRecord>(r.base_payload), value: parse<DomainRecord>(r.payload), state: r.state, attempts: r.attempts })); }
+  queue(): Mutation[] { const groups=this.metadata<Record<string,string[]>>('atomicGroups',{}),groupById=new Map(Object.entries(groups).flatMap(([group,ids])=>ids.map(id=>[id,group] as const)));return (this.db.prepare('SELECT * FROM outbox ORDER BY position').all() as any[]).map(r => ({ id: r.id, order: r.position, recordId: r.record_id, baseVersion: r.base_version, base: parse<DomainRecord>(r.base_payload), value: parse<DomainRecord>(r.payload), state: r.state, attempts: r.attempts,...(groupById.has(r.id)?{groupId:groupById.get(r.id)}:{}) })); }
   markSending(id: string): void { this.db.prepare("UPDATE outbox SET state='sending',attempts=attempts+1 WHERE id=?").run(id); }
   resetMutation(id: string, permanent = false): void { this.db.prepare('UPDATE outbox SET state=? WHERE id=?').run(permanent ? 'failed' : 'pending', id); }
   retryFailed(): void { this.db.prepare("UPDATE outbox SET state='pending' WHERE state='failed'").run(); }
@@ -151,6 +178,9 @@ export class LocalStore {
       if (next) this.db.prepare('UPDATE outbox SET base_version=?,base_payload=? WHERE id=?').run(remote.version, remote.value ? JSON.stringify(remote.value) : null, next.id);
       else this.write(remote.id, remote.value, false);
     })();
+  }
+  acknowledgeGroup(mutations:Mutation[],remotes:RemoteRecord[]):void{
+    this.db.transaction(()=>{mutations.forEach((m,i)=>this.acknowledge(m,remotes[i]));const groups=this.metadata<Record<string,string[]>>('atomicGroups',{});for(const m of mutations)if(m.groupId)delete groups[m.groupId];this.setMetadata('atomicGroups',groups);})();
   }
   applyRemote(records: RemoteRecord[], completedCursor?: number): void {
     this.db.transaction(() => {

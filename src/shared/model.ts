@@ -10,7 +10,7 @@ export const zone = z.string().refine(value => IANAZone.isValidZone(value) || va
 const title = z.string().trim().min(1, 'A title is required.').max(200);
 const instant = z.string().refine(value => DateTime.fromISO(value, { setZone: true }).isValid && /(?:Z|[+-]\d{2}:\d{2})$/.test(value), 'Use a complete timestamp with a time-zone offset.');
 export const timingSchema = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('timed'), start: instant, end: instant, zone }).strict().refine(t => DateTime.fromISO(t.end).toMillis() > DateTime.fromISO(t.start).toMillis(), 'End time must be after start time.'),
+  z.object({ mode: z.literal('timed'), start: instant, end: instant, zone }).strict().refine(t => DateTime.fromISO(t.end).toMillis() > DateTime.fromISO(t.start).toMillis(), 'End time must be after start time.').refine(t => [t.start,t.end].every(value=>{const date=DateTime.fromISO(value).setZone(t.zone);return date.isValid&&date.year>=1900&&date.year<=2100;}), 'Event dates must be between 1900 and 2100 in their time zone.'),
   z.object({ mode: z.literal('allDay'), startDate: localDate, endDate: localDate, zone, anchorTime: localTime.default('09:00') }).strict().refine(t => t.endDate > t.startDate, 'The exclusive end date must be after the first date.'),
   z.object({ mode: z.literal('deadline'), date: localDate, time: localTime.nullable(), zone, anchorTime: localTime.default('09:00') }).strict(),
   z.object({ mode: z.literal('unscheduled'), zone }).strict(),
@@ -61,14 +61,14 @@ export const defaultDeviceSettings: DeviceSettings = { notifications: false, sta
 export interface SyncStatus { state: 'local' | 'syncing' | 'synced' | 'offline' | 'verification' | 'error' | 'conflict'; pending: number; lastSynced: string | null; message: string; }
 export interface Conflict { id: string; recordId: string; base: DomainRecord | null; local: DomainRecord | null; remote: DomainRecord | null; remoteVersion: string | null; }
 export interface ReminderEntry { id: string; itemId: string; occurrenceKey: string; ruleId: string; title: string; dueMs: number; anchorMs: number; endMs: number; task: boolean; state: string; snoozeMs: number | null; createdMs: number; }
-export interface Snapshot { records: DomainRecord[]; session: Session | null; device: DeviceSettings; sync: SyncStatus; conflicts: Conflict[]; reminders: ReminderEntry[]; configured: boolean; googleConfigured: boolean; version: string; localMode: boolean; }
+export interface Snapshot { records: DomainRecord[]; session: Session | null; device: DeviceSettings; sync: SyncStatus; conflicts: Conflict[]; reminders: ReminderEntry[]; configured: boolean; googleConfigured: boolean; version: string; localMode: boolean; deleting?:boolean; recordsRevision?:string; }
 export interface CloudConfiguration { apiKey: string; projectId: string; googleClientId?: string; googleClientSecret?: string; }
 export interface ImportCandidate { record: DomainRecord; sourceHash: string; action: 'new' | 'identical' | 'changed'; existingId?: string; }
 export interface ImportPreview { token: string; candidates: ImportCandidate[]; warnings: string[]; invalid: number; filename: string; }
 export interface LimeApi {
   call<T = unknown>(command: string, payload?: unknown): Promise<T>;
   onChange(callback: () => void): () => void;
-  onNavigate(callback: (target: { itemId?: string; action?: string }) => void): () => void;
+  onNavigate(callback: (target: { itemId?: string; occurrenceKey?:string; action?: string }) => void): () => void;
 }
 declare global { interface Window { lime: LimeApi; } }
 export function parseRecord(input: unknown): DomainRecord { return recordSchema.parse(input); }
