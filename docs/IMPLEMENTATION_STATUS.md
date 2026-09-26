@@ -15,9 +15,11 @@ Updated September 25, 2026. Target: **0.1.0 development preview**, Windows x64. 
 | Package credentials | 242 archive entries inspected; no credential signatures or local configuration paths. Repeat after rebuilding. |
 | Installer | Squirrel Windows x64 installer: 166,089,728 bytes. Upgrade from 0.0.1 exited successfully; installed version 0.1.0 kept the profile path and the old feasibility database byte-for-byte. That older build contained no calendar records, so this does not prove a prior calendar-schema migration. Private local cloud configuration loaded successfully. Checksum in [preview release notes](RELEASE_NOTES.md). |
 | Performance | Median startup 2,828 ms, save 15 ms, month navigation 246 ms, day expansion 180 ms, search 283 ms. Navigation and slow samples miss targets. Two five-minute idle intervals completed at 0.10% visible / 0.28% tray normalized CPU; see [measurements and limits](PERFORMANCE.md). |
-| Native lifecycle/accessibility | Scheduler logic and controls tested; actual banner/click, sleep/login, Narrator and independent second-PC observations remain. |
+| Native lifecycle/accessibility | Owner confirmed receiving the installed app's Windows test banner after its two app-owned shortcuts were aligned with the registered notification identity. Scheduled/tray-only timing, banner-click routing, sleep/login, Narrator and independent second-PC observations remain. |
 
 All 12 calendar tests passed on the rebuilt package containing the final performance changes, then against the installed copy. The two added lifecycle tests passed in a separate run. The initial crash test targeted Playwright's Windows shell wrapper; it was corrected to verify the isolated profile and terminate the actual application main process. Exact privately configured values were also checked against source and package contents, without printing them. Raw reports/screenshots stay ignored in `test-results/`; credentials and live account checks stay in ignored local directories.
+
+Notification diagnosis found two C.C. Lime Start Menu shortcuts with different activation identifiers; the installer-created shortcut was backed up privately and aligned with the existing registered shortcut and verified installed launcher. The owner subsequently reported that a notification banner was received. This is evidence for this installation's test banner, not a completed scheduled-reminder or clean-machine acceptance matrix. The test button's native failure feedback still needs improvement.
 
 ## Per-task reconciliation
 
@@ -27,7 +29,7 @@ The original task descriptions remain the completion criteria.
 | --- | --- | --- |
 | T-01 | Complete | Detailed plan, 48 tasks, 52 acceptance scenarios, GitHub clone and source structure. |
 | T-02 | Implemented; local upgrade verified | Pinned toolchain and x64 installer. Upgrade from the 0.0.1 feasibility build to 0.1.0 passed on this Windows 11 host. Clean second-PC installation remains. |
-| T-03 | Partial | Installed SQLite normal/crash restart and hide-to-tray/second-launch restoration pass. Native popup/click observation remains. |
+| T-03 | Partial | Installed SQLite normal/crash restart, hide-to-tray/second-launch restoration and owner-observed test banner pass. Notification-click routing remains. |
 | T-04 | Live methods proved; extended auth checks open | Live email/password and Google Firebase exchange passed. Google session used Windows encryption and survived restart/refresh. Delivered email actions, linking and additional cancellation cases remain. |
 | T-05 | Verified protocol | Four records + head + receipt fits emulator rules; live two-profile CAS/conflict/tombstone checks pass. |
 | T-06 | Implemented | Synthetic fixtures, injected clocks, isolated profiles/stores and corrupt snapshots. Broader disk/migration fixtures remain. |
@@ -58,7 +60,7 @@ The original task descriptions remain the completion criteria.
 | T-31 | Implemented; live UI partial | Separate account stores, immediate hiding, local removal and resumable cloud-before-identity deletion. Google reauth/delete UI remains live-unverified. |
 | T-32 | Implemented/measured | Status/diagnostics/counters. Live synthetic session: 51 client reads and 20 writes across two profiles; implicit rule reads/admin cleanup are additional. |
 | T-33 | Implemented/tested | Durable journal, watchdog, crash uncertainty, catch-up, quiet hours and delivery markers. |
-| T-34 | Implemented; native check open | Notification host, occurrence routing, inbox/privacy/snooze. Actual banner activation/suppression remains. |
+| T-34 | Implemented; native check partial | Owner observed the test banner after local shortcut repair. Scheduled delivery, activation/suppression and clearer test failure feedback remain. |
 | T-35 | Implemented; installed checks partial | Tray hiding and second launch restoring the existing window pass. Actual login/notification identity remain. |
 | T-36 | Implemented; external fixtures open | Bounded ICS worker, preview/UID handling, native/finite recurrence and warnings. Independent Google/Outlook exports remain. |
 | T-37 | Partial | ICS export and safe import undo. External interoperability and per-occurrence completion export remain. |
@@ -87,7 +89,7 @@ Related unit tests do not mark an entire acceptance scenario passed. The exact s
 | A-16 | Archive implemented; semester impact preview/application incomplete. |
 | A-17–A-22 | DST/leap/sidebar logic and view/day/task coverage; full display/OS-zone/midnight visual matrix remains. |
 | A-23–A-30 | Durable queue/CAS/conflict/lost-response/tombstone/paging and live two-profile convergence; physical second PC and complete error matrix remain. |
-| A-31–A-38 | Scheduler logic and controls implemented; required real native lifecycle observations outstanding. |
+| A-31–A-38 | Scheduler logic and controls implemented; installed test banner received by owner. Required scheduled/tray-only timing, click, suppression and sleep/login lifecycle observations remain. |
 | A-39–A-44 | Parser/export/backup and actual desktop import/restore; external interoperability, cancellation and full malformed/custom-zone matrix remain. |
 | A-45–A-46 | Automated layout/keyboard/axe/zoom; Narrator/manual matrix not run. |
 | A-47–A-48 | Performance/resources incomplete. Live client cloud counters available. |
