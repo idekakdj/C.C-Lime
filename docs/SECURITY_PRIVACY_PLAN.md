@@ -95,4 +95,4 @@ Each package requires: named accountable owner, approved version/date, evidence 
 3. Continue original functionality/performance/installer work independently. Prepare T-53–T-60 technical inventories/templates without inventing approvals. Ask for actual operator/auditor/budget decisions when concrete choices are ready.
 4. T-61 depends on sustained organizational evidence and independent assessors; it cannot finish in a coding session. T-62 remains blocked until both original product acceptance and new applicable obligations are met.
 
-Current: T-49 specified; T-50–T-52 in progress; T-53–T-62 planned. No new acceptance scenario is pre-marked pass. Record results in IMPLEMENTATION_STATUS.md after execution.
+Initial status at planning: T-49 specified; T-50–T-52 in progress; T-53–T-62 planned. No acceptance scenario was pre-marked pass. Subsequent actual results are recorded in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md); [ABUSE_THREAT_MODEL.md](ABUSE_THREAT_MODEL.md) records the initial T-53 review and remaining remote enforcement gaps.
