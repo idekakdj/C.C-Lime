@@ -1,6 +1,29 @@
 # Implementation and verification evidence
 
-Updated September 26, 2026. Target: **0.1.2 development preview**, Windows x64. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+Updated September 26, 2026. Target: **0.1.3 development preview**, Windows x64. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+
+## 0.1.3 security/privacy extension checkpoint
+
+The owner confirmed a personal student calendar, no patient records, operated by them or a future company whose details remain undecided. [The detailed plan](SECURITY_PRIVACY_PLAN.md) adds R-15–R-21, T-49–T-62 and A-53–A-64 for the five assurance/privacy targets, rate limiting and 404 recovery. No SOC 2 report, ISO certificate, DGSI conformance assessment or legal compliance finding is claimed.
+
+- **132 unit tests in 15 files, type checking and production build pass.** New coverage includes sensitive-action limits before effects, independent budgets, monotonic provider cooldowns, non-JSON HTTP 429, safe pending queues, and manual/focus/save attempts during a sync hold.
+- **36 emulator tests pass.** The new head quota accepts 60 atomic commits per account/window, denies raw REST slot 61 and forged resets/counters/times, handles racing final-slot requests, separate accounts, legacy migration, expired windows and receipt replay. Existing auth, deletion and maximum-group rule-budget tests still pass.
+- **23 packaged desktop cases pass** (22 existing cases in the full run plus the corrected 404 case in a focused retest). The new case verifies actual status 404, denied IPC from an error document, automated accessibility, keyboard recovery and preserved saved data. Its first run used an unsupported new-tab accessibility API; switching to the same Electron-compatible legacy mode as existing checks resolved the harness failure.
+- **Source scan: 97 publishable files clean; package scan: 242 entries clean.** `.local/.env` and `.local/google-oauth.json` remain ignored. No credential values or private local configuration entered the app archive. Repeat scans after final artifact refresh.
+- **Rollout is pending.** The 0.1.3 package implements the quota client and app-side limits. The new rules are emulator-tested, not yet deployed at this checkpoint. They reject older clients, so the running 0.1.2 installation must be closed/upgraded before deployment. A separate eight-record/eight-queued-change/four-reminder 0.1.2 fixture has been prepared for upgrade verification. Do not describe the new server quota as live until deployment and disposable-account checks are recorded below.
+- CI now includes the Java 21 Firebase emulator suite before packaging, so future cloud-rule changes are checked on GitHub as well as locally.
+
+| Added task | State | Outstanding evidence |
+| --- | --- | --- |
+| T-49 | Complete | Exact scope, tasks, tests and dependencies documented; operator identity remains an explicit T-54 decision. |
+| T-50 | Ready for installed verification | Unit/service/provider and packaged regressions pass. In-process guards are not remote abuse enforcement. |
+| T-51 | Ready for rollout verification | Emulator enforcement passes; installed upgrade, deployment hash and live new-rule check pending. |
+| T-52 | Complete for packaged desktop | Real protocol status/security headers, traversal/junction/read errors, accessible page and keyboard recovery verified. Installed repeat pending with upgrade. No hosted website exists. |
+| T-53 | Planned | Custom distributed authentication/read-abuse limits, monitoring and bypass assessment remain. |
+| T-54–T-60 | Planned; owner decisions required for organizational controls | Operator/legal scope, risk/policy/retention/vendor/access/incident/continuity programs and operating evidence do not exist merely because this plan was written. |
+| T-61/T-62 | Blocked by organizational program/independent assessment and original release gaps | Reports/certification/conformance review, legally reviewed claims and final release approval outstanding. |
+
+The original product performance, importer, notification-installer, native/manual, dependency and second-PC gaps below remain open. The following tables retain the prior 0.1.2 baseline unless explicitly updated above; they are not new 0.1.3 installed/performance results.
 
 ## Observed results
 

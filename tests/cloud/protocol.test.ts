@@ -18,7 +18,7 @@ async function rawCommit(value:ReturnType<typeof item>){
   const writes=[
     {update:{name:`${root}/records/${value.id}`,fields:fields({ownerId:'alice',schemaVersion:1,kind:value.kind,payload:value,deleted:false,changeSeq:1,lastMutationId:group})},currentDocument:{exists:false},updateTransforms:[{fieldPath:'updatedAt',setToServerValue:'REQUEST_TIME'}]},
     {update:{name:`${root}/receipts/${group}`,fields:fields({ownerId:'alice',recordIds:[value.id],sequence:1,payloadHash:'0'.repeat(64)})},currentDocument:{exists:false}},
-    {update:{name:`${root}/system/sync`,fields:fields({ownerId:'alice',sequence:1,mutationId:group,recordIds:[value.id]})},currentDocument:{exists:false}},
+    {update:{name:`${root}/system/sync`,fields:fields({ownerId:'alice',sequence:1,mutationId:group,recordIds:[value.id],rateWindowCount:1})},currentDocument:{exists:false},updateTransforms:[{fieldPath:'rateWindowStart',setToServerValue:'REQUEST_TIME'}]},
   ];
   return fetch(`${origin}/v1/projects/${project}/databases/(default)/documents:commit`,{method:'POST',headers:{Authorization:`Bearer ${token()}`,'Content-Type':'application/json'},body:JSON.stringify({writes})});
 }

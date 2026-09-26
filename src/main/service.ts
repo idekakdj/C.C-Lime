@@ -9,6 +9,7 @@ import { recoverySnapshots, recoverSnapshot } from './recovery';
 import { AuthService, type SecureStorage } from './auth';
 import { FirestoreCloud } from './cloud';
 import { SyncEngine } from './sync';
+import { CommandRateLimits } from './rate-limit';
 import { ReminderScheduler, type ReminderNotice } from './scheduler';
 import { atDate, recurringDates, sourceDate, addDays, localInstant } from '../domain/calendar';
 import { createBackup, readBackup, remapBackup, previewImport, type ParsedCalendar, type ParseOptions } from '../domain/interchange';
@@ -22,6 +23,7 @@ export interface HostServices {
   setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string; timeZone?():string;
 }
 export class ApplicationService {
+  private readonly rateLimits = new CommandRateLimits();
   readonly auth:AuthService;
   store:LocalStore|null=null;
   sync:SyncEngine|null=null;
@@ -96,6 +98,7 @@ export class ApplicationService {
     });
   }
   async command(command:string,payload:any):Promise<any>{
+    this.rateLimits.take(command);
     if(this.store?.metadata('deleting',false)&&!['snapshot','auth.reauthenticate','auth.cancel','auth.signOut','account.delete','backup','dataFolder','diagnostics'].includes(command))throw new Error('Account deletion has started. Resume it in Settings; editing and reminders are paused.');
     switch(command){
       case 'snapshot':{

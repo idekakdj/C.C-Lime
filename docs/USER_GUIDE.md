@@ -14,6 +14,10 @@ Changes are saved in a local SQLite database before synchronization. Check the s
 
 If two computers edit the same item, review the conflict and choose your local version, the cloud version, or keep both. Pending work remains visible in Settings. Signing out keeps this computer's calendar files but stops its account reminders. Each account has a separate local folder.
 
+Sync can pause briefly when an account sends many changes or the cloud provider asks it to wait. Your changes remain saved on this computer and resume automatically. Large imports can take several minutes to upload. Repeated sign-in, email, file-dialog and test-notification actions may show a wait message; calendar editing, cancellation and sign-out remain available. All syncing installations need version 0.1.3 or later after the new cloud write rules are deployed; older previews keep local data but cannot upload changes under those rules.
+
+If an app address is unavailable, C.C. Lime shows **404 — Page not found** with a **Return to calendar** link. Use that link to reopen your saved calendar.
+
 ## Plan your semester
 
 Open **Courses & Semesters**, add semester dates and breaks, then add courses with their names, colors, instructor and usual room. A new class inherits its selected course's semester dates and time zone, proposes weekly meetings, and skips semester breaks by default. Review the selected weekdays and meeting times; lectures and labs should be separate items. Saving a repeating class opens a meeting-date preview before anything is written.

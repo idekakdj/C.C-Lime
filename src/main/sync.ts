@@ -1,6 +1,8 @@
 import { CloudError, VersionConflict, type CloudAdapter } from './cloud';
 import { LocalStore } from './store';
 import type { Session, SyncStatus } from '../shared/model';
+import { performance } from 'node:perf_hooks';
+import { RateLimitError } from './rate-limit';
 
 export class SyncEngine {
   private stopped = false;
@@ -8,17 +10,19 @@ export class SyncEngine {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private failures = 0;
   private visible = true;
+  private cooldownUntil = 0;
   status: SyncStatus;
-  constructor(private store: LocalStore, private cloud: CloudAdapter, private session: () => Session | null, private changed: () => void = () => {}) {
+  constructor(private store: LocalStore, private cloud: CloudAdapter, private session: () => Session | null, private changed: () => void = () => {}, private now = () => performance.now()) {
     this.status = { state: 'local', pending: store.queue().length, lastSynced: store.metadata('lastSynced', null), message: 'Changes are saved on this computer.' };
   }
   private update(state: SyncStatus['state'], message: string): void { if (this.stopped) return; this.status = { state, message, pending: this.store.queue().length, lastSynced: this.store.metadata('lastSynced', null) }; this.changed(); }
   start(): void { this.stopped = false; this.schedule(0); }
   setVisible(visible: boolean): void { this.visible = visible; if (visible) this.schedule(100); }
-  schedule(delay = 700): void { if (this.stopped) return; if (this.timer) clearTimeout(this.timer); this.timer = setTimeout(() => { this.timer = null; void this.sync(); }, delay); }
+  schedule(delay = 700): void { if (this.stopped) return; if (this.timer) clearTimeout(this.timer); this.timer = setTimeout(() => { this.timer = null; void this.sync(); }, Math.max(delay, this.cooldownUntil - this.now())); }
   async stop(): Promise<void> { this.stopped = true; if (this.timer) clearTimeout(this.timer); this.timer = null; await this.running; }
   async sync(): Promise<void> {
     if (this.stopped) return; if (this.running) return this.running;
+    if (this.now() < this.cooldownUntil) { this.schedule(0); return; }
     this.running = this.run().finally(() => { this.running = null; if (!this.stopped && !this.timer) this.schedule(this.failures ? [2000,5000,15000,30000,60000,300000][Math.min(this.failures-1,5)] + Math.random()*500 : this.visible ? 30000 : 120000); });
     return this.running;
   }
@@ -80,6 +84,12 @@ export class SyncEngine {
       else this.update('synced', 'Your calendar is up to date.');
     } catch (error) {
       if (this.stopped) return; this.failures++;
+      if (error instanceof RateLimitError || error instanceof CloudError && error.status === 429) {
+        const delay = error.retryAfterMs ?? 60_000;
+        this.cooldownUntil = Math.max(this.cooldownUntil, this.now() + delay);
+        this.update('offline', `Sync is paused for ${Math.ceil(delay / 1000)} seconds to limit requests. Your changes are saved and will retry automatically.`);
+        this.schedule(delay); return;
+      }
       const permanent = error instanceof CloudError && [400,401,403].includes(error.status);
       this.update(permanent ? 'error' : 'offline', permanent ? 'Cloud access needs attention. Your changes are saved on this computer.' : 'Could not connect. Your changes are saved on this computer and will retry.');
     }

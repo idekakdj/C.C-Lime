@@ -6,6 +6,17 @@ service cloud.firestore {
     function recordPath(uid, id) { return /databases/$(database)/documents/users/$(uid)/records/$(id); }
     function receiptPath(uid, id) { return /databases/$(database)/documents/users/$(uid)/receipts/$(id); }
     function headPath(uid) { return /databases/$(database)/documents/users/$(uid)/system/sync; }
+    // One account-wide, server-timed budget on the same CAS head. No extra document.
+    function withinWriteBudget(uid) {
+      let next = request.resource.data;
+      return next.rateWindowStart is timestamp && next.rateWindowCount is int &&
+        next.rateWindowCount >= 1 && next.rateWindowCount <= 60 &&
+        ((!exists(headPath(uid)) || !resource.data.keys().hasAny(['rateWindowStart','rateWindowCount']))
+          ? next.rateWindowStart == request.time && next.rateWindowCount == 1
+          : resource.data.rateWindowStart is timestamp && resource.data.rateWindowCount is int && resource.data.rateWindowCount >= 1 && resource.data.rateWindowCount <= 60 &&
+            ((next.rateWindowStart == resource.data.rateWindowStart && next.rateWindowCount == resource.data.rateWindowCount + 1) ||
+             (request.time >= resource.data.rateWindowStart + duration.value(60, 's') && next.rateWindowStart == request.time && next.rateWindowCount == 1)));
+    }
     function validId(id) { return id is string && id.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'); }
     function localDate(value) { return value is string && value.matches('^(19[0-9]{2}|20[0-9]{2}|2100)-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'); }
     function localTime(value) { return value is string && value.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'); }
@@ -72,7 +83,7 @@ service cloud.firestore {
     }
     match /users/{uid}/system/sync {
       allow read: if owns(uid);
-      allow create, update: if owns(uid) && active(uid) && request.resource.data.keys().hasOnly(['ownerId','sequence','mutationId','recordIds']) && request.resource.data.ownerId == uid && validId(request.resource.data.mutationId) && validIds(request.resource.data.recordIds) && request.resource.data.sequence is int &&
+      allow create, update: if owns(uid) && active(uid) && request.resource.data.keys().hasOnly(['ownerId','sequence','mutationId','recordIds','rateWindowStart','rateWindowCount']) && withinWriteBudget(uid) && request.resource.data.ownerId == uid && validId(request.resource.data.mutationId) && validIds(request.resource.data.recordIds) && request.resource.data.sequence is int &&
         (exists(headPath(uid)) ? request.resource.data.sequence == resource.data.sequence + 1 : request.resource.data.sequence == 1) &&
         groupRecords(uid,request.resource.data.recordIds,request.resource.data.sequence,request.resource.data.mutationId) && getAfter(receiptPath(uid,request.resource.data.mutationId)).data.sequence == request.resource.data.sequence;
       allow delete: if owns(uid) && exists(/databases/$(database)/documents/users/$(uid)/system/deletion);

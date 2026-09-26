@@ -14,6 +14,16 @@ async function launch(){app=await electron.launch({executablePath:executable,arg
 test.beforeEach(async()=>{profile=path.resolve('test-results/profiles',randomUUID());await fs.mkdir(profile,{recursive:true});errors=[];await launch();});
 test.afterEach(async()=>{await app?.close();expect(errors).toEqual([]);});
 async function call(command:string,payload?:unknown){return page.evaluate(({command,payload})=>window.lime.call(command,payload),{command,payload});}
+test('shows a genuine secure 404 and returns to the saved calendar with the keyboard',async()=>{
+  const value=makeItem(randomUUID(),today,'America/Toronto');value.title='Still saved after missing page';await call('save',value);
+  const response=await page.goto('cclime://app/does-not-exist?private=never-reflect');expect(response?.status()).toBe(404);
+  await expect(page.getByRole('heading',{name:'Page not found'})).toBeVisible();await expect(page.locator('body')).not.toContainText('never-reflect');
+  await expect(page.evaluate(()=>window.lime.call('snapshot'))).rejects.toThrow('Invalid sender');
+  expect((await new AxeBuilder({page}).setLegacyMode(true).analyze()).violations).toEqual([]);
+  await page.screenshot({path:path.join(profile,'missing-page.png')});
+  await page.keyboard.press('Tab');await expect(page.getByRole('link',{name:'Return to calendar'})).toBeFocused();await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading',{name:'Your calendar',exact:true})).toBeVisible();expect((await call('snapshot')as Snapshot).records.find(r=>r.id===value.id)).toMatchObject({title:value.title});
+});
 async function calendarZone(zone:string){const snapshot=await call('snapshot')as Snapshot,existing=snapshot.records.find(r=>r.kind==='preferences');await call('save',{...(existing??{id:randomUUID(),kind:'preferences'}),zone});}
 async function upcomingSidebar(){
   const toggle=page.getByRole('button',{name:'Show upcoming tasks',exact:true});

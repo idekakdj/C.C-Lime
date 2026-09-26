@@ -444,7 +444,11 @@ Reconcile R-01–R-14 with completed tasks and actual tests. Verify the download
 
 **Pass:** the handover distinguishes tested functionality from unavailable/not-run dependencies, provides the real installer, identifies unsigned/public-hosting status accurately, lists known limitations, and does not call a mock sign-in or local demo a completed cloud-enabled app.
 
-## Release report format
+## Added acceptance scenarios: A-53–A-64
+
+The [security/privacy extension](SECURITY_PRIVACY_PLAN.md#acceptance-extensions) specifies A-53 action throttles; A-54 cooldown/queue safety; A-55 hostile server quota/race/migration checks; A-56 actual 404/recovery/security; A-57 remote abuse defenses; A-58 operator/scope/risk mapping; A-59 privacy rights/lifecycle; A-60 administrative and development safeguards; A-61 incident exercise; A-62 restore/continuity; A-63 independent assurance; A-64 final truthful claims. These supplement A-01–A-52. Templates, local throttles or unit tests cannot substitute for the stated live/organizational/independent evidence.
+
+## Release report format (including extensions)
 
 Create `docs/RELEASE_VERIFICATION.md` during implementation. For each A-ID, include actual result, environment/build, evidence reference, defect reference if any, and retest outcome. Include a separate tested-platform table and the actual free-tier operation measurements. Do not prefill results with “pass.”
 

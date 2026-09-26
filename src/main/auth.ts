@@ -5,6 +5,7 @@ import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { z } from 'zod';
 import type { CloudConfiguration, Session } from '../shared/model';
+import { ProviderCooldown, retryAfterMs } from './rate-limit';
 
 export interface SecureStorage { isEncryptionAvailable(): boolean; encryptString(value: string): Buffer; decryptString(value: Buffer): string; }
 export class AuthError extends Error { constructor(message: string, readonly code: string) { super(message); } }
@@ -18,6 +19,7 @@ const messages: Record<string, string> = {
 };
 const savedSchema = z.object({ projectId: z.string(), refreshToken: z.string().min(1), session: z.object({ uid: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/), email: z.string(), displayName: z.string(), verified: z.boolean(), providers: z.array(z.string()) }) });
 export class AuthService {
+  private readonly providerCooldown = new ProviderCooldown();
   session: Session | null = null;
   remembered = false;
   private refreshToken = '';
@@ -49,11 +51,14 @@ export class AuthService {
   }
   private async request(action: string, body: object): Promise<any> {
     if (!this.config) throw new AuthError('Cloud sign-in is not configured in this build.', 'NOT_CONFIGURED');
+    this.providerCooldown.check();
     const base = this.emulator ? `${this.emulator}/identitytoolkit.googleapis.com` : 'https://identitytoolkit.googleapis.com';
     const response = await fetch(`${base}/v1/accounts:${action}?key=${encodeURIComponent(this.config.apiKey)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(20000) });
+    this.providerCooldown.observe(response);
     const result = await response.json();
     if (!response.ok || result.needConfirmation) {
       const code = result.needConfirmation ? 'NEED_CONFIRMATION' : String(result.error?.message ?? 'AUTH_FAILED').split(' : ')[0];
+      if (code === 'TOO_MANY_ATTEMPTS_TRY_LATER') this.providerCooldown.pause(retryAfterMs(response.headers));
       throw new AuthError(messages[code] ?? (code.startsWith('WEAK_PASSWORD') ? 'Use a stronger password with at least six characters.' : 'Sign-in could not be completed. Please try again.'), code);
     }
     return result;
@@ -104,12 +109,15 @@ export class AuthService {
     if (this.refreshPromise) return this.refreshPromise;
     const generation = this.generation; const expectedUid = this.session.uid;
     this.refreshPromise = (async () => {
+      this.providerCooldown.check();
       const base = this.emulator ? `${this.emulator}/securetoken.googleapis.com` : 'https://securetoken.googleapis.com';
       const response = await fetch(`${base}/v1/token?key=${encodeURIComponent(this.config!.apiKey)}`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: this.refreshToken }), signal: AbortSignal.timeout(20000) });
+      this.providerCooldown.observe(response);
       const result = await response.json();
       if (generation !== this.generation) throw new AuthError('Account changed.', 'SIGNED_OUT');
       if (!response.ok) {
         const code = result.error?.message ?? 'REFRESH_FAILED';
+        if (code === 'TOO_MANY_ATTEMPTS_TRY_LATER') this.providerCooldown.pause(retryAfterMs(response.headers));
         if (['TOKEN_EXPIRED','INVALID_REFRESH_TOKEN','USER_DISABLED','USER_NOT_FOUND'].includes(code)) this.signOut();
         throw new AuthError(messages[code] ?? 'Could not reconnect. Your changes remain on this computer.', code);
       }
@@ -123,6 +131,7 @@ export class AuthService {
   cancelGoogle(): void { this.cancelOAuth?.(); this.cancelOAuth = null; }
   async google(link = false, expectedAccount?:string): Promise<Session> {
     if (!this.config?.googleClientId) throw new AuthError('Google sign-in is awaiting the owner’s desktop OAuth configuration.', 'GOOGLE_NOT_CONFIGURED');
+    this.providerCooldown.check();
     return this.exclusive(async () => {
       const existingToken = link ? await this.token() : undefined; const existingUid = link ? this.session!.uid : expectedAccount;
       const verifier = randomBytes(48).toString('base64url'), nonce = randomBytes(24).toString('base64url'), state = randomBytes(24).toString('base64url');
@@ -152,6 +161,7 @@ export class AuthService {
       const params = new URLSearchParams({ client_id: this.config!.googleClientId!, grant_type: 'authorization_code', code: code.code, redirect_uri: code.redirect, code_verifier: verifier });
       if (this.config!.googleClientSecret) params.set('client_secret', this.config!.googleClientSecret);
       const response = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params, signal: AbortSignal.timeout(20000) });
+      this.providerCooldown.observe(response);
       const result = await response.json(); if (!response.ok || typeof result.id_token !== 'string') throw new Error('Google could not complete sign-in. Please try again.');
       const { payload } = await jwtVerify(result.id_token, createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs')), { issuer: ['https://accounts.google.com','accounts.google.com'], audience: this.config!.googleClientId });
       if (payload.nonce !== nonce || payload.email_verified !== true) throw new Error('The Google identity could not be verified.');

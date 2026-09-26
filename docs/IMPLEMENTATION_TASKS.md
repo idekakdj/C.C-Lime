@@ -421,7 +421,21 @@ Complete the traceability table, test report, known-issues list, measured resour
 | R-13 Free initial hosting | T-04/T-05/T-32/T-44 | A-30/A-48/A-52 |
 | R-14 UX improvements | T-15/T-20/T-22–T-24/T-39/T-42 | A-21/A-45–A-47 |
 
-## Reporting rules
+## Security and privacy extension: T-49–T-62
+
+The [detailed extension](SECURITY_PRIVACY_PLAN.md) is authoritative for T-49 scope/traceability; T-50 action/provider rate guards; T-51 server write quota; T-52 404/recovery; T-53 remote abuse defenses; T-54 operator/legal scope; T-55 ISMS/risk/control mapping; T-56 privacy/lifecycle; T-57 access/secret governance; T-58 secure development/monitoring; T-59 incidents; T-60 continuity/restore; T-61 independent assurance; T-62 final claims/release review. It specifies dependencies, exact actions, evidence and completion gates. T-48 now also requires R-15–R-21/A-53–A-64 reconciliation.
+
+| Added requirement | Tasks | Acceptance |
+| --- | --- | --- |
+| R-15 SOC 2 | T-54/T-55/T-57–T-62 | A-58/A-60–A-64 |
+| R-16 ISO 27001 | T-54–T-62 | A-58–A-64 |
+| R-17 CAN/DGSI 118 | T-54/T-55/T-59–T-62 | A-58/A-61–A-64 |
+| R-18 PIPEDA | T-54–T-60/T-62 | A-58–A-62/A-64 |
+| R-19 PHIPA scope and applicable duties | T-54–T-56/T-59/T-62 | A-58/A-59/A-61/A-64 |
+| R-20 Rate limiting | T-50/T-51/T-53 | A-53–A-55/A-57 |
+| R-21 Missing-page recovery | T-52 | A-56 |
+
+## Reporting rules (including extensions)
 
 - Allowed task statuses: planned, in progress, blocked by named dependency, ready for verification, complete, reopened.
 - Allowed test statuses: not run, pass, fail, blocked by named environment.

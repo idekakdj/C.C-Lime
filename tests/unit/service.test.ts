@@ -9,6 +9,17 @@ import { expand } from '../../src/domain/calendar';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('limits repeated actions before side effects while keeping saves and sign-out usable',async()=>{
+  const {service}=await setup(),notify=vi.fn();(service as any).host.notify=notify;
+  for(let i=0;i<3;i++)await service.command('testNotification',null);
+  await expect(service.command('testNotification',null)).rejects.toThrow('Please wait');expect(notify).toHaveBeenCalledTimes(3);
+  await service.command('save',item());expect(service.store!.list()).toHaveLength(1);
+  const signIn=vi.spyOn(service.auth,'signIn').mockRejectedValue(new Error('Synthetic invalid credentials'));
+  try{for(let i=0;i<10;i++)await expect(service.command('auth.signIn',{email:'student@example.test',password:'bad'})).rejects.toThrow('Synthetic');
+    await expect(service.command('auth.signIn',{email:'student@example.test',password:'bad'})).rejects.toThrow('Please wait');expect(signIn).toHaveBeenCalledTimes(10);
+    await service.command('auth.cancel',null);await service.command('auth.signOut',null);
+  }finally{signIn.mockRestore();}
+});
 it('omits unchanged calendar records from requested updates but reloads on edits, sign-out and store reopening',async()=>{
   const {service}=await setup(),value=item();await service.command('save',value);const first=await service.command('snapshot',null);
   await service.command('device',{view:'week'});const update=await service.command('snapshot',{recordsRevision:first.recordsRevision});expect(update.records).toBeUndefined();expect(update.device.view).toBe('week');
@@ -89,5 +100,7 @@ it('reports synchronous and asynchronous native test-notification failures witho
   expect(await service.command('testNotification',null)).toMatchObject({state:'submitted'});expect(service.snapshot().notificationTest?.message).toContain('does not confirm');failure();expect(service.snapshot().notificationTest).toMatchObject({state:'failed'});
   const oldFailure=failure;await service.command('testNotification',null);oldFailure();expect(service.snapshot().notificationTest?.state).toBe('submitted');
   (service as any).host.notify=(notice:any)=>notice.onFailure();expect(await service.command('testNotification',null)).toMatchObject({state:'failed'});
-  (service as any).host.notify=()=>{throw new Error('native failure');};expect(await service.command('testNotification',null)).toMatchObject({state:'failed'});
+});
+it('reports a thrown native notification failure',async()=>{
+  const {service}=await setup();(service as any).host.notify=()=>{throw new Error('native failure');};expect(await service.command('testNotification',null)).toMatchObject({state:'failed'});
 });

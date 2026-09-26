@@ -22,6 +22,12 @@ Deploy committed rules/indexes with the Firebase CLI for the intended project. B
 
 ## Data protocol and recovery
 
+Version 0.1.3 adds a 60-commit/60-second verified-account quota to the existing Firestore sync head. The four-record maximum is unchanged. `rateWindowStart` must be a server timestamp; `rateWindowCount` increments atomically and cannot exceed 60. Legacy heads migrate on their next new-client write. **Upgrade all pilot clients before deploying the new rules:** 0.1.2 and older omit required quota fields and will be denied writes. Preserve their local queues. See the [precise rollout/test specification](SECURITY_PRIVACY_PLAN.md#t-51-server-enforced-calendar-mutation-quota) and [sync protocol](SYNC_PROTOCOL.md).
+
+Action limits and provider cooldowns run in the main process. They do not constrain a modified client. The server write quota survives device restarts and alternate clients, but it does not limit reads, signup abuse, rejected requests or privileged Admin SDK operations. Firebase's own protections and quotas also apply. Additional remote abuse/alerting architecture remains T-53; do not claim universal rate limiting or denial-of-service protection. The 404 screen covers the local app protocol, not a hosted website.
+
+The [security/privacy plan](SECURITY_PRIVACY_PLAN.md) also defines operator-owned policies, legal reviews, evidence and independent assurance gates. Do not publish a certification/compliance claim based on tests, this plan or supplier certifications.
+
 Read [Sync protocol](SYNC_PROTOCOL.md) before editing queues, receipts, cursors or conflict resolution. Never discard an unacknowledged mutation after a network timeout. Group-linked edits use at most four domain records plus a head and receipt; security-rule access limits are tested for this exact shape. Preserve tombstones and mutation receipts for the lifetime of an active account. The retained deletion marker prevents still-valid old tokens from recreating deleted data.
 
 SQLite schema version is currently 1. There is no prior production schema upgrade to claim as verified. Introduce a migration and a seeded older-schema test together before increasing it. Make a consistent pre-migration snapshot and preserve the original database on failure. Keep corrupted databases and sidecars during recovery; never replace them based only on a filename.

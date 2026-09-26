@@ -1,4 +1,12 @@
-# C.C. Lime 0.1.2 — development preview
+# C.C. Lime 0.1.3 — development preview
+
+September 26, 2026. **Not a production release or a compliance certification.** Adds main-process sensitive-action limits, provider cooldowns that preserve pending edits, a server-enforced account write-quota protocol, and a black/purple 404 page with keyboard recovery. The new quota rules require updated clients; rollout status is recorded in [implementation evidence](IMPLEMENTATION_STATUS.md).
+
+Validation at this checkpoint: 132 unit tests, 36 cloud-emulator tests, 23 packaged desktop cases, type/build and credential scans pass. Installed upgrade and live new-rule enforcement are pending. The 404 case was rerun successfully after correcting the accessibility harness for Electron. The detailed [security/privacy plan](SECURITY_PRIVACY_PLAN.md) extends the project to 62 tasks and 64 acceptance scenarios. Organizational controls, independent assurance and remaining original release checks are still required.
+
+Local candidate: `out/make/squirrel.windows/x64/CC-Lime-0.1.3-Setup-x64.exe`. Unsigned, not uploaded as a public release. Final refreshed artifact size/checksum and upgrade results will be recorded after verification. Do not use the older checksum below for 0.1.3.
+
+## Prior verified 0.1.2 checkpoint
 
 September 26, 2026. **Not yet a production release.** [Implementation evidence](IMPLEMENTATION_STATUS.md) reconciles all 48 tasks and 52 acceptance scenarios.
 

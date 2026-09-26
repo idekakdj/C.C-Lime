@@ -24,6 +24,15 @@ The plan makes behavior and completion criteria explicit. It cannot guarantee er
 | R-12 | Calendar-file import and export | Import and export `.ics` files. Include a separate full-fidelity local backup format. |
 | R-13 | Free cloud tier initially; ask before spending | Use a no-cost cloud plan. No paid upgrade, paid signing certificate, domain purchase, or paid service is authorized by this plan. |
 | R-14 | Additional UX decisions delegated to planning | Adopt the explicit defaults and improvements below without further routine design questions. |
+| R-15 | SOC 2 assurance target | Establish an operator-owned control program and obtain an independent CPA examination for the approved scope/report type; never claim certification from app tests. |
+| R-16 | ISO 27001 target | Implement and independently certify the operator's scoped ISMS against ISO/IEC 27001 and applicable amendments. |
+| R-17 | CAN/DGSI 118 target | Review CAN/DGSI 118:2023 (R2026) healthcare applicability and achieve the agreed conformance scope with documented assessment evidence. |
+| R-18 | PIPEDA compliance | Determine jurisdiction and implement approved privacy governance, notices, rights, lifecycle and safeguards with operator/legal review. |
+| R-19 | PHIPA compliance | Review applicability for the confirmed personal-calendar/no-patient-record scope; gate any healthcare use on qualified review and required controls. |
+| R-20 | Active rate limiting | Enforce account write quotas in cloud rules, guard sensitive app actions and honor provider cooldowns; assess remaining remote abuse paths. |
+| R-21 | 404 error page | Return a real, secure black/purple 404 screen for unknown packaged app addresses with accessible recovery. |
+
+September 26 extension: [Security, privacy and assurance work plan](docs/SECURITY_PRIVACY_PLAN.md) defines T-49–T-62 and A-53–A-64, exact rate policies, rollout compatibility, assurance evidence and unresolved operator decisions. These are additional final-product requirements. Original release gates remain in force; no certification or legal compliance is currently claimed.
 
 ## 2. Release boundaries and success criteria
 

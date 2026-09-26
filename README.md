@@ -6,13 +6,14 @@ The home screen is a conventional month calendar with events beneath each date. 
 
 ## Project status
 
-Version 0.1.2 is implemented as a **development preview**. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records remaining work and verification. macOS and Linux packages have not been tested or published.
+Version 0.1.3 is a **development preview** with sensitive-action rate guards, server-enforced calendar write quotas and a secure 404 recovery page. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
 
 ## Project documents
 
 - [Product specification and project plan](PROJECT_PLAN.md)
-- [Implementation task register — 48 tasks](docs/IMPLEMENTATION_TASKS.md)
-- [Acceptance test specification — 52 scenarios](docs/ACCEPTANCE_TESTS.md)
+- [Implementation task register — 62 tasks](docs/IMPLEMENTATION_TASKS.md)
+- [Acceptance test specification — 64 scenarios](docs/ACCEPTANCE_TESTS.md)
+- [Security, privacy and assurance extension](docs/SECURITY_PRIVACY_PLAN.md)
 - [User guide](docs/USER_GUIDE.md)
 - [Maintainer guide](docs/MAINTAINER_GUIDE.md)
 - [Local cloud configuration](docs/LOCAL_CONFIGURATION.md)
