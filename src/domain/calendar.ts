@@ -117,7 +117,7 @@ export function isOverdue(item: Occurrence, now: number): boolean {
 }
 export function upcoming(records: DomainRecord[], now: number, zone: string): { upcoming: Occurrence[]; overdue: Occurrence[]; nextEvent: Occurrence | null } {
   const today = DateTime.fromMillis(now, { zone }).toISODate()!; const end = addDays(today, 7);
-  const nonRecurring = records.filter(r => r.kind !== 'item' || !r.recurrence);
+  const nonRecurring = records.filter(r => r.kind !== 'item' || (!r.recurrence && isTask(r)));
   const historic = expand(nonRecurring, '1900-01-01', today, zone).filter(o => isOverdue(o, now));
   const recentRecurring = expand(records.filter(r => r.kind !== 'item' || (!!r.recurrence && isTask(r))), '1900-01-01', today, zone, 100000).filter(o => isOverdue(o, now));
   const visible = expand(records, today, end, zone);

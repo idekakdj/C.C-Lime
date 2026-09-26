@@ -1,4 +1,24 @@
-# Performance evidence — development preview 0.1.0
+# Performance evidence — development preview 0.1.2
+
+## Latest run: 0.1.2, September 26
+
+The same 50-course, 5,000-master, 20,000-occurrence fixture was measured on the Windows 11 machine described below. These are complete packaged-app runs; no build or desktop test ran alongside the benchmark. The 0.1.1 baseline ran at 08:30 UTC and 0.1.2 later that day. Other host load and clock-dependent overdue counts were not held constant, so these runs do not establish a controlled before/after speedup. UI times include Playwright action and readiness-wait overhead.
+
+| Operation | Target | 0.1.1 median / slowest | 0.1.2 median / slowest | Latest assessment |
+| --- | --- | --- | --- | --- |
+| Cold start | ≤3,000 ms | 4,377 / 4,911 ms | 4,870 / 7,326 ms | Target missed. |
+| Durable local save | ≤200 ms | 22 / 40 ms | 28 / 46 ms | All samples meet target. |
+| Month navigation | ≤200 ms | 402 / 1,364 ms | 322 / 1,074 ms | Target missed. |
+| Expanded day | ≤200 ms | 122 / 161 ms | 108 / 186 ms | All samples meet target. |
+| Search | ≤300 ms | 882 / 927 ms | 907 / 956 ms | Target missed. |
+
+For the 5,050 stored records, a full snapshot serialized to 2,288,946 UTF-8 bytes; an unchanged revision returned 855 bytes with records omitted. This is a transport-size measurement, not a startup-speed guarantee. Full initial snapshots and changed-record snapshots still transfer all records; bounded initial pagination remains open. Worker responses now omit acknowledged unchanged sections and retain their renderer references. Unacknowledged results are resent, and account changes reset the cache.
+
+Month/week/agenda dates share an indexed item lookup. Six-month task expansion excludes unrelated classes/events; the large-class regression fixture opens its valid one-day view without exceeding the task expansion budget. Day panels, agenda days, task groups and sidebar days render batches of 50 with an explicit Show more action. These measures do not constitute full list virtualization.
+
+Private raw measurements are retained in ignored test-results/performance-0.1.1-baseline.json and test-results/performance-0.1.2-first.json. No new five-minute idle measurement was made for 0.1.2. The earlier CPU figures below apply only to 0.1.0.
+
+## Earlier run: 0.1.0, September 25
 
 Measured September 25, 2026 on Windows 11 Home, build 10.0.26200, Intel Core Ultra 7 155H (22 logical cores), 15.7 GiB reported RAM. This is the development machine, not a claim about every supported PC. Disk medium/speed was not separately verified.
 

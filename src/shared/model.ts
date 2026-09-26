@@ -63,6 +63,7 @@ export interface Conflict { id: string; recordId: string; base: DomainRecord | n
 export interface ReminderEntry { id: string; itemId: string; occurrenceKey: string; ruleId: string; title: string; dueMs: number; anchorMs: number; endMs: number; task: boolean; state: string; snoozeMs: number | null; createdMs: number; }
 export interface NotificationTest { state:'submitted'|'failed'; checkedAt:string; message:string; }
 export interface Snapshot { records: DomainRecord[]; session: Session | null; device: DeviceSettings; sync: SyncStatus; conflicts: Conflict[]; reminders: ReminderEntry[]; configured: boolean; googleConfigured: boolean; version: string; localMode: boolean; deleting?:boolean; recordsRevision?:string; displayZone?:string; notificationTest?:NotificationTest|null; }
+export type SnapshotUpdate = Omit<Snapshot,'records'> & {records?:DomainRecord[]};
 export interface CloudConfiguration { apiKey: string; projectId: string; googleClientId?: string; googleClientSecret?: string; }
 export interface ImportCandidate { record: DomainRecord; sourceHash: string; action: 'new' | 'identical' | 'changed'; existingId?: string; }
 export interface ImportPreview { token: string; candidates: ImportCandidate[]; warnings: string[]; invalid: number; filename: string; }

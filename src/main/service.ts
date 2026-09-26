@@ -98,7 +98,13 @@ export class ApplicationService {
   async command(command:string,payload:any):Promise<any>{
     if(this.store?.metadata('deleting',false)&&!['snapshot','auth.reauthenticate','auth.cancel','auth.signOut','account.delete','backup','dataFolder','diagnostics'].includes(command))throw new Error('Account deletion has started. Resume it in Settings; editing and reminders are paused.');
     switch(command){
-      case 'snapshot':return this.snapshot();
+      case 'snapshot':{
+        const p=z.object({recordsRevision:z.string().max(200).optional()}).strict().parse(payload??{}),snapshot=this.snapshot();
+        // A store's revision contains its random instance identity. It cannot
+        // reuse another account's records, including after reopening that store.
+        if(p.recordsRevision&&p.recordsRevision===snapshot.recordsRevision){const {records,...update}=snapshot;return update;}
+        return snapshot;
+      }
       case 'recovery.list':{const account=this.localMode?'local-preview':this.auth.session?.uid;if(!account||!this.recoveryError)throw new Error('No calendar is waiting for recovery.');return recoverySnapshots(this.root,account);}
       case 'recovery.restore':{const p=z.object({name:z.string().max(250),confirmation:z.literal('RESTORE')}).strict().parse(payload);const account=this.localMode?'local-preview':this.auth.session?.uid;if(!account||!this.recoveryError)throw new Error('No calendar is waiting for recovery.');recoverSnapshot(this.root,account,p.name);await this.activate(account,this.localMode);return true;}
       case 'auth.signIn':{const p=z.object({email:z.string(),password:z.string()}).strict().parse(payload);const session=await this.auth.signIn(p.email,p.password);await this.activate(session.uid);return true;}

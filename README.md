@@ -6,7 +6,7 @@ The home screen is a conventional month calendar with events beneath each date. 
 
 ## Project status
 
-Version 0.1.1 is implemented as a **development preview**. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records remaining work and verification. macOS and Linux packages have not been tested or published.
+Version 0.1.2 is implemented as a **development preview**. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records remaining work and verification. macOS and Linux packages have not been tested or published.
 
 ## Project documents
 
@@ -54,7 +54,7 @@ npm run check:package
 npm run test:e2e
 ```
 
-The unsigned installer is generated at `out/make/squirrel.windows/x64/CC-Lime-0.1.0-Setup-x64.exe`. A local build does not publish a GitHub release. Cloud emulator checks use `npm run test:cloud` and require Java 21 or later; see the maintainer guide.
+The unsigned installer is generated at `out/make/squirrel.windows/x64/CC-Lime-0.1.2-Setup-x64.exe`. A local build does not publish a GitHub release. Cloud emulator checks use `npm run test:cloud` and require Java 21 or later; see the maintainer guide.
 
 ## Development workflow
 

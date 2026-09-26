@@ -38,6 +38,11 @@ try{
   await page.locator('.calendar-event').first().waitFor({timeout:60000});await ready();report.restoreMs=performance.now()-start;
   await app!.close();app=undefined;await checkpoint();
   for(let i=0;i<10;i++){start=await launch();await page.locator('.calendar-event').first().waitFor({timeout:60000});await ready();starts.push(performance.now()-start);console.log(`Cold start ${i+1}: ${Math.round(starts.at(-1)!)} ms`);await checkpoint();if(i<9){await app!.close();app=undefined;}}
+  report.snapshotTransport=await page.evaluate(async()=>{
+    const full=await window.lime.call<any>('snapshot'),update=await window.lime.call<any>('snapshot',{recordsRevision:full.recordsRevision});
+    const bytes=(value:unknown)=>new TextEncoder().encode(JSON.stringify(value)).byteLength;
+    return{records:full.records.length,fullBytes:bytes(full),unchangedBytes:bytes(update),unchangedRecordsOmitted:update.records===undefined};
+  });
   for(let i=0;i<10;i++){
     for(const direction of ['Next period','Previous period']){start=performance.now();await page.getByRole('button',{name:direction}).click();await ready();months.push(performance.now()-start);}
     start=performance.now();await page.locator(`[data-day="${from}"]`).click();await page.locator(`#day-panel-${from}`).waitFor();days.push(performance.now()-start);await page.getByRole('button',{name:'Close expanded day'}).click();

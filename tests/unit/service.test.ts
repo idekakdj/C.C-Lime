@@ -9,6 +9,14 @@ import { expand } from '../../src/domain/calendar';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('omits unchanged calendar records from requested updates but reloads on edits, sign-out and store reopening',async()=>{
+  const {service}=await setup(),value=item();await service.command('save',value);const first=await service.command('snapshot',null);
+  await service.command('device',{view:'week'});const update=await service.command('snapshot',{recordsRevision:first.recordsRevision});expect(update.records).toBeUndefined();expect(update.device.view).toBe('week');
+  await service.command('save',{...value,title:'Changed'});const edited=await service.command('snapshot',{recordsRevision:first.recordsRevision});expect(edited.records[0].title).toBe('Changed');
+  await service.command('auth.signOut',null);expect((await service.command('snapshot',{recordsRevision:edited.recordsRevision})).records).toEqual([]);
+  await service.command('localPreview',null);const reopened=await service.command('snapshot',{recordsRevision:edited.recordsRevision});expect(reopened.records).toHaveLength(1);expect(reopened.recordsRevision).not.toBe(edited.recordsRevision);
+  await expect(service.command('snapshot',{recordsRevision:'x'.repeat(201)})).rejects.toThrow();
+});
 it('detaches an edited completed occurrence without losing its date or history',async()=>{
   const{service}=await setup();const series=item({recurrence:recurrence({frequency:'DAILY',count:5})});
   await service.command('save',series);
