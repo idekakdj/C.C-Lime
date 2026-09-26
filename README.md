@@ -6,7 +6,7 @@ The home screen is a conventional month calendar with events beneath each date. 
 
 ## Project status
 
-Version 0.1.0 is implemented as a **development preview**. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records remaining work and verification. macOS and Linux packages have not been tested or published.
+Version 0.1.1 is implemented as a **development preview**. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records remaining work and verification. macOS and Linux packages have not been tested or published.
 
 ## Project documents
 
@@ -21,10 +21,12 @@ Version 0.1.0 is implemented as a **development preview**. It builds a Windows x
 ## Features
 
 - Semesters, courses, recurring classes, assignments, exams, and study sessions.
+- Review semester and series changes before applying them; preserve removed occurrence history as separate items.
 - Persistent local storage, offline editing, and cloud synchronization across computers.
 - Email/password and Google sign-in.
 - Native desktop reminders while the app is open or running in the system tray, with optional startup at login.
 - Month, week, and agenda views, expandable day details, search, and task completion.
+- Week movement/resizing with time snapping, recurrence scope choices, and optional device time-zone following.
 - Calendar-file import/export and full backup/restore.
 - A Windows installer that does not require development tools to run.
 

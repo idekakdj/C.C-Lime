@@ -1,1 +1,10 @@
 @import url('./theme.css');
+
+.schedule-preview-list{display:flex;flex-direction:column;gap:16px}
+.schedule-impact{border:1px solid #624677;border-radius:9px;padding:16px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.65}
+.schedule-impact h3{font-size:16px;color:#eddbf8}
+.schedule-impact h4{font-size:13px}
+.schedule-impact ul{padding-left:20px}
+.schedule-changes{list-style:none;display:flex;flex-direction:column;gap:9px;padding:0;max-height:300px;overflow:auto}
+.schedule-changes li{background:#130c1b;border:1px solid #453050;border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere}
+.schedule-changes span{color:#c9b5d8}

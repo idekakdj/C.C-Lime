@@ -12,6 +12,25 @@ beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-lime-tests-'
 afterEach(() => { stores.forEach(store => store.close()); if (!path.resolve(root).startsWith(path.resolve(os.tmpdir()) + path.sep) || !path.basename(root).startsWith('cc-lime-tests-')) throw Error('Unsafe test cleanup path'); fs.rmSync(root, { recursive: true, force: true }); });
 
 describe('durable local storage and recovery', () => {
+  it('rolls back the entire group and queue when SQLite reaches its file-size limit',()=>{
+    const store=open(),original=item();store.save(original);const records=store.list(),queue=store.queue(),pages=store.db.pragma('page_count',{simple:true})as number;
+    store.db.pragma(`max_page_count = ${pages}`);
+    const values=[{...original,title:'Must not replace saved title'},...Array.from({length:40},(_,i)=>item({title:`Capacity fixture ${i}`,notes:'x'.repeat(10000)}))];
+    let failure:any;try{store.saveGroup(values.map(value=>({id:value.id,value})));}catch(error){failure=error;}
+    expect(failure?.code).toBe('SQLITE_FULL');expect(store.list()).toEqual(records);expect(store.queue()).toEqual(queue);
+    store.db.pragma('max_page_count = 100000');expect(store.save({...original,title:'Saved after capacity restored'}).record).toMatchObject({title:'Saved after capacity restored'});
+  });
+  it('rejects read-only writes without changing an acknowledged record or its queue',()=>{
+    const store=open(),original=item();store.save(original);const queue=store.queue();store.db.pragma('query_only = ON');
+    expect(()=>store.save({...original,title:'Not saved'})).toThrow();expect(store.get(original.id)).toEqual(original);expect(store.queue()).toEqual(queue);store.db.pragma('query_only = OFF');
+  });
+  it('refuses a newer database schema while preserving the existing calendar',()=>{
+    const store=open(),original=item();store.save(original);store.db.pragma('user_version = 2');store.close();
+    expect(()=>open()).toThrow('newer C.C. Lime version');
+    // The original connection is closed. Inspect without opening it through the app.
+    const Database=store.db.constructor as new(filename:string)=>typeof store.db,inspection=new Database(store.filename);
+    try{expect(inspection.pragma('user_version',{simple:true})).toBe(2);expect(JSON.parse((inspection.prepare('SELECT payload FROM records WHERE id=?').get(original.id)as {payload:string}).payload)).toEqual(original);}finally{inspection.close();}
+  });
   it('refreshes cached records after another connection commits and after a failed group',()=>{
     const a=open(),first=item(),second=item();a.save(first);a.save(second);a.list();
     const b=open();b.save({...first,title:'Changed elsewhere'});

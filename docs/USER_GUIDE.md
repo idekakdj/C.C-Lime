@@ -16,9 +16,9 @@ If two computers edit the same item, review the conflict and choose your local v
 
 ## Plan your semester
 
-Open **Courses & Semesters**, add semester dates and breaks, then add courses with their names, colors, instructor and usual room. Create a class with a weekly recurrence and an end date. Separate lectures and labs into separate items. The class editor can exclude semester break dates.
+Open **Courses & Semesters**, add semester dates and breaks, then add courses with their names, colors, instructor and usual room. A new class inherits its selected course's semester dates and time zone, proposes weekly meetings, and skips semester breaks by default. Review the selected weekdays and meeting times; lectures and labs should be separate items. Saving a repeating class opens a meeting-date preview before anything is written.
 
-In this preview, changing semester dates or breaks does not automatically rewrite existing class patterns. Edit those patterns explicitly. Archiving courses keeps their calendar items. Independent assignments and exams keep their dates.
+Changing semester dates, time zone or breaks opens a preview for its linked repeating classes. Choose **Apply timetable changes** to update them, or **Save semester only** to keep the current classes. Timetable application preserves each pattern's interval phase and local start time, adopts the semester zone, and replaces count endings with the new semester end date. Previous excluded dates remain excluded by default; the optional replacement of previous break exclusions also replaces manual exclusions inside those old break ranges. Archiving keeps calendar records and reminders. Assignments, exams and independent events keep their dates.
 
 ## Calendar and tasks
 
@@ -26,7 +26,11 @@ The month grid lists events below each date. Select a day to expand its schedule
 
 The upcoming sidebar includes incomplete tasks, assignments, exams and study sessions for today and the following six calendar days. Overdue items appear separately. The Tasks page includes scheduled work from the previous 30 days and next 180 days, all overdue work and unscheduled tasks. Search looks within the previous and next year, plus unscheduled items. Search results show the first 300 matches.
 
-For repeating items, select **This occurrence only** or **The entire series** before editing. One-occurrence edits retain their original date identity even when moved. If a repeat-pattern change would remove edited or completed history, first make those occurrences independent. Completing an occurrence does not complete the entire series. Dragging to another day or using the Week resize handle opens the editor to review and save the proposed change. Week dragging currently changes the date; set the exact time in the editor.
+For repeating items, select **This occurrence only** or **The entire series** before editing. Switching scope with unsaved changes asks you to keep editing or discard those edits. One-occurrence edits retain their original date identity even when moved. A whole-series save previews changed dates. Edited or completed dates removed by the new rule become separate calendar items by default; discarding their history requires an explicit choice and acknowledgement. This decision covers affected history outside the visible preview range too. Canceled dates without other history do not become new items. Completing an occurrence does not complete the entire series.
+
+You can adjust a preview's date window; counts cover that window, while applying changes affects the whole series. If the calendar changes while a preview is open, update the preview before applying it. **Back to editing** leaves the draft intact. Applied changes offer Undo while the undo window remains open and no newer edit conflicts with it.
+
+Month dragging changes the date while preserving local time and duration. Week dragging uses the time under the pointer, snapped to 15 minutes; the resize handle adjusts the end in 15-minute steps. Repeating items ask for occurrence or series scope. A series move shifts its weekday pattern while keeping the current ending and absolute date exclusions, with a preview before saving. Escape cancels an active drag or resize. All proposed moves open editable time controls before saving; you can also edit those fields directly without dragging.
 
 Keyboard shortcuts: **Ctrl+N** adds an item, **Ctrl+F** searches, **Ctrl+T** returns to today. Arrow keys move between calendar dates; Enter expands the selected day. Escape closes dialogs, with a discard confirmation for an edited item.
 
@@ -36,7 +40,9 @@ Enable **Desktop reminders** in Settings. Add one or more reminders in minutes b
 
 Closing the window normally leaves C.C. Lime in the Windows system tray. Use the tray menu to reopen it or quit completely. **Start with Windows** is optional and off initially. Reminders require the app to be running and the laptop to be awake. Windows Do Not Disturb and notification permissions may suppress banners. The app cannot promise to wake a sleeping laptop or notify while fully quit.
 
-Quiet hours delay notifications, and privacy mode hides calendar titles in popups. The reminder inbox provides dismissal and snooze controls. Use **Send a test reminder** to check your Windows setup; a submitted notification is not proof Windows displayed its banner.
+Quiet hours delay notifications, and privacy mode hides calendar titles in popups. The reminder inbox provides dismissal and snooze controls. Use **Send a test reminder** to check your Windows setup. Settings shows whether the test was submitted or Windows reported a failure; submission is not proof that Windows displayed a banner.
+
+In Calendar settings, **Follow this computer's time zone** changes this device's display and quiet-hours zone as the operating-system zone changes. The seven-day sidebar follows the effective display zone. Updates are picked up on resume and during the scheduler's reconciliation, within approximately one minute while running. Stored event instants, class zones, reminder anchors and your saved fixed calendar zone are preserved. Turning this setting off returns to that saved zone; other computers are unaffected.
 
 ## Import, export and recovery
 

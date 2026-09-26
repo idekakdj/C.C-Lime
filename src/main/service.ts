@@ -12,13 +12,14 @@ import { SyncEngine } from './sync';
 import { ReminderScheduler, type ReminderNotice } from './scheduler';
 import { atDate, recurringDates, sourceDate, addDays, localInstant } from '../domain/calendar';
 import { createBackup, readBackup, remapBackup, previewImport, type ParsedCalendar, type ParseOptions } from '../domain/interchange';
-import { defaultDeviceSettings, parseRecord, preferencesSchema, localDate, localTime, uid, zone as zoneSchema, type CloudConfiguration, type DeviceSettings, type DomainRecord, type ImportPreview, type Preferences, type Snapshot, type CalendarItem } from '../shared/model';
+import { seriesImpact, seriesChanges, semesterClass, type SchedulePreview, type RecordChange } from '../domain/schedule-changes';
+import { defaultDeviceSettings, parseRecord, preferencesSchema, itemSchema, semesterSchema, localDate, localTime, uid, zone as zoneSchema, type CloudConfiguration, type DeviceSettings, type DomainRecord, type ImportPreview, type Preferences, type Snapshot, type CalendarItem, type Semester, type NotificationTest } from '../shared/model';
 
 const deviceSchema=z.object({notifications:z.boolean(),startAtLogin:z.boolean(),closeToTray:z.boolean(),quietStart:localTime.nullable(),quietEnd:localTime.nullable(),privacy:z.boolean(),followZone:z.boolean(),onboardingDone:z.boolean(),view:z.enum(['month','week','agenda']),month:z.string().regex(/^\d{4}-\d{2}$/).nullable(),hideCompleted:z.boolean()}).strict();
 export interface HostServices {
   secure:SecureStorage; openBrowser(url:string):Promise<void>; changed():void; notify(notice:ReminderNotice):void;
   openFile(kind:'ics'|'backup'):Promise<string|null>; saveFile(kind:'ics'|'backup'|'diagnostics'):Promise<string|null>;
-  setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string;
+  setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string; timeZone?():string;
 }
 export class ApplicationService {
   readonly auth:AuthService;
@@ -33,6 +34,8 @@ export class ApplicationService {
   private worker:Worker|null=null;
   private imports=new Map<string,{preview:ImportPreview;account:string;before:Map<string,string>}>();
   private restorePreview:{token:string;records:DomainRecord[];account:string;foreign:boolean;count:number}|null=null;
+  private schedulePreview:{token:string;account:string;revision:string;expires:number;semester:Semester|null;pairs:Array<{before:CalendarItem|null;after:CalendarItem}>}|null=null;
+  private notificationTest:NotificationTest|null=null;
   private readonly settingsPath:string;
   constructor(readonly root:string,readonly config:CloudConfiguration|null,private host:HostServices){
     fs.mkdirSync(root,{recursive:true});this.settingsPath=path.join(root,'device.json');
@@ -53,12 +56,17 @@ export class ApplicationService {
     const existing=this.store?.list().find((r):r is Preferences=>r.kind==='preferences');
     return existing??preferencesSchema.parse({id:'c44ba791-5ae6-5ec6-9813-0c840db2f0f2',kind:'preferences',zone:DateTime.local().zoneName??'UTC'});
   }
+  private displayZone():string{
+    const fixed=this.preferences().zone;if(!this.device.followZone)return fixed;
+    const zone=zoneSchema.safeParse(this.host.timeZone?.()??new Intl.DateTimeFormat().resolvedOptions().timeZone);return zone.success?zone.data:fixed;
+  }
   private async activate(accountId:string,local=false):Promise<void>{
+    this.schedulePreview=null;
     this.switching=true;this.host.changed();await this.stopServices();this.store?.close();this.store=null;this.localMode=local;this.imports.clear();this.restorePreview=null;
     try{
       this.store=new LocalStore(this.root,accountId);this.recoveryError=null;
       if(this.store.metadata('deleting',false))return;
-      this.scheduler=new ReminderScheduler(this.store,()=>this.device,()=>this.preferences().zone,n=>this.host.notify(n),()=>this.host.changed());this.scheduler.start();
+      this.scheduler=new ReminderScheduler(this.store,()=>this.device,()=>this.displayZone(),n=>this.host.notify(n),()=>this.host.changed());this.scheduler.start();
       if(this.config&&!local){this.cloud=new FirestoreCloud(this.config.projectId,accountId,()=>this.auth.token());this.sync=new SyncEngine(this.store,this.cloud,()=>this.auth.session,()=>{if(this.store?.metadata('deleting',false))this.scheduler?.stop();else this.scheduler?.reconcile();this.host.changed();});this.sync.start();}
     }catch(error){this.recoveryError=(error as Error).message;}
     finally{this.switching=false;this.host.changed();}
@@ -70,14 +78,14 @@ export class ApplicationService {
     this.switching=true;await this.stopServices();await this.worker?.terminate();store.close();this.store=null;this.localMode=false;this.imports.clear();this.restorePreview=null;
     this.auth.signOut();fs.rmSync(directory,{recursive:true,force:true});this.switching=false;this.host.changed();
   }
-  async close(){this.auth.cancelGoogle();await this.stopServices();this.worker?.terminate();this.store?.close();this.store=null;}
+  async close(){this.schedulePreview=null;this.auth.cancelGoogle();await this.stopServices();this.worker?.terminate();this.store?.close();this.store=null;}
   setVisible(visible:boolean){this.sync?.setVisible(visible);}
   resume(){this.scheduler?.reconcile();this.sync?.schedule(100);}
   private active():LocalStore{if(this.switching||!this.store||(!this.localMode&&this.store.accountId!==this.auth.session?.uid))throw new Error('Open a calendar account first.');return this.store;}
   private changed(){this.scheduler?.reconcile();this.sync?.schedule();this.host.changed();}
   snapshot():Snapshot&{recoveryError:string|null;remembered:boolean;dataPath:string;startup:{enabled:boolean;wasOpenedAtLogin:boolean}}{
     const visible=!this.switching&&(this.localMode||this.store?.accountId===this.auth.session?.uid)?this.store:null;
-    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),session:this.auth.session,device:this.device,sync:this.sync?.status??{state:'local',pending:visible?.queue().length??0,lastSynced:null,message:visible?.metadata('deleting',false)?'Account deletion is paused. Resume it in Settings.':this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'},conflicts:visible?.conflicts()??[],reminders:visible?.reminders().slice(0,500)??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
+    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,device:this.device,sync:this.sync?.status??{state:'local',pending:visible?.queue().length??0,lastSynced:null,message:visible?.metadata('deleting',false)?'Account deletion is paused. Resume it in Settings.':this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'},conflicts:visible?.conflicts()??[],reminders:visible?.reminders().slice(0,500)??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
   }
   private async work<T>(type:'parse'|'export',payload:unknown):Promise<T>{
     if(this.worker)throw new Error('Another calendar file is being processed.');
@@ -115,8 +123,46 @@ export class ApplicationService {
         if(directory!==expected)throw new Error('Local account path could not be verified.');
         store.close();this.store=null;fs.rmSync(directory,{recursive:true,force:true});this.switching=false;this.host.changed();return true;
       }
-      case 'auth.signOut':await this.stopServices();this.store?.close();this.store=null;this.localMode=false;this.auth.signOut();this.imports.clear();this.host.changed();return true;
+      case 'auth.signOut':this.schedulePreview=null;await this.stopServices();this.store?.close();this.store=null;this.localMode=false;this.auth.signOut();this.imports.clear();this.host.changed();return true;
       case 'localPreview':if(this.auth.session)throw new Error('Sign out before opening a local preview.');await this.activate('local-preview',true);return true;
+      case 'schedule.preview':{
+        const p=z.object({value:z.union([itemSchema,semesterSchema]),from:localDate.optional(),to:localDate.optional(),restoreOldBreaks:z.boolean().default(false)}).strict().parse(payload);
+        const store=this.active(),records=store.list(),previous=store.get(p.value.id);
+        const pairs:Array<{before:CalendarItem|null;after:CalendarItem}>=[];const warnings:string[]=[];
+        let from:string,to:string,semester:Semester|null=null;
+        if(p.value.kind==='semester'){
+          if(previous?.kind!=='semester')throw new Error('Save the semester before changing its timetable.');
+          semester=p.value;const courseIds=new Set(records.filter(r=>r.kind==='course'&&r.semesterId===semester!.id).map(r=>r.id));
+          for(const record of records)if(record.kind==='item'&&record.itemType==='class'&&record.recurrence&&record.courseId&&courseIds.has(record.courseId))pairs.push({before:record,after:semesterClass(record,previous,semester,p.restoreOldBreaks)});
+          from=previous.startDate<semester.startDate?previous.startDate:semester.startDate;to=previous.endDate>semester.endDate?previous.endDate:semester.endDate;
+          warnings.push('Timetable changes apply only to repeating classes in this semester. Assignments, exams and independent events keep their dates.');
+          warnings.push('Class patterns keep their interval phase and wall-clock start time, use the semester time zone, and end on the new semester end date. Occurrence-count endings are replaced.');
+          warnings.push(p.restoreOldBreaks?'Exclusions inside previous semester breaks will be replaced, including manually excluded dates in those ranges. Other exclusions remain.':'Previously excluded dates stay excluded. The new semester breaks are added.');
+        }else{
+          if(previous&&previous.kind!=='item')throw new Error('This identity belongs to another record type.');
+          const before=previous?.kind==='item'?previous:null;pairs.push({before,after:p.value});
+          const first=sourceDate(p.value.timing)??DateTime.now().setZone(p.value.timing.zone).toISODate()!;
+          const oldFirst=before?sourceDate(before.timing):null;from=oldFirst&&oldFirst<first?oldFirst:first;
+          const end=p.value.recurrence?.until??before?.recurrence?.until;
+          to=end&&end>=from?end:DateTime.fromISO(from).plus({years:1}).toISODate()!;
+        }
+        from=p.from??from;to=p.to??(to>'2100-12-31'?'2100-12-31':to);
+        if(to<from)throw new Error('The preview end must be on or after its start.');
+        const series=pairs.map(pair=>seriesImpact(pair.before,pair.after,records,from,to));
+        if(series.reduce((sum,s)=>sum+s.beforeCount+s.afterCount,0)>20000)throw new Error('This preview exceeds 20,000 meetings. Choose a shorter preview range.');
+        const token=randomUUID();this.schedulePreview={token,account:store.accountId,revision:store.listRevision(),expires:Date.now()+10*60*1000,semester,pairs};
+        const result:SchedulePreview={token,kind:semester?'semester':'series',from,to,series,historyCount:series.reduce((sum,s)=>sum+s.affectedHistory.length,0),warnings,restoreOldBreaks:p.restoreOldBreaks};return result;
+      }
+      case 'schedule.commit':{
+        const p=z.object({token:uid,history:z.enum(['preserve','discard']),applyTimetable:z.boolean().default(true)}).strict().parse(payload),store=this.active(),preview=this.schedulePreview;
+        if(!preview||preview.token!==p.token||preview.account!==store.accountId||preview.expires<Date.now())throw new Error('This preview has expired. Review the schedule again.');
+        if(store.listRevision()!==preview.revision)throw new Error('Your calendar changed after this preview. Review the latest schedule before applying it.');
+        if(!preview.semester&&!p.applyTimetable)throw new Error('A series change must apply the reviewed schedule.');
+        const changes:RecordChange[]=preview.semester?[{id:preview.semester.id,value:preview.semester}]:[];
+        if(p.applyTimetable)for(const pair of preview.pairs)changes.push(...seriesChanges(pair.before,pair.after,store.list(),p.history,randomUUID));
+        const result=store.saveGroup(changes);this.schedulePreview=null;this.changed();return result;
+      }
+      case 'schedule.cancel':this.schedulePreview=null;return true;
       case 'save':{
         const value=parseRecord(payload),store=this.active();
         if(value.kind==='item'){
@@ -159,7 +205,12 @@ export class ApplicationService {
       }
       case 'sync':await this.sync?.retry();return true;
       case 'conflict':{const p=z.object({id:uid,choice:z.enum(['local','remote','both'])}).strict().parse(payload);const store=this.active(),conflict=store.conflicts().find(c=>c.id===p.id);if(!conflict||!this.cloud)throw new Error('Reconnect to review this conflict.');store.resolve(p.id,p.choice,await this.cloud.get(conflict.recordId));this.changed();return true;}
-      case 'testNotification':this.host.notify({title:'C.C. Lime',body:'Your test reminder has been submitted to Windows.',inbox:true,onFailure:()=>{}});return true;
+      case 'testNotification':{
+        const attempt:NotificationTest={state:'submitted',checkedAt:new Date().toISOString(),message:'Test reminder submitted to Windows. Check for a banner or open Notification Center; submission does not confirm that a banner was displayed.'};this.notificationTest=attempt;
+        const onFailure=()=>{if(this.notificationTest!==attempt)return;attempt.state='failed';attempt.message='Windows could not display the test reminder. Check Windows Settings → System → Notifications for C.C. Lime, then try again.';this.host.changed();};
+        try{this.host.notify({title:'C.C. Lime',body:'Your test reminder is ready. Open C.C. Lime to return to your calendar.',inbox:true,onFailure});}catch{onFailure();}
+        this.host.changed();return attempt;
+      }
       case 'snooze':{const p=z.object({id:z.string().max(250),minutes:z.number()}).strict().parse(payload);this.scheduler?.snooze(p.id,p.minutes);return true;}
       case 'dismissReminder':this.scheduler?.dismiss(z.object({id:z.string().max(250)}).strict().parse(payload).id);return true;
       case 'import.preview':{
