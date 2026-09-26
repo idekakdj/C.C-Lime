@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { FirestoreCloud, VersionConflict, encode } from '../../src/main/cloud';
 import type { Mutation } from '../../src/main/store';
-import { item } from '../fixtures';
+import { item, recurrence } from '../fixtures';
 
 const project = 'demo-cc-lime';
 const origin = 'http://127.0.0.1:8080';
@@ -12,9 +12,42 @@ function token(uid = 'alice', verified = true) {
 }
 const cloud = (uid = 'alice', verified = true) => new FirestoreCloud(project, uid, async () => token(uid, verified), origin);
 function mutation(value = item(), baseVersion: string | null = null): Mutation { return { id: randomUUID(), recordId: value.id, value, base: null, baseVersion, order: 1, state: 'pending', attempts: 0 }; }
+async function rawCommit(value:ReturnType<typeof item>){
+  const root=`projects/${project}/databases/(default)/documents/users/alice`,group=randomUUID();
+  const fields=(object:object)=>Object.fromEntries(Object.entries(object).map(([key,value])=>[key,encode(value)]));
+  const writes=[
+    {update:{name:`${root}/records/${value.id}`,fields:fields({ownerId:'alice',schemaVersion:1,kind:value.kind,payload:value,deleted:false,changeSeq:1,lastMutationId:group})},currentDocument:{exists:false},updateTransforms:[{fieldPath:'updatedAt',setToServerValue:'REQUEST_TIME'}]},
+    {update:{name:`${root}/receipts/${group}`,fields:fields({ownerId:'alice',recordIds:[value.id],sequence:1,payloadHash:'0'.repeat(64)})},currentDocument:{exists:false}},
+    {update:{name:`${root}/system/sync`,fields:fields({ownerId:'alice',sequence:1,mutationId:group,recordIds:[value.id]})},currentDocument:{exists:false}},
+  ];
+  return fetch(`${origin}/v1/projects/${project}/databases/(default)/documents:commit`,{method:'POST',headers:{Authorization:`Bearer ${token()}`,'Content-Type':'application/json'},body:JSON.stringify({writes})});
+}
 beforeEach(async () => { await fetch(`${origin}/emulator/v1/projects/${project}/databases/(default)/documents`, { method: 'DELETE' }); });
 
 describe('Firestore protocol with deployed authorization rules', () => {
+  it('accepts the raw request control used for adversarial payload checks',async()=>{expect((await rawCommit(item())).status).toBe(200);});
+  it.each([
+    {timing:{mode:'timed',start:'not-a-time',end:'not-a-time',zone:'UTC'}},
+    {reminders:[{id:randomUUID(),minutesBefore:-1}]},
+    {recurrence:{...recurrence(),interval:0}},
+    {recurrence:{...recurrence(),weekdays:[9]}},
+    {recurrence:{...recurrence(),extraField:'forged'}},
+    {estimatedMinutes:'too long'},
+  ])('rejects a malformed nested calendar payload (%j)',async patch=>{
+    const value={...item(),...patch} as any;
+    const response=await rawCommit(value);expect(response.status).toBe(403);expect((await response.json()).error.status).toBe('PERMISSION_DENIED');
+    expect(await cloud().head()).toBe(0);
+  });
+  it('accepts four recurring records with five reminders each within the rule expression budget',async()=>{
+    const changes=Array.from({length:4},()=>mutation(item({recurrence:recurrence({until:'2026-12-18'}),reminders:Array.from({length:5},(_,i)=>({id:randomUUID(),minutesBefore:i*15}))})));
+    expect(await cloud().commitGroup(changes,randomUUID())).toHaveLength(4);
+  });
+  it('resumes deletion while denying stale clients permission to recreate records',async()=>{
+    const a=cloud(),first=mutation();await a.commit(first);await a.beginDeletion();
+    await expect(a.commit(mutation())).rejects.toMatchObject({code:'PERMISSION_DENIED'});
+    const response=await fetch(`${origin}/v1/projects/${project}/databases/(default)/documents/users/alice/system/deletion`,{method:'DELETE',headers:{Authorization:`Bearer ${token()}`}});expect(response.status).toBe(403);
+    const resumed=cloud();expect(await resumed.deletionStarted()).toBe(true);await resumed.deleteCalendarData();expect(await resumed.get(first.recordId)).toBeNull();expect(await resumed.receipt(first.id)).toBeNull();expect(await resumed.head()).toBe(0);await resumed.deleteCalendarData();await expect(resumed.commit(mutation())).rejects.toMatchObject({code:'PERMISSION_DENIED'});
+  });
   it('permits exactly four atomic domain records plus one head and receipt within rule limits', async () => {
     const a = cloud(); const mutations = Array.from({ length: 4 }, () => mutation()); const group = randomUUID();
     const saved = await a.commitGroup(mutations, group);

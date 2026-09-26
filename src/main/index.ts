@@ -15,7 +15,7 @@ protocol.registerSchemesAsPrivileged([{scheme:'cclime',privileges:{standard:true
 let window:BrowserWindow|null=null,tray:Tray|null=null,service:ApplicationService|null=null;
 let quitting=false,shutdownDone=false;let changeTimer:ReturnType<typeof setTimeout>|null=null;
 const notices=new Set<Notification>();
-function show(target?:{itemId?:string;action?:string}){if(!window)return;window.show();if(window.isMinimized())window.restore();window.focus();if(target)window.webContents.send('lime:navigate',target);}
+function show(target?:{itemId?:string;occurrenceKey?:string;action?:string}){if(!window)return;window.show();if(window.isMinimized())window.restore();window.focus();if(target)window.webContents.send('lime:navigate',target);}
 const primary=!squirrelStartup&&app.requestSingleInstanceLock();
 if(!primary)app.quit();
 else{
@@ -33,7 +33,7 @@ else{
     service=new ApplicationService(root,config,{
       secure:safeStorage,version:app.getVersion(),changed,
       openBrowser:async url=>{const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!=='accounts.google.com')throw new Error('Unsupported sign-in address.');await shell.openExternal(url);},
-      notify:notice=>{if(!Notification.isSupported()){notice.onFailure();return;}const notification=new Notification({title:notice.title,body:notice.body,icon:iconPath,silent:false});notices.add(notification);notification.on('click',()=>show(notice.inbox?{action:'inbox'}:{itemId:notice.itemId}));notification.on('failed',()=>{notice.onFailure();notices.delete(notification);});notification.on('close',()=>notices.delete(notification));notification.show();},
+      notify:notice=>{if(!Notification.isSupported()){notice.onFailure();return;}const notification=new Notification({title:notice.title,body:notice.body,icon:iconPath,silent:false});notices.add(notification);notification.on('click',()=>show(notice.inbox?{action:'inbox'}:{itemId:notice.itemId,occurrenceKey:notice.occurrenceKey}));notification.on('failed',()=>{notice.onFailure();notices.delete(notification);});notification.on('close',()=>notices.delete(notification));notification.show();},
       openFile:async kind=>{const result=await dialog.showOpenDialog(window!,{title:kind==='ics'?'Import calendar':'Restore calendar backup',properties:['openFile'],filters:[{name:kind==='ics'?'Calendar file':'C.C. Lime backup',extensions:kind==='ics'?['ics']:['json']} ]});return result.canceled?null:result.filePaths[0];},
       saveFile:async kind=>{const result=await dialog.showSaveDialog(window!,{title:kind==='ics'?'Export calendar':kind==='backup'?'Save full backup':'Save diagnostics',defaultPath:`CC-Lime-${kind}-${new Date().toISOString().slice(0,10)}.${kind==='ics'?'ics':'json'}`,filters:[{name:kind==='ics'?'Calendar file':'JSON file',extensions:[kind==='ics'?'ics':'json']} ]});return result.canceled?null:result.filePath??null;},
       setStartup:enabled=>{if(enabled&&!app.isPackaged)throw new Error('Startup is available after installing the app.');const launcher=process.platform==='win32'?path.resolve(path.dirname(process.execPath),'..','cc-lime.exe'):process.execPath;app.setLoginItemSettings({openAtLogin:enabled,path:launcher,args:['--background'],name:'C.C. Lime'});},

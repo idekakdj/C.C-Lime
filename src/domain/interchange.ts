@@ -3,7 +3,7 @@ import { DateTime, IANAZone } from 'luxon';
 import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { itemSchema, parseRecord, recurrenceSchema, localDate, zone as zoneSchema, type CalendarItem, type DomainRecord, type ImportCandidate, type Recurrence, type Timing } from '../shared/model';
-import { addDays, expand, localInstant, recurrenceRule, sourceDate } from './calendar';
+import { addDays, atDate, expand, localInstant, recurrenceRule, sourceDate } from './calendar';
 
 const hash = (v: unknown) => createHash('sha256').update(JSON.stringify(v)).digest('hex');
 function stableId(source: string): string { const h=createHash('sha256').update(source).digest('hex');return `${h.slice(0,8)}-${h.slice(8,12)}-5${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`; }
@@ -23,9 +23,12 @@ function readTime(property: ICAL.Property | null, floatingZone: string, custom =
   const instant=localInstant(date,value.isDate?'09:00':text.slice(11,16),zone).plus({seconds:value.isDate?0:value.second});
   return { date, instant:instant.toUTC().toISO()!, zone, allDay:value.isDate };
 }
-function nativeRecurrence(component: ICAL.Component, first: string): Recurrence | null {
-  const rules=component.getAllProperties('rrule'); if (!rules.length) return null; if(rules.length>1) throw new Error('Multiple recurrence rules need finite-range conversion.');
+function nativeRecurrence(component: ICAL.Component, first: string, timing:Timing): Recurrence | null {
+  const rules=component.getAllProperties('rrule'); if (!rules.length) {if(component.hasProperty('rdate'))throw new Error('Additional dates without a recurrence rule need finite-range conversion.');return null;} if(rules.length>1) throw new Error('Multiple recurrence rules need finite-range conversion.');
+  const tzid=component.getFirstProperty('dtstart')?.getParameter('tzid') as string|undefined;
+  if(tzid&&tzid!=='UTC'&&!IANAZone.isValidZone(tzid))throw new Error('Custom time zone recurrence needs finite-range conversion.');
   const rule=rules[0].getFirstValue() as ICAL.Recur; const data:any=rule.toJSON(); const frequency=data.freq;
+  for(const key of ['byday','bymonthday','bymonth'])if(data[key]!==undefined&&!Array.isArray(data[key]))data[key]=[data[key]];
   if (!['DAILY','WEEKLY','MONTHLY','YEARLY'].includes(frequency)) throw new Error('This recurrence frequency needs finite-range conversion.');
   const allowed=['freq','interval','count','until','wkst','byday','bymonthday','bymonth'];
   if(Object.keys(data).some(k=>!allowed.includes(k.toLowerCase()))) throw new Error('This recurrence pattern needs finite-range conversion.');
@@ -35,11 +38,12 @@ function nativeRecurrence(component: ICAL.Component, first: string): Recurrence 
   else if(frequency==='MONTHLY'&&byday.length) {const match=byday.length===1&&/^(-1|[1-5])(MO|TU|WE|TH|FR|SA|SU)$/.exec(byday[0]);if(!match||map.indexOf(match[2])+1!==DateTime.fromISO(first).weekday)throw new Error('This monthly recurrence needs finite-range conversion.');monthlyMode='ordinal';ordinal=Number(match[1]);}
   else if(byday.length)throw new Error('This recurrence weekday filter needs finite-range conversion.');
   const day=DateTime.fromISO(first);
-  if(data.bymonthday && (data.bymonthday.length!==1||Number(data.bymonthday[0])!==day.day)) throw new Error('This day-of-month pattern needs finite-range conversion.');
+  if(data.bymonthday && (!['MONTHLY','YEARLY'].includes(frequency)||data.bymonthday.length!==1||Number(data.bymonthday[0])!==day.day)) throw new Error('This day-of-month pattern needs finite-range conversion.');
   if(data.bymonth && (frequency!=='YEARLY'||data.bymonth.length!==1||Number(data.bymonth[0])!==day.month)) throw new Error('This month filter needs finite-range conversion.');
   if(data.wkst&&data.wkst!=='MO'&&data.wkst!==2&&Number(data.interval??1)>1)throw new Error('This recurrence week boundary needs finite-range conversion.');
-  const dateValues=(name:string)=>component.getAllProperties(name).flatMap(p=>p.getValues().map(v=>(v as ICAL.Time).toString().slice(0,10)));
-  return recurrenceSchema.parse({frequency,interval:data.interval??1,count:data.count??null,until:data.until?String(data.until).slice(0,10):null,weekdays,monthlyMode,ordinal,excludedDates:dateValues('exdate'),extraDates:dateValues('rdate')});
+  const dateValues=(name:string)=>component.getAllProperties(name).flatMap(p=>p.getValues().map(v=>{const time=v as ICAL.Time;if(time.icaltype!=='date'&&time.icaltype!=='date-time')throw new Error('Period dates need finite-range conversion.');if(timing.mode==='timed'&&!time.isDate){const normalized=time.zone?.tzid==='UTC'?DateTime.fromSeconds(time.toUnixTime(),{zone:timing.zone}):DateTime.fromISO(time.toString(),{zone:timing.zone});if(normalized.toFormat('HH:mm:ss')!==DateTime.fromISO(timing.start).setZone(timing.zone).toFormat('HH:mm:ss'))throw new Error('Additional dates with a different time need finite-range conversion.');return normalized.toISODate()!;}return time.toString().slice(0,10);}));
+  const until=data.until?DateTime.fromISO(String(data.until),{zone:timing.zone}).setZone(timing.zone).toISODate():null;
+  return recurrenceSchema.parse({frequency,interval:data.interval??1,count:data.count??null,until,weekdays,monthlyMode,ordinal,excludedDates:dateValues('exdate'),extraDates:dateValues('rdate')});
 }
 function componentItem(component:ICAL.Component, options:ParseOptions, forceStandalone=false):CalendarItem {
   const source=String(component.getFirstPropertyValue('uid')??'');if(!source||source.length>1000)throw new Error('Missing or oversized UID.');
@@ -51,12 +55,14 @@ function componentItem(component:ICAL.Component, options:ParseOptions, forceStan
     else if(start.allDay){const end=component.getFirstProperty('dtend');const duration=component.getFirstPropertyValue('duration') as ICAL.Duration|null;timing={mode:'allDay',startDate:start.date,endDate:end?readTime(end,options.zone).date:addDays(start.date,Math.max(1,Math.ceil((duration?.toSeconds()??86400)/86400))),zone:start.zone,anchorTime:'09:00'};}
     else {const end=component.getFirstProperty('dtend'),duration=component.getFirstPropertyValue('duration') as ICAL.Duration|null;timing={mode:'timed',start:start.instant,end:end?readTime(end,options.zone,!!options.finiteRange).instant:DateTime.fromISO(start.instant).plus({seconds:duration?.toSeconds()??3600}).toUTC().toISO()!,zone:start.zone};}
   }else if(!isTodo)throw new Error('Event has no start date.');
+  const deadline=component.getFirstPropertyValue('x-cclime-deadline');
+  if(deadline&&startProperty){const zone=zoneSchema.parse(component.getFirstPropertyValue('x-cclime-zone')??options.zone),start=readTime(startProperty,zone,!!options.finiteRange);timing={mode:'deadline',date:deadline==='DATE'?start.date:DateTime.fromISO(start.instant).setZone(zone).toISODate()!,time:deadline==='DATE'?null:String(deadline),zone,anchorTime:String(component.getFirstPropertyValue('x-cclime-anchor')??'09:00')};}
   const nativeType=component.getFirstPropertyValue('x-cclime-type');const itemType=['class','event','assignment','exam','study','task'].includes(String(nativeType))?nativeType:isTodo?'task':'event';
   const nativeStatus=component.getFirstPropertyValue('x-cclime-status');const status=component.getFirstPropertyValue('status')==='COMPLETED'||nativeStatus==='completed'?'completed':nativeStatus==='in_progress'?'in_progress':'open';
   if(component.getFirstPropertyValue('status')==='CANCELLED')throw new Error('Canceled event skipped.');
   const reminders=component.getAllSubcomponents('valarm').flatMap((alarm,i)=>{const trigger=alarm.getFirstPropertyValue('trigger') as ICAL.Duration; if(alarm.getFirstPropertyValue('action')!=='DISPLAY'||!trigger||typeof trigger.toSeconds!=='function')return [];const seconds=trigger.toSeconds();return seconds<=0&&seconds>=-30*86400?[{id:stableId(`${source}:alarm:${i}`),minutesBefore:Math.floor(-seconds/60)}]:[];}).slice(0,5);
   const first=sourceDate(timing);
-  return itemSchema.parse({id:randomUUID(),kind:'item',title:String(component.getFirstPropertyValue('summary')??'Untitled event'),notes:String(component.getFirstPropertyValue('description')??''),location:String(component.getFirstPropertyValue('location')??''),itemType,timing,status,sourceUid:source,recurrence:forceStandalone||!first?null:nativeRecurrence(component,first),reminders});
+  return itemSchema.parse({id:randomUUID(),kind:'item',title:String(component.getFirstPropertyValue('summary')??'Untitled event'),notes:String(component.getFirstPropertyValue('description')??''),location:String(component.getFirstPropertyValue('location')??''),itemType,timing,status,sourceUid:source,recurrence:forceStandalone||!first?null:nativeRecurrence(component,first,timing),reminders});
 }
 export function parseCalendar(text:string,options:ParseOptions):ParsedCalendar {
   if(Buffer.byteLength(text,'utf8')>10*1024*1024)throw new Error('Choose a calendar file smaller than 10 MiB.');
@@ -78,7 +84,21 @@ export function parseCalendar(text:string,options:ParseOptions):ParsedCalendar {
       if(c.hasProperty('attendee')||c.hasProperty('attach'))warnings.push(`Attendees/attachments in “${value.title}” are not imported; no invitations are sent.`);
     }catch(error){
       if(options.finiteRange&&c.name==='vevent'){
-        try{const base=componentItem(c,options,true),event=new ICAL.Event(c),iterator=event.iterator();let n=0,produced=0;while(n++<20000){const next=iterator.next();if(!next)break;const date=next.toString().slice(0,10);if(date>options.finiteRange.to)break;if(date<options.finiteRange.from)continue;const details=event.getOccurrenceDetails(next);const start=DateTime.fromMillis(details.startDate.toUnixTime()*1000,{zone:'UTC'}),end=DateTime.fromMillis(details.endDate.toUnixTime()*1000,{zone:'UTC'});records.push(itemSchema.parse({...base,id:randomUUID(),sourceUid:`${source}#${next.toString()}`,timing:next.isDate?{mode:'allDay',startDate:date,endDate:details.endDate.toString().slice(0,10),zone:options.zone,anchorTime:'09:00'}:{mode:'timed',start:start.toISO(),end:end.toISO(),zone:'UTC'}}));produced++;}if(n>=20000)throw new Error('Conversion exceeds 20,000 occurrence steps. Narrow the date range.');warnings.push(`Converted “${base.title}” into ${produced} standalone events. Recurrence outside the chosen range is not retained.`);continue;}catch(convertError){warnings.push(String((convertError as Error).message));}
+        try{
+          // Do not save part of a conversion when a later occurrence is invalid.
+          if(components.some(v=>v.hasProperty('recurrence-id')&&v.getFirstPropertyValue('uid')===source))throw new Error('Finite conversion with occurrence overrides is not supported. Export this series as standalone events from its original calendar.');
+          const base=componentItem(c,options,true),event=new ICAL.Event(c),iterator=event.iterator(),converted:DomainRecord[]=[];
+          const startProperty=c.getFirstProperty('dtstart')!,startValue=startProperty.getFirstValue() as ICAL.Time;
+          const sourceZone=String(startProperty.getParameter('tzid')??(startValue.zone?.tzid==='UTC'?'UTC':options.zone));
+          const instant=(time:ICAL.Time)=>sourceZone==='UTC'||IANAZone.isValidZone(sourceZone)?localInstant(time.toString().slice(0,10),time.toString().slice(11,16),sourceZone).plus({seconds:time.second}).toUTC():DateTime.fromMillis(time.toUnixTime()*1000,{zone:'UTC'});
+          let n=0;while(n++<20000){
+            const next=iterator.next();if(!next)break;const date=next.toString().slice(0,10);if(date>options.finiteRange.to)break;if(date<options.finiteRange.from)continue;
+            const details=event.getOccurrenceDetails(next);
+            converted.push(itemSchema.parse({...base,id:randomUUID(),sourceUid:`${source}#${next.toString()}`,timing:next.isDate?{mode:'allDay',startDate:date,endDate:details.endDate.toString().slice(0,10),zone:options.zone,anchorTime:'09:00'}:{mode:'timed',start:instant(details.startDate).toISO(),end:instant(details.endDate).toISO(),zone:'UTC'}}));
+          }
+          if(n>=20000)throw new Error('Conversion exceeds 20,000 occurrence steps. Narrow the date range.');
+          records.push(...converted);warnings.push(`Converted “${base.title}” into ${converted.length} standalone events. Recurrence outside the chosen range is not retained.`);continue;
+        }catch(convertError){warnings.push(String((convertError as Error).message));}
       }
       warnings.push(`${source.slice(0,80)||'Calendar item'}: ${(error as Error).message}`);invalid++;
     }
@@ -116,7 +136,7 @@ function eventComponent(item:CalendarItem,uid:string):ICAL.Component {
   if(t.mode==='deadline'){
     if(t.time){const start=localInstant(t.date,t.time,t.zone).toUTC();c.addProperty(timeProperty('dtstart',start.toFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")));c.addProperty(timeProperty('dtend',start.plus({minutes:1}).toFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")));}
     else {c.addProperty(timeProperty('dtstart',t.date,true));c.addProperty(timeProperty('dtend',addDays(t.date,1),true));}
-    c.addPropertyWithValue('x-cclime-deadline',t.time??'DATE');c.addPropertyWithValue('x-cclime-zone',t.zone);
+    c.addPropertyWithValue('x-cclime-deadline',t.time??'DATE');c.addPropertyWithValue('x-cclime-zone',t.zone);c.addPropertyWithValue('x-cclime-anchor',t.anchorTime);
   }
   if(item.recurrence){const first=sourceDate(t)!;let rule=recurrenceRule(item.recurrence,first);if(t.mode==='timed'&&item.recurrence.until){const time=DateTime.fromISO(t.start).setZone(t.zone).toFormat('HH:mm');const until=localInstant(item.recurrence.until,time,t.zone).toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'");rule=rule.replace(/UNTIL=\d{8}/,`UNTIL=${until}`);}c.addProperty(property('rrule',ICAL.Recur.fromString(rule)));for(const [field,dates]of [['exdate',item.recurrence.excludedDates],['rdate',item.recurrence.extraDates]]as const)for(const date of dates){if(t.mode==='allDay')c.addProperty(timeProperty(field,date,true));else if(t.mode==='timed')c.addProperty(timeProperty(field,`${date}T${DateTime.fromISO(t.start).setZone(t.zone).toFormat('HH:mm:ss')}`,false,t.zone));}}
   for(const reminder of item.reminders){const alarm=new ICAL.Component('valarm');alarm.addPropertyWithValue('action','DISPLAY');alarm.addPropertyWithValue('description',item.title);alarm.addPropertyWithValue('trigger',ICAL.Duration.fromSeconds(-reminder.minutesBefore*60));c.addSubcomponent(alarm);}
@@ -129,7 +149,7 @@ export function exportCalendar(records:DomainRecord[],options:{courses?:string[]
   else for(const r of chosen)if(r.kind==='item'){
     const uid=r.sourceUid??`${r.id}@cc-lime.app`;calendar.addSubcomponent(eventComponent(r,uid));
     for(const exception of chosen.filter(e=>e.kind==='exception'&&e.seriesId===r.id))if(exception.kind==='exception'){
-      const c=eventComponent({...r,...exception.override,timing:exception.override.timing??r.timing,recurrence:null},uid);
+      const c=eventComponent({...r,...exception.override,timing:exception.override.timing??atDate(r.timing,exception.originalDate),recurrence:null},uid);
       if(r.timing.mode==='allDay')c.addProperty(timeProperty('recurrence-id',exception.originalDate,true));
       else if(r.timing.mode==='timed')c.addProperty(timeProperty('recurrence-id',`${exception.originalDate}T${DateTime.fromISO(r.timing.start).setZone(r.timing.zone).toFormat('HH:mm:ss')}`,false,r.timing.zone));
       if(exception.cancelled)c.addPropertyWithValue('status','CANCELLED');calendar.addSubcomponent(c);

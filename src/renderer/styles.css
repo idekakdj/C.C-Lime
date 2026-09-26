@@ -1,1 +1,10 @@
-:root{font-family:'Segoe UI',sans-serif;color:#f7f3ff;background:#09070f;color-scheme:dark}*{box-sizing:border-box}body{margin:0}.setup{display:grid;justify-items:center;align-content:center;min-height:100vh;gap:12px;background:radial-gradient(ellipse at top,#292038,transparent 65%)}h1{font-size:60px;letter-spacing:-3px;margin:0}p{margin:0}.logo{background:#8b5cf6;border-radius:24px;padding:26px;font-size:40px;font-weight:800}.eyebrow{font-size:12px;letter-spacing:3px;color:#c4b5fd;margin-top:22px}.muted{color:#b9adc9;font-size:13px}button{font:inherit;background:#8b5cf6;color:white;border:0;border-radius:10px;padding:13px 20px;margin-top:20px;cursor:pointer}button:focus-visible{outline:3px solid #c4b5fd;outline-offset:4px}
+@import url('./theme.css');
+
+.schedule-preview-list{display:flex;flex-direction:column;gap:16px}
+.schedule-impact{border:1px solid #624677;border-radius:9px;padding:16px;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.65}
+.schedule-impact h3{font-size:16px;color:#eddbf8}
+.schedule-impact h4{font-size:13px}
+.schedule-impact ul{padding-left:20px}
+.schedule-changes{list-style:none;display:flex;flex-direction:column;gap:9px;padding:0;max-height:300px;overflow:auto}
+.schedule-changes li{background:#130c1b;border:1px solid #453050;border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere}
+.schedule-changes span{color:#c9b5d8}

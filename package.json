@@ -1,7 +1,7 @@
 {
   "name": "cc-lime",
   "productName": "C.C. Lime",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "description": "A thoughtful calendar and task planner for university life.",
   "author": "idekakdj",
   "private": true,
@@ -9,7 +9,7 @@
   "license": "UNLICENSED",
   "main": "dist/main/index.cjs",
   "scripts": {
-    "start": "npm run build && electron .",
+    "start": "npm run build && node scripts/dev.mjs --production",
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
@@ -21,7 +21,9 @@
     "package": "npm run build && electron-forge package",
     "make": "npm run build && electron-forge make",
     "rebuild:electron": "electron-rebuild -f -w better-sqlite3",
-    "rebuild:node": "npm rebuild better-sqlite3"
+    "rebuild:node": "npm rebuild better-sqlite3",
+    "test:cloud": "node scripts/emulators.mjs",
+    "check:package": "node scripts/check-package.mjs"
   },
   "config": {
     "forge": "./forge.config.cjs"
@@ -31,6 +33,7 @@
     "electron-squirrel-startup": "1.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@electron-forge/cli": "7.11.2",
     "@electron-forge/maker-squirrel": "7.11.2",
     "@electron/rebuild": "4.2.0",

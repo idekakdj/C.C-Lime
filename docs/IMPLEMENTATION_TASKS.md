@@ -1,10 +1,10 @@
 # C.C. Lime — implementation task register
 
-**Status of every task below:** planned, not implemented. **Baseline:** [project specification v1.0](../PROJECT_PLAN.md). **Verification:** [acceptance scenarios](ACCEPTANCE_TESTS.md).
+**Current per-task status and evidence:** [implementation evidence](IMPLEMENTATION_STATUS.md). These descriptions remain the original completion criteria; implemented code does not imply every acceptance check has passed. **Baseline:** [project specification v1.0](../PROJECT_PLAN.md). **Verification:** [acceptance scenarios](ACCEPTANCE_TESTS.md).
 
 Execute dependencies in order. Work that depends on external account setup may remain blocked while independent local tasks continue. A task is complete only when its stated output exists and its completion check has been performed. Keep a short evidence entry under each task during implementation: status, changed files, commands/manual checks performed, result, and unresolved defects.
 
-The paths below are intended implementation locations, not a claim that those application files already exist. The initial workspace was empty and was not a Git repository when inspected.
+These paths were planned before implementation. The workspace is now a GitHub clone with application source and tests; the evidence register records actual implementation and gaps.
 
 ## Phase 0 — establish the baseline and prove risky integrations
 

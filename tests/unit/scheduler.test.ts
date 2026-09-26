@@ -34,7 +34,7 @@ describe('durable reminder scheduler', () => {
   it('snoozes persist and completion cancels a snooze', () => {
     const t = setup(); t.scheduler.reconcile(false); const id=t.store.reminders()[0].id; t.scheduler.snooze(id,5); t.scheduler.stop();
     const other = new LocalStore(t.root,'test'); stores.push(other); expect(other.reminders()[0].state).toBe('snoozed');
-    t.store.save({...t.value,status:'completed'}); const resumed=new ReminderScheduler(t.store,()=>t.device,()=> 'America/Toronto',n=>t.notices.push(n),()=>{},()=>millis('2026-09-18T08:51')); schedulers.push(resumed); resumed.reconcile(false); expect(t.notices).toHaveLength(1); expect(t.store.reminders()[0].state).toBe('dismissed');
+    t.store.save({...t.value,status:'completed'}); const resumed=new ReminderScheduler(t.store,()=>t.device,()=> 'America/Toronto',n=>t.notices.push(n),()=>{},()=>millis('2026-09-18T08:51')); schedulers.push(resumed); resumed.reconcile(false); expect(t.notices).toHaveLength(1); expect(t.store.reminders()[0].state).toBe('canceled');
   });
   it('marks an interrupted dispatch uncertain without replaying a popup', () => {
     const t=setup(); t.scheduler.reconcile(false); t.store.putReminder({...t.store.reminders()[0],state:'dispatching'}); t.store.close(); const recovered=new LocalStore(t.root,'test'); stores.push(recovered); expect(recovered.reminders()[0].state).toBe('uncertain');

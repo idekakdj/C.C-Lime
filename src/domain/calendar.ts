@@ -3,6 +3,8 @@ import ICAL from 'ical.js';
 import { isTask, type CalendarItem, type DomainRecord, type Occurrence, type OccurrenceException, type Recurrence, type Timing } from '../shared/model';
 
 export const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+const dateCache=new Map<string,string[]>(),timingCache=new Map<string,Timing>(),displayCache=new Map<string,{startMs:number|null;endMs:number|null;date:string;endDate:string}>();
+function remember<K,V>(cache:Map<K,V>,key:K,value:V,limit=2048):V{cache.set(key,value);if(cache.size>limit)cache.delete(cache.keys().next().value!);return value;}
 export function day(date: string, zone = 'UTC'): DateTime { const result = DateTime.fromISO(date, { zone }).startOf('day'); if (!result.isValid) throw new Error('Invalid calendar date.'); return result; }
 export function addDays(date: string, amount: number): string { return day(date).plus({ days: amount }).toISODate()!; }
 export function localInstant(date: string, time: string, zone: string, later = false): DateTime {
@@ -30,10 +32,11 @@ export function finish(timing: Timing): number | null {
   return null;
 }
 export function atDate(timing: Timing, date: string): Timing {
+  const key=JSON.stringify([timing,date]),cached=timingCache.get(key);if(cached)return {...cached};
   if (timing.mode === 'timed') {
     const original = DateTime.fromISO(timing.start).setZone(timing.zone);
     const start = localInstant(date, original.toFormat('HH:mm'), timing.zone);
-    return { ...timing, start: start.toUTC().toISO()!, end: start.plus({ milliseconds: DateTime.fromISO(timing.end).toMillis() - original.toMillis() }).toUTC().toISO()! };
+    return {...remember(timingCache,key,{ ...timing, start: start.toUTC().toISO()!, end: start.plus({ milliseconds: DateTime.fromISO(timing.end).toMillis() - original.toMillis() }).toUTC().toISO()! })};
   }
   if (timing.mode === 'allDay') return { ...timing, startDate: date, endDate: addDays(date, Math.round(day(timing.endDate).diff(day(timing.startDate), 'days').days)) };
   if (timing.mode === 'deadline') return { ...timing, date };
@@ -52,6 +55,7 @@ export function recurrenceRule(recurrence: Recurrence, firstDate: string, includ
 export function recurringDates(item: CalendarItem, from: string, toExclusive: string): string[] {
   const first = sourceDate(item.timing); if (!first) return [];
   const recurrence = item.recurrence; if (!recurrence) return first >= from && first < toExclusive ? [first] : [];
+  const key=JSON.stringify([item.timing,recurrence,from,toExclusive]),cached=dateCache.get(key);if(cached)return [...cached];
   const rule = ICAL.Recur.fromString(recurrenceRule(recurrence, first, false));
   const iterator = rule.iterator(ICAL.Time.fromString(first, null));
   const result = new Set<string>(); let iterations = 0; let validCount = 0;
@@ -64,19 +68,20 @@ export function recurringDates(item: CalendarItem, from: string, toExclusive: st
   }
   if (iterations >= 100000) throw new Error('This repeating schedule is too large to expand safely.');
   for (const date of recurrence.extraDates) if (date >= from && date < toExclusive && !recurrence.excludedDates.includes(date)) result.add(date);
-  return [...result].sort();
+  return [...remember(dateCache,key,[...result].sort(),256)];
 }
 function occurrence(item: CalendarItem, originalDate: string, displayZone: string, exception?: OccurrenceException): Occurrence | null {
   if (exception?.cancelled) return null;
   let timing: Timing; try { timing = item.recurrence ? atDate(item.timing, originalDate) : item.timing; } catch { return null; }
   const effective = { ...item, ...exception?.override, timing: exception?.override.timing ?? timing };
-  const startMs = anchor(effective.timing); const endMs = finish(effective.timing);
-  let date = sourceDate(effective.timing) ?? '';
-  let endDate = date;
-  if (effective.timing.mode === 'timed') { date = DateTime.fromMillis(startMs!, { zone: displayZone }).toISODate()!; endDate = DateTime.fromMillis(endMs! - 1, { zone: displayZone }).toISODate()!; }
-  if (effective.timing.mode === 'allDay') endDate = addDays(effective.timing.endDate, -1);
-  if (effective.timing.mode === 'deadline' && effective.timing.time) date = endDate = DateTime.fromMillis(startMs!, { zone: displayZone }).toISODate()!;
-  return { ...effective, originalDate, occurrenceKey: item.recurrence ? `${item.id}:${originalDate}` : item.id, seriesId: item.recurrence ? item.id : null, startMs, endMs, date, endDate };
+  const key=JSON.stringify([effective.timing,displayZone]);let display=displayCache.get(key);
+  if(!display){const startMs=anchor(effective.timing),endMs=finish(effective.timing);let date=sourceDate(effective.timing)??'',endDate=date;
+    if(effective.timing.mode==='timed'){date=DateTime.fromMillis(startMs!,{zone:displayZone}).toISODate()!;endDate=DateTime.fromMillis(endMs!-1,{zone:displayZone}).toISODate()!;}
+    if(effective.timing.mode==='allDay')endDate=addDays(effective.timing.endDate,-1);
+    if(effective.timing.mode==='deadline'&&effective.timing.time)date=endDate=DateTime.fromMillis(startMs!,{zone:displayZone}).toISODate()!;
+    display=remember(displayCache,key,{startMs,endMs,date,endDate});
+  }
+  return { ...effective, originalDate, occurrenceKey: item.recurrence ? `${item.id}:${originalDate}` : item.id, seriesId: item.recurrence ? item.id : null,...display };
 }
 export function expand(records: DomainRecord[], from: string, toExclusive: string, displayZone: string, limit = 20000): Occurrence[] {
   const exceptions = new Map<string, OccurrenceException>();
@@ -112,7 +117,7 @@ export function isOverdue(item: Occurrence, now: number): boolean {
 }
 export function upcoming(records: DomainRecord[], now: number, zone: string): { upcoming: Occurrence[]; overdue: Occurrence[]; nextEvent: Occurrence | null } {
   const today = DateTime.fromMillis(now, { zone }).toISODate()!; const end = addDays(today, 7);
-  const nonRecurring = records.filter(r => r.kind !== 'item' || !r.recurrence);
+  const nonRecurring = records.filter(r => r.kind !== 'item' || (!r.recurrence && isTask(r)));
   const historic = expand(nonRecurring, '1900-01-01', today, zone).filter(o => isOverdue(o, now));
   const recentRecurring = expand(records.filter(r => r.kind !== 'item' || (!!r.recurrence && isTask(r))), '1900-01-01', today, zone, 100000).filter(o => isOverdue(o, now));
   const visible = expand(records, today, end, zone);
@@ -129,12 +134,17 @@ export function formatTime(ms: number, zone: string, format: '12' | '24' = '12')
 export function timingLabel(item: Occurrence, zone: string, format: '12' | '24' = '12'): string {
   if (item.timing.mode === 'allDay') return 'All day';
   if (item.timing.mode === 'unscheduled') return 'No due date';
-  if (item.timing.mode === 'deadline' && !item.timing.time) return 'Due today';
+  if (item.timing.mode === 'deadline' && !item.timing.time) return `Due ${day(item.timing.date).toFormat('MMM d')}`;
   const start = formatTime(item.startMs!, zone, format);
   return item.timing.mode === 'timed' ? `${start} – ${formatTime(item.endMs!, zone, format)}` : `Due ${start}`;
 }
 export function reminderCandidates(records: DomainRecord[], now: number, zone: string): Array<{ id: string; item: Occurrence; dueMs: number; ruleId: string }> {
   const today = DateTime.fromMillis(now, { zone }).toISODate()!;
-  const items = expand(records, addDays(today, -2), addDays(today, 32), zone);
+  // An occurrence can add reminders even when its master has none. Keep those
+  // masters, but do not expand unrelated schedules merely to find no rules.
+  const withRules=new Set(records.filter(r=>r.kind==='item'&&r.reminders.length>0).map(r=>r.id));
+  for(const record of records)if(record.kind==='exception'&&record.override.reminders?.length)withRules.add(record.seriesId);
+  const relevant=records.filter(r=>r.kind==='item'?withRules.has(r.id):(r.kind==='exception'||r.kind==='occurrenceState')&&withRules.has(r.seriesId));
+  const items = expand(relevant, addDays(today, -2), addDays(today, 32), zone);
   return items.filter(o => o.status !== 'completed' && o.startMs !== null).flatMap(item => item.reminders.map(rule => ({ id: `${item.occurrenceKey}:${rule.id}`, item, ruleId: rule.id, dueMs: item.startMs! - rule.minutesBefore * 60000 })));
 }
