@@ -116,8 +116,10 @@ test('inherits semester dates and zone for a new class and previews its meetings
 
 test('follows the computer zone on this device and restores the fixed zone after switching off',async()=>{
   const prefs={id:randomUUID(),kind:'preferences',zone:'Pacific/Honolulu'};await call('save',prefs);const initial=(await call('snapshot')as Snapshot).records.find(r=>r.kind==='preferences');
-  await page.getByRole('button',{name:'Settings',exact:true}).click();const toggle=page.getByRole('checkbox',{name:/Follow this computer’s time zone/});await toggle.check();const systemZone=await app.evaluate(()=>new Intl.DateTimeFormat().resolvedOptions().timeZone);await expect(page.getByText(`Currently displaying ${systemZone}.`,{exact:false})).toBeVisible();expect((await call('snapshot')as Snapshot).records.find(r=>r.kind==='preferences')).toEqual(initial);
-  await app.close();await launch();await page.getByRole('button',{name:'Settings',exact:true}).click();const restored=page.getByRole('checkbox',{name:/Follow this computer’s time zone/});await expect(restored).toBeChecked();await restored.uncheck();await expect(page.getByText('Currently displaying Pacific/Honolulu.',{exact:false})).toBeVisible();
+  // This controlled checkbox updates only after the main process saves settings.
+  // Wait for that acknowledgement instead of check()'s immediate DOM assertion.
+  await page.getByRole('button',{name:'Settings',exact:true}).click();const toggle=page.getByRole('checkbox',{name:/Follow this computer’s time zone/});await expect(toggle).not.toBeChecked();await toggle.click();await expect(toggle).toBeChecked();const systemZone=await app.evaluate(()=>new Intl.DateTimeFormat().resolvedOptions().timeZone);await expect(page.getByText(`Currently displaying ${systemZone}.`,{exact:false})).toBeVisible();expect((await call('snapshot')as Snapshot).records.find(r=>r.kind==='preferences')).toEqual(initial);
+  await app.close();await launch();await page.getByRole('button',{name:'Settings',exact:true}).click();const restored=page.getByRole('checkbox',{name:/Follow this computer’s time zone/});await expect(restored).toBeChecked();await restored.click();await expect(restored).not.toBeChecked();await expect(page.getByText('Currently displaying Pacific/Honolulu.',{exact:false})).toBeVisible();
 });
 
 test('shows a native notification failure in Settings instead of a success message',async()=>{

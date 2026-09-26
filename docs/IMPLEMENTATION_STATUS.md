@@ -22,6 +22,8 @@ The previous 0.1.0 package and installation passed 12 calendar tests plus two in
 
 Notification diagnosis for 0.1.0 found two C.C. Lime Start Menu shortcuts with different activation identifiers; the installer-created shortcut was backed up privately and aligned with the existing registered shortcut and verified installed launcher. The owner subsequently reported that a notification banner was received. This is evidence for that installation's test banner, not a completed scheduled-reminder or clean-machine acceptance matrix. Version 0.1.1 reports test submission and native failure separately, without claiming submission proves visibility.
 
+On September 26, an isolated installed 0.1.1 calendar scheduled a real reminder for 08:21:22.427 UTC with the window hidden. Electron reported native submission 73 ms after the due time and the durable journal recorded `emitted`. No click was observed during the bounded test and owner confirmation of the banner was not received. This measures dispatch timing, not visible-banner latency or successful click routing.
+
 ## Per-task reconciliation
 
 The original task descriptions remain the completion criteria.
@@ -100,7 +102,7 @@ Related unit tests do not mark an entire acceptance scenario passed. The exact s
 
 ## Dependency and distribution limits
 
-The last local audit reported 32 advisories: 1 critical, 20 high, 8 moderate, 3 low in builder/admin dependencies. No runtime library was named by that report; this is not proof of a vulnerability-free packaged runtime. Review upgrades before production distribution.
+The September 26 audit reported 32 advisories: 1 critical, 20 high, 8 moderate, 3 low in builder/admin dependencies. The separate `npm audit --omit=dev` check reported zero advisories. That scan does not audit Electron's bundled Chromium or prove a vulnerability-free packaged runtime. The critical finding is in transitive `tar`; automatic remediation proposes incompatible toolchain changes, so dependency updates need compatibility verification before production distribution.
 
 No production release, signing certificate, automatic updater or macOS/Linux installer has been published. The current installer is unsigned. Cloud configuration must be supplied privately on each computer. No billing upgrade was enabled; client counters exclude implicit rule reads, so no unlimited-free-capacity promise is made.
 
