@@ -1,6 +1,6 @@
 # Abuse-control review — C.C. Lime 0.1.3
 
-Engineering review, September 26, 2026. T-53 is **not complete**. This document records current trust boundaries and concrete remaining decisions; it is not a penetration-test or assurance report. The application is a personal calendar, not a patient-record system.
+Engineering review, updated September 27, 2026. T-53 is **not complete**. This document records current trust boundaries and concrete remaining decisions; it is not a penetration-test or assurance report. The application is a personal calendar, not a patient-record system.
 
 ## Boundaries and protected assets
 
@@ -22,7 +22,24 @@ Assets: private calendar content, account credentials/sessions, durable local ch
 | Local OS user / compromised device | Read plaintext calendar database/export, edit local settings or steal an unlocked session | OS account boundary, encrypted persisted authentication tokens, local-account separation | Calendar databases/backups are not application-encrypted. Evaluate full-disk/device encryption expectations and application encryption/recovery tradeoffs; disclose actual behavior. Software cannot protect an already fully compromised logged-in account |
 | Developer/operator access or build compromise | Publish credentials, change rules, ship malicious unsigned binaries | Ignored private configuration, source/archive scans, pinned dependencies, CI tests; unsigned preview label | Actual admin MFA/least privilege/review, secret rotation, branch protections, build advisories, provenance/signing and independent review remain T-57/T-58 |
 
-## Architecture decision required before a public service
+## Observed provider configuration — September 27, 2026
+
+Read-only administrative API inspection returned HTTP 200 for authentication configuration and the default database. Only the following selected, non-secret fields were retained; raw configuration, domains and account details were not published.
+
+| Setting | Observed value | Implication / follow-up |
+| --- | --- | --- |
+| Authentication subtype | `IDENTITY_PLATFORM` | Inventory provider-specific supported controls; this field does not establish billing level or service capacity. |
+| Email/password sign-in | Enabled | Required product sign-in path remains available. |
+| Improved email privacy | Enabled | Retain this protection and verify enumeration behavior in the final auth abuse matrix. |
+| Application-account MFA | `DISABLED` | End-user MFA is not enforced by this project. This does not describe administrator or upstream Google-account MFA; those need separate review. |
+| Email/password reCAPTCHA enforcement | Field not returned | Unknown from this response; do not infer enabled or disabled. |
+| Database region/type | `northamerica-northeast2` / `FIRESTORE_NATIVE` | One observed database location; not a guarantee that identity, logs, support or every processor stores data in the same region. |
+| Point-in-time recovery | Disabled | T-60 must evaluate recovery requirements, retention, cost and a restore drill. Other cloud backup mechanisms were not inventoried by this call. |
+| Whole-database deletion protection | Disabled | Evaluate enabling protection against administrative database deletion; this is distinct from user account/document deletion. |
+
+No configuration or billing settings were changed by the inventory. The tested write-quota rules were deployed separately: live source matched the tested file, raw REST bypass attempts were denied, and a durable save resumed automatically after a real server-window reset. The two quota-test identities and a further sync-test identity were cleaned up. These bounded checks do not close the distributed read/auth abuse or monitoring gaps above.
+
+## Architecture decision required before a public service (remaining work)
 
 Keep the no-cost pilot within current scope while collecting actual request/denial counts using synthetic data. Before choosing an enforcement layer, specify numerical global/account/IP budgets, expected campus NAT behavior, acceptable upload delays, provider failure behavior, data minimization, emergency override ownership and deletion/recovery exemptions. Inventory the provider's current configurable protections, desktop attestation support and hosting requirements from primary documentation. Do not embed a permanent shared secret in the desktop app as proof of a trusted client.
 
