@@ -1,4 +1,14 @@
-# C.C. Lime 0.1.3 — development preview
+# C.C. Lime 0.1.4 — development preview
+
+September 27, 2026. **Built and package-tested; installed verification pending. Not a production release or compliance certification.**
+
+Windows installation and updates now align C.C. Lime's notification shortcuts automatically, using a stable notification identity and launcher. Ordinary installed startup checks them again. Changes are privately backed up, and unrelated shortcuts are preserved. Windows development previews/test profiles do not initialize native notifications; use the installed app for popup reminders.
+
+Validation: 150 unit tests, type/build checks, all 25 packaged desktop tests, and source/package credential scans passed. Actual isolated Windows shortcut files were tested through fresh creation, stale upgrade, repeated repair and ownership cleanup. The populated 0.1.3 fixture retained eight records, eight queued changes, four reminders and settings under packaged 0.1.4. The cloud protocol and deployed rules are unchanged.
+
+Unsigned local installer: `out/make/squirrel.windows/x64/CC-Lime-0.1.4-Setup-x64.exe`; **166,077,952 bytes**; SHA-256 **`3fb7de98ef66515e7ef6d4489176667752ef8c1acc7d8870f1042035cd384c37`**. Not published as a release asset. The installed 0.1.3 app must be closed before upgrading. Installed shortcut/registration checks, real-profile comparison, banner/click and clean-PC acceptance remain open; see [current evidence](IMPLEMENTATION_STATUS.md).
+
+## Prior verified 0.1.3 checkpoint
 
 Updated September 27, 2026. **Not a production release or a compliance certification.** Adds main-process sensitive-action limits, provider cooldowns that preserve pending edits, a server-enforced account write quota, and a black/purple 404 page with keyboard recovery. The rules are deployed and require 0.1.3 or later on syncing devices; see [implementation evidence](IMPLEMENTATION_STATUS.md).
 

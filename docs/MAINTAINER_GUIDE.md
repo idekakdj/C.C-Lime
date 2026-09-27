@@ -10,6 +10,12 @@ Use Node 24.13.0, `npm ci`, then `npm run check`. Dependencies are pinned. Windo
 
 After packaging, `node scripts/measure-performance.mjs` runs the large-fixture checks; `node scripts/measure-idle.mjs` then measures two five-minute idle intervals. See [performance evidence](PERFORMANCE.md) for the current results and remaining misses.
 
+## Windows notification installation
+
+Version 0.1.4 owns its Squirrel lifecycle explicitly in `src/main/windows-integration.ts`. It waits for shortcut creation before aligning the root, installer and existing desktop shortcuts. The installed AUMID and toast activator are stable public identifiers; never generate a new one on update. Electron adopts the root shortcut's activator, so align shortcuts before initializing its notification presenter. Normal installed startup also repairs stale metadata. Changed shortcuts are backed up once per location under the private profile's `shortcut-backups` directory. A foreign/unreadable shortcut or failed write disables native submission for that run while keeping the calendar usable; Settings reports dispatch failure.
+
+Packaged previews/development and isolated test profiles use separate notification names, AUMIDs and activators, and never initialize or submit Windows native notifications. Electron's shortcut filename comes from the executable resource rather than `app.setName`, so runtime naming alone is insufficient isolation. Native reminders require a normal installed Windows launch. These restrictions preserve existing calendar profile paths and prevent test runs from rewriting installed shortcuts. The Windows integration suite exercises actual `.lnk` files inside isolated workspace fixtures; it does not uninstall the owner's application. Installer events never initialize calendar stores or windows. Uninstall removes Squirrel shortcuts, the app-owned root shortcut targeting this installation, and its login setting; full uninstall and clean-PC acceptance still require a separate observation. See the [implementation/test plan](WINDOWS_NOTIFICATION_PLAN.md).
+
 ## Private cloud setup
 
 See [Local configuration](LOCAL_CONFIGURATION.md). Never put credential values in source, `VITE_` variables, CI logs, fixtures or installers. The owner-provided Google JSON belongs in `.local/google-oauth.json`; `node scripts/import-google-oauth.mjs` imports validated values into `.local/.env`. Both locations are ignored. Do not copy the local folder when sharing the repository or installer.

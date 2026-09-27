@@ -1,6 +1,18 @@
 # Implementation and verification evidence
 
-Updated September 27, 2026. Target: **0.1.3 development preview**, Windows x64. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+Updated September 27, 2026. Target: **0.1.4 development preview**, Windows x64. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+
+## 0.1.4 Windows notification installation checkpoint
+
+- The [precise repair plan](WINDOWS_NOTIFICATION_PLAN.md) extends T-34/T-35/T-46. Install/update now await Squirrel shortcut creation and align owned root/installer/existing desktop shortcuts before exit. Normal installed startup repeats the check; already-correct shortcuts are unchanged. Changed shortcuts are backed up privately once per location. Unrelated/unreadable shortcuts are refused; failure leaves calendar operation available and reports native dispatch failure.
+- The installed AUMID and activator remain stable. Windows preview/test runs do not initialize the native notification presenter. A repeat-launch check exposed that Electron uses the EXE product resource for its shortcut filename, ignoring runtime app-name separation; preventing preview/test initialization fixed this. The diagnostic's root-shortcut and activation-target changes were restored to the verified prior installation before final regression.
+- **150 unit tests in 16 files, type checking and production build pass.** Eighteen new cases cover installation boundaries, fresh/stale/idempotent repair, ownership, unreadable files, backup/write/read-back failures and lifecycle ordering/errors. No cloud protocol/rule changes are included.
+- **All 25 packaged desktop tests pass in one final run** (1.8 minutes): 23 calendar regressions plus repeated test launches/dispatch attempts preserving installed shortcut bytes, and actual Windows `.lnk` creation/upgrade/backups/idempotence/ownership cleanup in isolated workspace fixtures. An initial fixture test's unsupported `require` call was corrected in the harness. These tests do not establish fresh-Windows-user installation or visible-banner delivery.
+- **Source/package scans pass:** 102 publishable files and 204 archive entries, with no private credentials/configuration found. The superseded automatic Squirrel startup dependency and its types were removed; explicit lifecycle handling now waits for completion and reports a nonzero exit on errors.
+- The packaged 0.1.4 build preserves the populated 0.1.3 fixture's eight records, eight pending mutations, four reminders and device settings. Schema remains 1. Private real-profile baseline captured before upgrade held zero active calendar records.
+- **Built, not installed yet:** unsigned installer `CC-Lime-0.1.4-Setup-x64.exe`, 166,077,952 bytes, SHA-256 `3fb7de98ef66515e7ef6d4489176667752ef8c1acc7d8870f1042035cd384c37`. Packaged ASAR SHA-256 `ec3732698b2cd2dce93632b7acc654c56e5031aaa48a1e4d323ac1205ec1d21a`. The owner's normal installed 0.1.3 instance remains open; a tray-quit request is pending. Installation, immediate post-installer shortcut metadata, installed profile/fixture comparison, installed suite and native banner/click observation remain to be performed. No forced termination of the owner's app occurred.
+
+The automatic repair is implemented and passes isolated Windows tests. T-34/T-35/T-46 still require the installed upgrade and broader native/clean-PC/uninstall checks. All performance, importer, organizational security/privacy and independent assurance gaps remain. The following sections retain the verified 0.1.3 and earlier evidence; they are not 0.1.4 installed results.
 
 ## 0.1.3 security/privacy extension checkpoint
 

@@ -44,6 +44,8 @@ Keyboard shortcuts: **Ctrl+N** adds an item, **Ctrl+F** searches, **Ctrl+T** ret
 
 Enable **Desktop reminders** in Settings. Add one or more reminders in minutes before an item's start or deadline. All-day items and date-only deadlines use their configured reminder anchor time. Unscheduled tasks cannot produce a dated reminder until they receive a date.
 
+Windows popup reminders require the installed app opened from the Start menu. Uninstalled development previews and automated test copies do not send Windows popups. Version 0.1.4 aligns notification shortcuts automatically during installation and updates.
+
 Closing the window normally leaves C.C. Lime in the Windows system tray. Use the tray menu to reopen it or quit completely. **Start with Windows** is optional and off initially. Reminders require the app to be running and the laptop to be awake. Windows Do Not Disturb and notification permissions may suppress banners. The app cannot promise to wake a sleeping laptop or notify while fully quit.
 
 Quiet hours delay notifications, and privacy mode hides calendar titles in popups. The reminder inbox provides dismissal and snooze controls. Use **Send a test reminder** to check your Windows setup. Settings shows whether the test was submitted or Windows reported a failure; submission is not proof that Windows displayed a banner.

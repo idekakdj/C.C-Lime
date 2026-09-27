@@ -6,7 +6,7 @@ The home screen is a conventional month calendar with events beneath each date. 
 
 ## Project status
 
-Version 0.1.3 is a **development preview** with sensitive-action rate guards, server-enforced calendar write quotas and a secure 404 recovery page. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
+Version 0.1.4 is a **development preview** that adds automatic Windows notification shortcut alignment to the existing sensitive-action rate guards, server-enforced calendar write quotas and secure 404 recovery page. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
 
 ## Project documents
 
@@ -55,7 +55,7 @@ npm run check:package
 npm run test:e2e
 ```
 
-The unsigned installer is generated at `out/make/squirrel.windows/x64/CC-Lime-0.1.2-Setup-x64.exe`. A local build does not publish a GitHub release. Cloud emulator checks use `npm run test:cloud` and require Java 21 or later; see the maintainer guide.
+The unsigned installer is generated at `out/make/squirrel.windows/x64/CC-Lime-0.1.4-Setup-x64.exe`. A local build does not publish a GitHub release. Cloud emulator checks use `npm run test:cloud` and require Java 21 or later; see the maintainer guide.
 
 ## Development workflow
 

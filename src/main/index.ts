@@ -1,28 +1,46 @@
 import { app, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage, safeStorage, shell, dialog, protocol, net, powerMonitor, session } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
-import squirrelStartup from 'electron-squirrel-startup';
 import { ZodError } from 'zod';
 import { ApplicationService } from './service';
 import { loadCloudConfiguration } from './config';
 import { appProtocol, isAppDocument } from './app-protocol';
+import { WINDOWS_IDENTITIES, squirrelInstallation, isRegularFile, shortcutIO, repairInstalledShortcuts, removeInstalledRootShortcut, squirrelEvent, handleSquirrelEvent, runUpdater } from './windows-integration';
 
-app.setName('C.C. Lime');app.setAppUserModelId('com.squirrel.cc_lime.cc-lime');
+app.setName('C.C. Lime');
 if(process.env.CC_LIME_DATA_DIR&&!app.isPackaged)app.setPath('userData',path.resolve(process.env.CC_LIME_DATA_DIR));
 const testProfile=process.argv.find(arg=>arg.startsWith('--cc-lime-test-profile='));
 if(testProfile)app.setPath('userData',path.resolve(testProfile.split('=').slice(1).join('=')));
+const installation=squirrelInstallation(process.platform,app.isPackaged,process.execPath,isRegularFile);
+const identity=testProfile?WINDOWS_IDENTITIES.test:installation?WINDOWS_IDENTITIES.installed:WINDOWS_IDENTITIES.preview;
+if(process.platform==='win32'){
+  // Preserve the calendar path while keeping preview/test notification registrations separate.
+  const profile=app.getPath('userData');app.setName(identity.name);app.setPath('userData',profile);
+  app.setAppUserModelId(identity.id);app.setToastActivatorCLSID(identity.clsid);
+}
+const shortcutPaths=()=>({appData:app.getPath('appData'),desktop:app.getPath('desktop'),profile:app.getPath('userData')});
+const repairShortcuts=()=>{if(installation&&!testProfile)repairInstalledShortcuts(installation,shortcutPaths(),shortcutIO(shell));};
 protocol.registerSchemesAsPrivileged([{scheme:'cclime',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
 let window:BrowserWindow|null=null,tray:Tray|null=null,service:ApplicationService|null=null;
 let quitting=false,shutdownDone=false;let changeTimer:ReturnType<typeof setTimeout>|null=null;
 const notices=new Set<Notification>();
 function show(target?:{itemId?:string;occurrenceKey?:string;action?:string}){if(!window)return;window.show();if(window.isMinimized())window.restore();window.focus();if(target)window.webContents.send('lime:navigate',target);}
-const primary=!squirrelStartup&&app.requestSingleInstanceLock();
-if(!primary)app.quit();
+const installerEvent=squirrelEvent(process.platform,process.argv);
+const primary=!installerEvent&&app.requestSingleInstanceLock();
+if(installerEvent){
+  void handleSquirrelEvent(installerEvent,installation,{ready:()=>app.whenReady(),run:runUpdater,repair:repairShortcuts,cleanup:()=>{
+    if(installation){removeInstalledRootShortcut(installation,shortcutPaths(),shortcutIO(shell));app.setLoginItemSettings({openAtLogin:false,path:installation.launcher,args:['--background'],name:'C.C. Lime'});}
+  }}).then(()=>app.quit(),()=>app.exit(1));
+}else if(!primary)app.quit();
 else{
   app.on('second-instance',()=>show());app.on('activate',()=>show());
   app.on('before-quit',event=>{quitting=true;if(!shutdownDone&&service){event.preventDefault();void service.close().finally(()=>{shutdownDone=true;app.quit();});}});
   app.whenReady().then(async()=>{
     const root=app.getPath('userData');fs.mkdirSync(root,{recursive:true});
+    // Electron derives its Windows shortcut filename from the EXE resource, not app.setName.
+    // Never initialize that presenter in previews/tests: it would rewrite the installed shortcut.
+    let notificationSetupFailed=process.platform==='win32'&&(!installation||!!testProfile);
+    try{repairShortcuts();if(process.platform==='win32'&&!notificationSetupFailed)Notification.isSupported();}catch{notificationSetupFailed=true;}
     const iconPath=app.isPackaged?path.join(process.resourcesPath,'icon.png'):path.join(app.getAppPath(),'assets/icon.png');
     const rendererRoot=path.resolve(__dirname,'../renderer');
     protocol.handle('cclime',appProtocol(rendererRoot,url=>net.fetch(url)));
@@ -33,7 +51,7 @@ else{
     service=new ApplicationService(root,config,{
       secure:safeStorage,version:app.getVersion(),changed,
       openBrowser:async url=>{const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!=='accounts.google.com')throw new Error('Unsupported sign-in address.');await shell.openExternal(url);},
-      notify:notice=>{if(!Notification.isSupported()){notice.onFailure();return;}const notification=new Notification({title:notice.title,body:notice.body,icon:iconPath,silent:false});notices.add(notification);notification.on('click',()=>show(notice.inbox?{action:'inbox'}:{itemId:notice.itemId,occurrenceKey:notice.occurrenceKey}));notification.on('failed',()=>{notice.onFailure();notices.delete(notification);});notification.on('close',()=>notices.delete(notification));notification.show();},
+      notify:notice=>{if(notificationSetupFailed||!Notification.isSupported()){notice.onFailure();return;}const notification=new Notification({title:notice.title,body:notice.body,icon:iconPath,silent:false});notices.add(notification);notification.on('click',()=>show(notice.inbox?{action:'inbox'}:{itemId:notice.itemId,occurrenceKey:notice.occurrenceKey}));notification.on('failed',()=>{notice.onFailure();notices.delete(notification);});notification.on('close',()=>notices.delete(notification));notification.show();},
       openFile:async kind=>{const result=await dialog.showOpenDialog(window!,{title:kind==='ics'?'Import calendar':'Restore calendar backup',properties:['openFile'],filters:[{name:kind==='ics'?'Calendar file':'C.C. Lime backup',extensions:kind==='ics'?['ics']:['json']} ]});return result.canceled?null:result.filePaths[0];},
       saveFile:async kind=>{const result=await dialog.showSaveDialog(window!,{title:kind==='ics'?'Export calendar':kind==='backup'?'Save full backup':'Save diagnostics',defaultPath:`CC-Lime-${kind}-${new Date().toISOString().slice(0,10)}.${kind==='ics'?'ics':'json'}`,filters:[{name:kind==='ics'?'Calendar file':'JSON file',extensions:[kind==='ics'?'ics':'json']} ]});return result.canceled?null:result.filePath??null;},
       setStartup:enabled=>{if(enabled&&!app.isPackaged)throw new Error('Startup is available after installing the app.');const launcher=process.platform==='win32'?path.resolve(path.dirname(process.execPath),'..','cc-lime.exe'):process.execPath;app.setLoginItemSettings({openAtLogin:enabled,path:launcher,args:['--background'],name:'C.C. Lime'});},
