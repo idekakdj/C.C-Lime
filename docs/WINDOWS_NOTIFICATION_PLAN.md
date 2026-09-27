@@ -20,3 +20,7 @@ Electron 44.4.2 supports [setting a toast activator before notification initiali
 8. Record the installer checksum, observed results and remaining clean-PC, sleep/login and manual activation checks. Push reviewed code and evidence to the existing branch/PR. Do not claim full native acceptance or production release.
 
 No account/cloud schema, provider settings, notification permissions or billing changes are part of this task. Clean-PC acceptance requires a separate Windows environment and remains explicitly open if unavailable.
+
+## Observed result
+
+September 27: the 0.1.3-to-0.1.4 installer exited successfully. Before normal startup, all three owned shortcuts shared the installed identity; Windows file IDs verified the normal and redirected path aliases referred to the same files. Normal startup registered the installed activator and subsequent launch preserved shortcut bytes. Populated and real-profile upgrade comparisons passed. All 150 unit tests and all 25 desktop cases passed; the desktop suite ran against both packaged and installed builds. GitHub's implementation checks passed. On the owner's requested retry after reporting Do Not Disturb, the real notification click restored the hidden calendar. No manual shortcut/registry repair was needed after this upgrade. Full clean-PC installation/uninstall, scheduled timing, sleep/login and fully-quit activation remain separate acceptance work.
