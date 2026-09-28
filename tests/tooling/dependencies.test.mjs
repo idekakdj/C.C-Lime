@@ -38,3 +38,39 @@ test('external-editor creates, reads and removes a temporary file with the patch
   finally { editor.cleanup(); }
   assert.equal(fs.existsSync(filename), false);
 });
+
+test('Firebase gaxios resolves patched UUID with its required v4 API and bounds checks', () => {
+  const require = createRequire(import.meta.url);
+  const fromCli = createRequire(require.resolve('firebase-tools'));
+  const fromGaxios = createRequire(fromCli.resolve('gaxios'));
+  const uuid = fromGaxios('uuid');
+  assert.match(uuid.v4(), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.throws(() => uuid.v5('fixture', uuid.v5.DNS, new Uint8Array(1)), RangeError);
+});
+
+test('Firebase Pub/Sub trace propagation works with patched OpenTelemetry', () => {
+  const require = createRequire(import.meta.url);
+  const fromCli = createRequire(require.resolve('firebase-tools'));
+  const fromPubSub = createRequire(fromCli.resolve('@google-cloud/pubsub'));
+  const { W3CTraceContextPropagator } = fromPubSub('@opentelemetry/core');
+  const { ROOT_CONTEXT, trace, defaultTextMapGetter, defaultTextMapSetter } = fromPubSub('@opentelemetry/api');
+  const propagator = new W3CTraceContextPropagator(), carrier = {};
+  const span = { traceId: '11111111111111111111111111111111', spanId: '2222222222222222', traceFlags: 1 };
+  propagator.inject(trace.setSpanContext(ROOT_CONTEXT, span), carrier, defaultTextMapSetter);
+  assert.equal(carrier.traceparent, `00-${span.traceId}-${span.spanId}-01`);
+  assert.deepEqual(trace.getSpanContext(propagator.extract(ROOT_CONTEXT, carrier, defaultTextMapGetter)), { ...span, isRemote: true });
+});
+
+test('Firebase hosting loads native RE2 rather than silently falling back to JavaScript', () => {
+  const require = createRequire(import.meta.url);
+  const fromCli = createRequire(require.resolve('firebase-tools'));
+  const fromHosting = createRequire(fromCli.resolve('superstatic'));
+  const RE2 = fromHosting('re2');
+  assert.equal(fromHosting('re2/package.json').version, '1.27.0');
+  const patterns = fromHosting('./utils/patterns');
+  assert.equal(patterns.re2Available(), true);
+  assert.equal(patterns.configMatcher('/calendar/week', { regex: '^/calendar/(day|week)$' }), true);
+  assert.equal(patterns.configMatcher('/outside', { regex: '^/calendar/(day|week)$' }), false);
+  assert.equal(new RE2('(?P<name>é+)', 'u').exec('éé').groups.name, 'éé');
+  assert.equal(new RE2('é', 'gu').replace('café', 'e'), 'cafe');
+});

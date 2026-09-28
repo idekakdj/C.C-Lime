@@ -1,10 +1,14 @@
 {
   "name": "cc-lime",
   "productName": "C.C. Lime",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "A thoughtful calendar and task planner for university life.",
   "author": "idekakdj",
   "private": true,
+  "engines": {
+    "node": ">=24.21.0 <25",
+    "npm": ">=11.19.0 <12"
+  },
   "type": "module",
   "license": "UNLICENSED",
   "main": "dist/main/index.cjs",
@@ -22,7 +26,7 @@
     "check:release-security": "node scripts/dependency-evidence.mjs --release",
     "check:secrets": "node scripts/check-secrets.mjs",
     "package": "npm run build && electron-forge package",
-    "make": "npm run build && electron-forge make",
+    "make": "npm run build && node scripts/prepare-windows-installer.mjs && electron-forge make",
     "rebuild:electron": "electron-rebuild -f -w better-sqlite3",
     "rebuild:node": "npm rebuild better-sqlite3",
     "test:cloud": "node scripts/emulators.mjs",
@@ -69,6 +73,20 @@
   },
   "overrides": {
     "@electron/rebuild": "$@electron/rebuild",
-    "tmp": "0.2.7"
+    "tmp": "0.2.7",
+    "firebase-tools": {
+      "@opentelemetry/core": "2.8.0",
+      "gaxios": {
+        "uuid": "11.1.1"
+      },
+      "re2": "1.27.0"
+    }
+  },
+  "allowScripts": {
+    "electron-winstaller": false,
+    "esbuild@0.28.2": true,
+    "re2@1.27.0": true,
+    "@firebase/util": false,
+    "protobufjs": false
   }
 }

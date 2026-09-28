@@ -99,3 +99,5 @@ Each package requires: named accountable owner, approved version/date, evidence 
 Initial status at planning: T-49 specified; T-50–T-52 in progress; T-53–T-62 planned. No acceptance scenario was pre-marked pass. Subsequent actual results are recorded in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md); [ABUSE_THREAT_MODEL.md](ABUSE_THREAT_MODEL.md) records the initial T-53 review and remaining remote enforcement gaps.
 
 September 27 follow-up: [data and retention inventory](PRIVACY_DATA_INVENTORY.md) and [initial risk register](RISK_REGISTER.md) provide code-grounded T-54/T-55/T-56 evidence drafts. [Supply-chain work](SUPPLY_CHAIN_PLAN.md) advances T-45/T-58. No operator policy, legal finding, risk acceptance or independent assurance approval has been inferred from these drafts.
+
+September 28 follow-up: the [owner-upgrade and engineering plan](RELEASE_FOLLOWUP_PLAN.md) separates the verified 0.1.5 installation from 0.1.6 dependency and expired-undo fixes. The inventory and risks now describe that source behavior and remaining copies. Dependency findings remain release-blocking; lifecycle policy, legal review and independent assurance are still open.

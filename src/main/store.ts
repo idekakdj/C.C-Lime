@@ -52,6 +52,7 @@ export class LocalStore {
           `);
         })();
       }
+      this.pruneExpiredUndo();
       this.db.prepare("UPDATE outbox SET state='pending' WHERE state='sending'").run();
       for (const entry of this.reminders()) if (entry.state === 'dispatching') this.putReminder({ ...entry, state: 'uncertain' });
     } catch (error) { this.db.close(); throw error; }
@@ -73,6 +74,9 @@ export class LocalStore {
   metadata<T>(key: string, fallback: T): T { const row = this.db.prepare('SELECT value FROM metadata WHERE key=?').get(key) as { value: string } | undefined; return row ? JSON.parse(row.value) : fallback; }
   setMetadata(key: string, value: unknown): void { this.db.prepare('INSERT OR REPLACE INTO metadata VALUES (?,?)').run(key, JSON.stringify(value)); }
   snapshot(label = 'manual'): string {
+    // A pre-migration copy preserves the older schema verbatim, including cases
+    // where it has no undo table. New ordinary copies need not retain expired undo.
+    if (label !== 'pre-migration') this.pruneExpiredUndo();
     const folder = path.join(this.directory, 'backups'); fs.mkdirSync(folder, { recursive: true });
     const destination = path.join(folder, `${label}-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 6)}.sqlite`);
     this.db.exec(`VACUUM INTO ${sqlString(destination)}`);
@@ -82,6 +86,7 @@ export class LocalStore {
     return destination;
   }
   private beforeMutation(): void {
+    this.pruneExpiredUndo();
     const today = new Date().toISOString().slice(0, 10);
     if (this.metadata('dailyBackupDate', '') !== today) { this.snapshot('daily'); this.setMetadata('dailyBackupDate', today); }
   }
@@ -144,8 +149,9 @@ export class LocalStore {
     return token;
   }
   undo(token: string): void {
+    const now = Date.now(); this.pruneExpiredUndo(now);
     const entry = this.db.prepare('SELECT * FROM undo WHERE id=?').get(token) as { expires_ms: number; before_payload: string; after_hash: string } | undefined;
-    if (!entry || entry.expires_ms < Date.now()) throw new Error('The undo period has ended.');
+    if (!entry || entry.expires_ms < now) throw new Error('The undo period has ended.');
     const before = JSON.parse(entry.before_payload) as Array<{ id: string; value: DomainRecord | null }>;
     if (digest(before.map(v => ({ id: v.id, value: this.get(v.id) }))) !== entry.after_hash) throw new Error('This item changed again. Review it before restoring an earlier version.');
     this.db.transaction(() => { for (const old of before) this.write(old.id, old.value, true); this.db.prepare('DELETE FROM undo WHERE id=?').run(token); })();
@@ -211,6 +217,15 @@ export class LocalStore {
       if (choice === 'local' && current?.value) this.write(conflict.recordId, conflict.local, true);
       else if ((choice === 'both' || choice === 'local') && conflict.local) { const newId = randomUUID(); this.write(newId, { ...conflict.local, id: newId }, true); }
     })();
+  }
+  pruneExpiredUndo(now = Date.now()): boolean {
+    // Cleanup is retried at the next lifecycle opportunity. A storage failure
+    // must not turn an already acknowledged save into a failed command.
+    try { this.db.prepare('DELETE FROM undo WHERE expires_ms < ?').run(now); return true; }
+    catch (error) {
+      if ((error as { code?: string }).code?.startsWith('SQLITE_')) return false;
+      throw error;
+    }
   }
   reminders(): ReminderEntry[] { return (this.db.prepare('SELECT payload FROM reminders ORDER BY due_ms DESC').all() as Array<{ payload: string }>).map(r => JSON.parse(r.payload)); }
   putReminder(entry: ReminderEntry): void { this.db.prepare('INSERT OR REPLACE INTO reminders VALUES (?,?,?,?)').run(entry.id, JSON.stringify(entry), entry.snoozeMs ?? entry.dueMs, entry.state); }

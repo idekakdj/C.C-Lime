@@ -1,5 +1,36 @@
 # Dependency treatment and release evidence
 
+## September 28 follow-up: source 0.1.6, installed 0.1.5
+
+The [follow-up plan](RELEASE_FOLLOWUP_PLAN.md) keeps the requested owner installation at the verified 0.1.5 artifact. Subsequent fixes are separately versioned 0.1.6. No public release or risk acceptance is implied. T-45/T-58 remain open.
+
+| Follow-up | Resolution and verification |
+| --- | --- |
+| Firebase CLI → Pub/Sub → OpenTelemetry core | Scoped root override pins 2.8.0, matching the CLI's own override intent (transitive overrides are not inherited by npm). Actual W3C trace injection/extraction passes. [Advisory](https://github.com/advisories/GHSA-8988-4f7v-96qf). |
+| Firebase CLI → gaxios → UUID | Scoped 11.1.1 pin follows the CLI's declared intent. Required v4 generation and short-buffer rejection pass. [Advisory](https://github.com/advisories/GHSA-w5hq-g745-h8pq). |
+| Firebase CLI → hosting → RE2 | Pin 1.27.0 and use a supported Node runtime. Native load, hosting match/nonmatch, Unicode named captures and replacement pass; tests reject silent JavaScript fallback. [Bounds-read advisory](https://github.com/advisories/GHSA-j4r3-hg7j-8chg). |
+| Build runtime / install hooks | Project-local Node 24.21.0/npm 11.19.0; system Node unchanged. Official Windows x64 archive verified against the [publisher checksum list](https://nodejs.org/dist/v24.21.0/SHASUMS256.txt): `158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541`. CI uses the same Node version. npm's manifest policy approves only pinned esbuild/RE2 hooks; unused Firebase/protobuf hooks and the broken installer hook are denied. An explicit step selects/verifies existing x64 installer tools. CI now builds the installer too. |
+
+Full audit at **2026-09-28 05:40 UTC**: **15 high, zero critical/moderate/low**, down from 21 affected packages in 0.1.5. All remaining findings trace to `extract-zip` 2.0.1 and inherited tooling parents. This is a count of affected packages, not 15 independent vulnerabilities. No advisories were suppressed. The production dependency gate generated fresh evidence and correctly exited **1, blocked**.
+
+The two extraction advisories have no patched npm release at this review: [symlink target validation](https://github.com/advisories/GHSA-jmr9-qjv8-65gv) and [final-path symlink writes](https://github.com/advisories/GHSA-7pqw-9j4j-h8q3). Upstream [PR 160](https://github.com/max-mapper/extract-zip/pull/160) remains open and addresses final-component containment; it is not proof that both advisories are repaired in a published dependency. Next: review a maintained replacement or complete upstream patches, exercise safe synthetic traversal/symlink/duplicate-entry/pre-existing-target archives, inspect compatibility at each caller, then rebuild/test the real Windows package. Do not force an incompatible Forge downgrade or assume that rejecting all symlinks is compatible with every future platform archive.
+
+Local verification: **158 app unit tests, 12 tooling checks, 36 cloud emulator tests and all 25 packaged desktop tests pass** (desktop suite: 2.5 minutes). Types, production build, native SQLite rebuild, Windows package and Squirrel installer pass. The archive scan inspects 204 entries with no configured credentials or excluded local/output paths. Root `release`/`build` directories are now excluded and checked so retained earlier installers cannot be accidentally bundled. These checks do not establish complete native Electron/Chromium review or production approval.
+
+| Exact 0.1.6 evidence | Value |
+| --- | --- |
+| Full npm CycloneDX component count | 1,132 |
+| Lockfile SHA-256 | `6cc315afcd4127f4044f2fc29b6cfdbd29abb63589c73bf9389e5a5709349cec` |
+| Audit SHA-256 | `3254d4377174800811c543ec708a2c60c15da2408fe0fa51331733ea7c2ce9e4` |
+| CycloneDX SHA-256 | `1f947db236a7d116b3676f5e943860b1368b382391e1719ac3e6f0063f6f615a` |
+| Unsigned installer | `CC-Lime-0.1.6-Setup-x64.exe`, 166,069,248 bytes |
+| Installer SHA-256 | `a7261e4c6eed3ae6b1ac491bb6036e0007a5b8e286a6a0993cbc94ad4ae58b5f` |
+| Tested ASAR SHA-256 | `7e215efd43d24f7087a56f5ce06d1f1211108398a54f0523d8d08157f89929cc` |
+
+The ignored 0.1.5 installer is retained under `release/0.1.5` with its original hash below. Installed ASAR identity, real-profile preservation, populated upgrade fixture and all 25 installed desktop checks passed for 0.1.5; see [implementation evidence](IMPLEMENTATION_STATUS.md). Version 0.1.6 is built/tested locally, not installed over it. Generated dependency evidence remains ignored locally and retained by CI for 14 days. A later evidence refresh changes metadata/hashes, so compare each report with its corresponding saved summary.
+
+## Historical 0.1.5 build checkpoint
+
 September 27, 2026 (America/Toronto); evidence generated September 28 at 00:32 UTC. Build 0.1.5, owner-only distribution scope. T-45/T-58 remain open. [Ordered plan](SUPPLY_CHAIN_PLAN.md).
 
 ## Changes and exposure
@@ -48,6 +79,6 @@ The evidence command removes only its prior three generated success files before
 - Regeneration can change timestamps/serial IDs/report metadata; compare the exact saved artifact against its own summary, not a newly generated byte hash.
 - Unsigned `CC-Lime-0.1.5-Setup-x64.exe`: **166,068,736 bytes**, SHA-256 `c0b25f524b39f832598a7672d056074a6dde3bab1d5a873b5e61a6ffa5cb90df`.
 - Tested package ASAR SHA-256: `b933b74971f4c544b3abc39d5f62d164fba4014b1bcb8fe50439910fc5531240`; credential scan covers **204 entries**, no private configuration/credential values found.
-- The working installed 0.1.4 baseline is preserved; 0.1.5 has not been installed over it or uploaded as a public release. This patch updates build tooling and evidence, not user-facing calendar behavior.
+- At this original build checkpoint 0.1.5 had not been installed over 0.1.4. The subsequent owner upgrade is now verified as recorded above; no public release asset was uploaded. That patch updated build tooling and evidence, not user-facing calendar behavior.
 
 See [implementation status](IMPLEMENTATION_STATUS.md) for final desktop/CI observations. Signing, clean-PC release acceptance, outstanding dependency remediation and organizational approval remain required. No SOC report, ISO certificate, DGSI conformance finding or privacy-law compliance opinion is established here.

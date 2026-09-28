@@ -49,7 +49,7 @@ export class ReminderScheduler {
       if (eligible.length > 3) this.deliver(eligible, true, device.privacy);
       else for (const entry of eligible) this.deliver([entry], false, device.privacy);
     }
-    this.store.pruneReminders(now); this.changed();
+    this.store.pruneExpiredUndo(now); this.store.pruneReminders(now); this.changed();
     if (schedule && !this.stopped) {
       const future = this.store.reminders().filter(r => ['pending','snoozed'].includes(r.state)).map(r => r.snoozeMs ?? r.dueMs).filter(ms => ms > now);
       const delay = Math.max(100, Math.min(60000, ...future.map(ms => ms-now)));
