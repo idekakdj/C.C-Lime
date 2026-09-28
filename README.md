@@ -6,7 +6,7 @@ The home screen is a conventional month calendar with events beneath each date. 
 
 ## Project status
 
-The source targets **0.1.6, an owner-only development preview**, with expired quick-undo cleanup and further dependency fixes. The owner's installed version is **0.1.5**, verified separately; building this source does not update it. Automatic Windows notification shortcut alignment, sensitive-action rate guards, server-enforced calendar write quotas and secure 404 recovery remain. The operator is based in Ontario, Canada. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
+The source targets **0.1.7, an owner-only development preview**, with a reviewed archive-extractor replacement, pinned Electron download checksum and isolated build directories. It retains expired quick-undo cleanup from 0.1.6. The owner's installed version is **0.1.5**, verified separately; building this source does not update it. Automatic Windows notification shortcut alignment, sensitive-action rate guards, server-enforced calendar write quotas and secure 404 recovery remain. The operator is based in Ontario, Canada. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
 
 ## Project documents
 
@@ -16,6 +16,7 @@ The source targets **0.1.6, an owner-only development preview**, with expired qu
 - [Security, privacy and assurance extension](docs/SECURITY_PRIVACY_PLAN.md)
 - [Dependency treatment and release gate](docs/SUPPLY_CHAIN_REPORT.md)
 - [Owner upgrade and follow-up engineering plan](docs/RELEASE_FOLLOWUP_PLAN.md)
+- [Archive extraction repair and verification](docs/ARCHIVE_EXTRACTION_PLAN.md)
 - [Privacy data and retention inventory](docs/PRIVACY_DATA_INVENTORY.md)
 - [Initial security and privacy risk register](docs/RISK_REGISTER.md)
 - [User guide](docs/USER_GUIDE.md)
@@ -59,9 +60,9 @@ npm run check:package
 npm run test:e2e
 ```
 
-The unsigned installer is generated at `out/make/squirrel.windows/x64/CC-Lime-0.1.6-Setup-x64.exe`. A local build does not install the app or publish a GitHub release. Cloud emulator checks use `npm run test:cloud` and require Java 21 or later; see the maintainer guide.
+The unsigned installer is generated at `out/make/squirrel.windows/x64/CC-Lime-0.1.7-Setup-x64.exe`. A local build does not install the app or publish a GitHub release. Cloud emulator checks use `npm run test:cloud` and require Java 21 or later; see the maintainer guide.
 
-`npm run security:report` generates the full npm CycloneDX inventory and vulnerability report under ignored `test-results/supply-chain`. `npm run check:release-security` refreshes evidence and blocks production approval while any finding remains. It currently fails as intended; passing preview tests is not security sign-off.
+`npm run security:report` generates the full npm CycloneDX inventory and vulnerability report under ignored `test-results/supply-chain`. `npm run check:release-security` refreshes evidence and blocks the dependency gate while any finding remains. The 0.1.7 scan reports zero npm findings; this does not cover every native component or grant production/compliance approval.
 
 ## Development workflow
 

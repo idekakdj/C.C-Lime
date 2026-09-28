@@ -1,6 +1,30 @@
 # Dependency treatment and release evidence
 
-## September 28 follow-up: source 0.1.6, installed 0.1.5
+## September 28 extraction repair: source 0.1.7, installed 0.1.5
+
+The [ordered extraction plan](ARCHIVE_EXTRACTION_PLAN.md) precedes the change. Forge 7.11.2's packager 18.4.4 was the only resolved consumer of the vulnerable `extract-zip` package. A scoped override now resolves that consumer to `@electron-internal/extract-zip` 1.0.5, the same native implementation already used by Electron 44.4.2. The lockfile removes the old extractor and seven installed helper packages; other consumers are unchanged. This is an implementation replacement with containment checks, not an advisory suppression.
+
+Official [packager 20.3.0](https://github.com/electron/packager/releases/tag/v20.3.0) also uses this implementation, but its hook interface differs from the callbacks used by the current Forge, so the packager major version is retained. Tests load the actual existing CommonJS extraction wrapper and native replacement. The replacement's [security policy](https://raw.githubusercontent.com/electron/extract-zip/v1.0.5/SECURITY.md) supports trusted, checksum-verified Electron distributions through Electron tooling; general untrusted archives and preseeded destinations are outside its supported scope. This app does not use the extractor for user calendar import.
+
+`scripts/electron-build-policy.cjs` pins the official Windows x64 Electron 44.4.2 archive SHA-256 `6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03`, retrieved from the [release checksum file](https://github.com/electron/electron/releases/download/v44.4.2/SHASUMS256.txt) and cross-checked with the installed Electron package. The policy rejects custom local archives/download options, mirror/version environment selectors and unreviewed target/version changes. The actual downloader validates both cached and fresh bytes against that digest. The pre-package hook creates a unique parent; packager creates an empty extraction child. Post-package cleanup validates the same process's saved root, resolved path and filesystem identity before removing it. Failure may retain that build's root for review; unrelated roots are not cleaned. A trusted build account, checkout and installed tools are assumed; same-user concurrent compromise remains outside this guarantee.
+
+Full npm audit at **2026-09-28 19:18 UTC**: **zero affected-package findings in every severity**, down from 15 high findings in 0.1.6. `npm run check:release-security` exits **0**. CI now uses this blocking command, with an evidence-upload attempt even on failure. An unavailable/malformed audit still fails closed. The flag `releaseAllowed` in generated evidence refers only to this dependency gate; signing, manual acceptance, native-component review, operator/legal decisions and independent assurance remain open.
+
+Local checks: **158 app unit tests, 36 cloud tests and all 25 packaged desktop cases pass**; types, production build, native package and Squirrel maker pass. **31 of 33 tooling cases pass, with two explicitly skipped because this laptop cannot create file symlinks.** The skipped cases are positive relative-link extraction and pre-existing leaf-link replacement; CI must run both and fails instead of skipping if that host is also incapable. Passing cases exercise normal bytes/overwrites, traversal/absolute/reserved paths, outside/chained links, mixed/duplicate entries, directory junctions, checksum/cache failures, rejected build overrides and scoped cleanup. The initial mixed duplicate fixture incorrectly expected every archive to reject: the parser keeps the final regular entry. The corrected test proves that regular file stays inside the destination and the outside sentinel remains unchanged; the reversed order is rejected. No destructive archive/bomb or user-file target was used.
+
+| Exact 0.1.7 dependency evidence | Value |
+| --- | --- |
+| Full npm CycloneDX components | 1,126 |
+| Lockfile SHA-256 | `b0313d161edc0aa7c6ca3118fe48fad7345585904f223024ee1ecb9bc8c75f66` |
+| Audit SHA-256 | `f5a3ec0aab8fa3c4309d06de4c1a7369715af18b49f8c30bc09c1fd6c6e03a30` |
+| CycloneDX SHA-256 | `0f5ae19693cedbd53e39347a97fdc3b930a64f7ccd7d7fc71db9bf3a7a1e3fa6` |
+| Unsigned installer | `CC-Lime-0.1.7-Setup-x64.exe`, 166,069,760 bytes |
+| Installer SHA-256 | `e1e3d7b1de37ae2cc4e2ace921c48ac44d115e59d5b73a3bc189ce959cb695c6` |
+| Tested ASAR SHA-256 | `cd2b7e67902a4aa4c01c4af153326c2ed9239853f41b5b75c9c2bd1fa7a5ff5a` |
+
+This is a complete npm-lockfile inventory, not an inventory of internal native dependencies in Electron/Chromium or the Rust extractor. Unknown/new advisories and administrative compromise are not ruled out by a zero npm result. Review those components/provenance separately. The exact 0.1.6 installer and its dependency evidence are retained privately before regeneration; 0.1.5 stays installed. Final package/desktop/CI evidence is recorded in [implementation status](IMPLEMENTATION_STATUS.md).
+
+## Historical September 28 follow-up: source 0.1.6, installed 0.1.5
 
 The [follow-up plan](RELEASE_FOLLOWUP_PLAN.md) keeps the requested owner installation at the verified 0.1.5 artifact. Subsequent fixes are separately versioned 0.1.6. No public release or risk acceptance is implied. T-45/T-58 remain open.
 

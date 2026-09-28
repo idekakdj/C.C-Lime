@@ -40,7 +40,7 @@ const files = { 'audit.json': JSON.stringify(audit, null, 2), 'sbom.cdx.json': J
 const summary = {
   generatedAt: new Date().toISOString(), application: manifest.name, version: manifest.version,
   node: process.version, lockfileSha256: hash(lock),
-  scope: 'Full npm lockfile, including build tools and libraries bundled from devDependencies; excludes Electron/Chromium internal native components.',
+  scope: 'Full npm lockfile, including build tools and libraries bundled from devDependencies; excludes internal native dependencies of Electron/Chromium and the Rust extractor.',
   components: sbom.components.length, ...assessment,
   artifactSha256: Object.fromEntries(Object.entries(files).map(([name, body]) => [name, hash(body)])),
 };

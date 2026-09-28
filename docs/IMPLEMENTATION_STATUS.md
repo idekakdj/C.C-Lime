@@ -1,6 +1,15 @@
 # Implementation and verification evidence
 
-Updated September 28, 2026. Source target: **0.1.6 owner-only development preview**, Windows x64. Owner's installed version: **0.1.5**, verified below. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+Updated September 28, 2026. Source target: **0.1.7 owner-only development preview**, Windows x64. Owner's installed version: **0.1.5**, verified below. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+
+## 0.1.7 archive-extraction checkpoint
+
+- [The ordered repair plan](ARCHIVE_EXTRACTION_PLAN.md) preserves prior artifacts and scopes the packager's extractor to Electron's native implementation 1.0.5. The unchanged packager interface is exercised through its actual CommonJS wrapper; Forge's callback hooks remain compatible. No application schema, cloud rules, calendar or notification behavior changed.
+- The build now pins the official Electron 44.4.2 Windows x64 archive digest, refuses custom archive/download/environment/target overrides, creates a unique build parent and verifies its filesystem identity before scoped cleanup. Tests exercise the real downloader's fresh/cache/corrupt paths as well as tiny archive containment fixtures. These controls assume a trusted build account and checkout.
+- **158 unit tests, 36 cloud emulator tests, types and production build pass.** Tooling: **31 pass, two explicit skips** because local Windows denies file symlinks. Relative-link success and existing leaf-link replacement require capable-host evidence; no skip is counted as a pass. Junction, traversal, unsafe link, duplicate-entry, digest/cache, policy and cleanup tests pass. The mixed duplicate case was corrected to assert safe final-entry behavior instead of demanding rejection of a safe normalized archive.
+- **The full npm dependency gate now passes with zero findings**, and the inventory contains 1,126 npm components. CI now uses the blocking gate instead of report-only mode and attempts evidence upload on failure. This is not complete native-component review or product/compliance approval. See [the treatment report](SUPPLY_CHAIN_REPORT.md) for exact hashes and limits.
+- **Windows native package and Squirrel installer pass; all 25 packaged desktop tests pass in one run (1.9 minutes).** Both new Forge hooks completed successfully. Package scan: 204 entries, no credentials/private configuration. Unsigned `CC-Lime-0.1.7-Setup-x64.exe`: 166,069,760 bytes; SHA-256 `e1e3d7b1de37ae2cc4e2ace921c48ac44d115e59d5b73a3bc189ce959cb695c6`. ASAR SHA-256 `cd2b7e67902a4aa4c01c4af153326c2ed9239853f41b5b75c9c2bd1fa7a5ff5a`. This build is not installed or publicly uploaded.
+- Evidence hashes match and all 1,126 unique npm identities reconcile with the lockfile, including aliases. All 70 local links checked in the eight updated documents resolve. Fresh GitHub validation remains pending; file-symlink capability is required in CI, so its two cases must pass there rather than silently skip.
 
 ## 0.1.5 installed owner upgrade
 

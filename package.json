@@ -1,7 +1,7 @@
 {
   "name": "cc-lime",
   "productName": "C.C. Lime",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A thoughtful calendar and task planner for university life.",
   "author": "idekakdj",
   "private": true,
@@ -73,6 +73,9 @@
   },
   "overrides": {
     "@electron/rebuild": "$@electron/rebuild",
+    "@electron/packager": {
+      "extract-zip": "npm:@electron-internal/extract-zip@1.0.5"
+    },
     "tmp": "0.2.7",
     "firebase-tools": {
       "@opentelemetry/core": "2.8.0",

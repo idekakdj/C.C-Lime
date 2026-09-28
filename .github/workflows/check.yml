@@ -15,9 +15,10 @@ jobs:
           node-version: '24.21.0'
           cache: npm
       - run: npm ci
-      - name: Report dependencies (preview evidence; not production approval)
-        run: npm run security:report
+      - name: Check dependencies (npm gate; not production approval)
+        run: npm run check:release-security
       - name: Retain dependency evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dependency-evidence
