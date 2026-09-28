@@ -5,7 +5,8 @@ Version 1, September 26, 2026. Extends PROJECT_PLAN.md; original functionality a
 ## Confirmed scope and decision gates
 
 - Product: Windows-first personal university calendar with Firebase identity/sync and offline local storage. No patient records or healthcare organization workflow. Free initial cloud tier; no spending authorization.
-- Operator: owner or future company, legal entity/contact/jurisdiction still undecided. Owner is the decision maker until named roles are assigned; no fictional appointments or approvals.
+- Operator: owner or future company, based in Ontario, Canada (confirmed September 27). Legal entity/contact remain undecided. Owner is the decision maker until named roles are assigned; no fictional appointments or approvals.
+- Next release audience: only the owner (confirmed September 27), superseding a proposed limited private pilot. This narrows distribution; it does not enforce a private backend or waive release/security gates.
 - Requested final targets: SOC 2, ISO/IEC 27001, CAN/DGSI 118, PIPEDA and PHIPA. All remain tracked. Legal applicability and assurance scope require a qualified review of the actual operator, customers, contracts, data and locations.
 - SOC 2 requires an independent CPA examination of a defined service organization/system. Plan for Security and evaluate Availability, Confidentiality, Processing Integrity and Privacy with the owner/auditor. Decide Type I/Type II and the operating evidence period before procurement; neither report is claimed today. [AICPA](https://www.aicpa-cima.com/resources/landing/system-and-organization-controls-soc-suite-of-services).
 - ISO/IEC 27001:2022 concerns an organization's information security management system. Include applicable amendments in the standards register, risk treatment and Statement of Applicability; obtain independent certification for the requested certified end state. Code tests cannot certify an ISMS. [ISO](https://www.iso.org/standard/27001).
@@ -96,3 +97,5 @@ Each package requires: named accountable owner, approved version/date, evidence 
 4. T-61 depends on sustained organizational evidence and independent assessors; it cannot finish in a coding session. T-62 remains blocked until both original product acceptance and new applicable obligations are met.
 
 Initial status at planning: T-49 specified; T-50–T-52 in progress; T-53–T-62 planned. No acceptance scenario was pre-marked pass. Subsequent actual results are recorded in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md); [ABUSE_THREAT_MODEL.md](ABUSE_THREAT_MODEL.md) records the initial T-53 review and remaining remote enforcement gaps.
+
+September 27 follow-up: [data and retention inventory](PRIVACY_DATA_INVENTORY.md) and [initial risk register](RISK_REGISTER.md) provide code-grounded T-54/T-55/T-56 evidence drafts. [Supply-chain work](SUPPLY_CHAIN_PLAN.md) advances T-45/T-58. No operator policy, legal finding, risk acceptance or independent assurance approval has been inferred from these drafts.

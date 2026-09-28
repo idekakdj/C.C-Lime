@@ -1,6 +1,6 @@
 # Abuse-control review — C.C. Lime 0.1.3
 
-Engineering review, updated September 27, 2026. T-53 is **not complete**. This document records current trust boundaries and concrete remaining decisions; it is not a penetration-test or assurance report. The application is a personal calendar, not a patient-record system.
+Engineering review, updated September 27, 2026. T-53 is **not complete**. This document records current trust boundaries and concrete remaining decisions; it is not a penetration-test or assurance report. The application is a personal calendar, not a patient-record system. The operator is based in Ontario; the next release is owner-only. This audience choice does not restrict existing public provider endpoints.
 
 ## Boundaries and protected assets
 

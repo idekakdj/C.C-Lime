@@ -6,7 +6,7 @@ The home screen is a conventional month calendar with events beneath each date. 
 
 ## Project status
 
-Version 0.1.4 is a **development preview** that adds automatic Windows notification shortcut alignment to the existing sensitive-action rate guards, server-enforced calendar write quotas and secure 404 recovery page. It builds a Windows x64 installer and has automated desktop, domain, and cloud checks. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
+Version 0.1.5 is an **owner-only development preview** that updates vulnerable build dependencies and adds a dependency inventory/release security gate. It retains automatic Windows notification shortcut alignment, sensitive-action rate guards, server-enforced calendar write quotas and secure 404 recovery. The operator is based in Ontario, Canada. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
 
 ## Project documents
 
@@ -14,6 +14,9 @@ Version 0.1.4 is a **development preview** that adds automatic Windows notificat
 - [Implementation task register — 62 tasks](docs/IMPLEMENTATION_TASKS.md)
 - [Acceptance test specification — 64 scenarios](docs/ACCEPTANCE_TESTS.md)
 - [Security, privacy and assurance extension](docs/SECURITY_PRIVACY_PLAN.md)
+- [Dependency treatment and release gate](docs/SUPPLY_CHAIN_REPORT.md)
+- [Privacy data and retention inventory](docs/PRIVACY_DATA_INVENTORY.md)
+- [Initial security and privacy risk register](docs/RISK_REGISTER.md)
 - [User guide](docs/USER_GUIDE.md)
 - [Maintainer guide](docs/MAINTAINER_GUIDE.md)
 - [Local cloud configuration](docs/LOCAL_CONFIGURATION.md)
@@ -39,7 +42,7 @@ The initial cloud setup targets a free tier. Live authentication and synchroniza
 
 ## Run and build
 
-Use Node.js 24 and npm on Windows x64. Native SQLite compilation may require Visual Studio C++ Build Tools and Python if a prebuilt binary is unavailable.
+Use Node.js 24.13.0 and npm 11.12.0 on Windows x64. Native SQLite compilation may require Visual Studio C++ Build Tools and Python if a prebuilt binary is unavailable.
 
 ```sh
 npm ci
@@ -55,7 +58,9 @@ npm run check:package
 npm run test:e2e
 ```
 
-The unsigned installer is generated at `out/make/squirrel.windows/x64/CC-Lime-0.1.4-Setup-x64.exe`. A local build does not publish a GitHub release. Cloud emulator checks use `npm run test:cloud` and require Java 21 or later; see the maintainer guide.
+The unsigned installer is generated at `out/make/squirrel.windows/x64/CC-Lime-0.1.5-Setup-x64.exe`. A local build does not publish a GitHub release. Cloud emulator checks use `npm run test:cloud` and require Java 21 or later; see the maintainer guide.
+
+`npm run security:report` generates the full npm CycloneDX inventory and vulnerability report under ignored `test-results/supply-chain`. `npm run check:release-security` refreshes evidence and blocks production approval while any finding remains. It currently fails as intended; passing preview tests is not security sign-off.
 
 ## Development workflow
 

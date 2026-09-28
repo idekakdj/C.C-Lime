@@ -1,6 +1,19 @@
 # Implementation and verification evidence
 
-Updated September 27, 2026. Target: **0.1.4 development preview**, Windows x64. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+Updated September 27, 2026. Target: **0.1.5 owner-only development preview**, Windows x64. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+
+## 0.1.5 dependency and compliance preparation checkpoint
+
+- **Scope confirmed:** operator in Ontario, Canada; next release only for the owner. Legal entity/contact remain undecided. No patient-record workflow. Owner-only distribution does not restrict the existing cloud endpoints or waive mandatory acceptance gates.
+- [The ordered supply-chain plan](SUPPLY_CHAIN_PLAN.md) precedes the dependency changes. Forge now uses the already-pinned rebuild 4.2.0 throughout, tmp is pinned to 0.2.7 and Firebase CLI to 15.31.0. This removes 112 installed packages and the old tar/native-builder chain. Lockfile review shows the CLI also updated its csv-parse/stream-chain/stream-json dependencies. No application schema, cloud rule/protocol or notification logic changed.
+- **150 app unit tests, nine tooling checks, type checking and production build pass.** Tooling checks include fail-closed audit policy, Forge requiring the unified rebuild API and actual external-editor temporary-file cleanup. **All 36 cloud emulator tests pass** under the changed CLI.
+- **Windows native package and unsigned installer build pass; all 25 packaged desktop tests pass in one run (1.8 minutes).** This includes calendar restart/abrupt-exit durability, recurrence, imports/backup/restore, secure 404 recovery, accessibility automation and real Windows shortcut fixtures that preserve installed metadata. No 0.1.5 installed upgrade or new native banner observation is claimed; working installed 0.1.4 remains the baseline.
+- **Dependency findings decreased from 32 to 21:** zero critical, 15 high and six moderate affected packages, including inherited parent findings. Full npm CycloneDX inventory contains 1,127 components. The separate runtime-manifest subset reports zero findings, but does not represent bundled devDependencies or native Electron/Chromium internals. Remaining findings are detailed in [the treatment report](SUPPLY_CHAIN_REPORT.md).
+- **Production dependency gate correctly blocks.** `npm run check:release-security` generated fresh evidence and exited 1 for the unresolved findings. Preview CI now reports/retains dependency evidence and has explicit read-only repository token permissions; reporting success does not grant production approval. Evidence hashes identify the exact lockfile and reports.
+- **Archive credential scan passes: 204 entries.** Private `.local` configuration and generated reports remain ignored. Unsigned installer: 166,068,736 bytes; SHA-256 `c0b25f524b39f832598a7672d056074a6dde3bab1d5a873b5e61a6ffa5cb90df`. Package ASAR SHA-256 `b933b74971f4c544b3abc39d5f62d164fba4014b1bcb8fe50439910fc5531240`. No public release asset uploaded.
+- **Compliance preparation advances:** [data/retention inventory](PRIVACY_DATA_INVENTORY.md) maps actual local/cloud/auth/export/notification/configuration holdings and deletion limits; [risk register](RISK_REGISTER.md) records twelve concrete risks, controls, treatment gates and unapproved ownership/decisions. Expired quick-undo rows, import history and recovery quarantine need retention work. These drafts are not approved policies, legal opinions, full normative control mappings or independent assurance evidence.
+
+T-45/T-54/T-55/T-56/T-58 are in progress; original product/performance/manual checks, remote abuse controls, remaining dependencies and organizational/independent assessments are still open. GitHub results for this checkpoint will be recorded after the exact implementation commit runs. Prior sections below retain their original versioned observations.
 
 ## 0.1.4 Windows notification installation checkpoint
 
@@ -44,7 +57,8 @@ The owner confirmed a personal student calendar, no patient records, operated by
 | T-51 | Complete for specified account write quota | Installed populated and real-profile upgrade comparisons, deployment read-back, live denial/bypass/receipt/separate-account/reset checks and cleanup pass. |
 | T-52 | Complete for desktop | Status/security headers, traversal/junction/read errors, accessibility and keyboard recovery verified in packaged and installed apps. No hosted website exists. |
 | T-53 | In progress | Threat/bypass review and provider inventory recorded. Distributed authentication/read-abuse limits, monitoring and independent assessment remain. |
-| T-54–T-60 | Planned; owner decisions required for organizational controls | Operator/legal scope, risk/policy/retention/vendor/access/incident/continuity programs and operating evidence do not exist merely because this plan was written. |
+| T-54/T-55/T-56/T-58 | In progress; see 0.1.5 checkpoint | Ontario/owner-only scope, data inventory, initial risk register and dependency inventory/gate prepared. Operator/legal decisions, approved controls/retention/vendor review and operating evidence remain. |
+| T-57/T-59/T-60 | Planned; organizational decisions/evidence required | Actual admin/access governance, incident/continuity plans, named owners, drills and approved recovery objectives remain. |
 | T-61/T-62 | Blocked by organizational program/independent assessment and original release gaps | Reports/certification/conformance review, legally reviewed claims and final release approval outstanding. |
 
 The original product performance, importer, notification-installer, native/manual, dependency and second-PC gaps below remain open. The following tables retain the prior 0.1.2 baseline unless explicitly updated above; they are not new 0.1.3 installed/performance results.

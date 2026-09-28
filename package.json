@@ -1,7 +1,7 @@
 {
   "name": "cc-lime",
   "productName": "C.C. Lime",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A thoughtful calendar and task planner for university life.",
   "author": "idekakdj",
   "private": true,
@@ -16,7 +16,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check": "npm run check:secrets && npm run typecheck && npm test && npm run build",
+    "check": "npm run check:secrets && npm run check:tooling && npm run typecheck && npm test && npm run build",
+    "check:tooling": "node --test tests/tooling/*.test.mjs",
+    "security:report": "node scripts/dependency-evidence.mjs",
+    "check:release-security": "node scripts/dependency-evidence.mjs --release",
     "check:secrets": "node scripts/check-secrets.mjs",
     "package": "npm run build && electron-forge package",
     "make": "npm run build && electron-forge make",
@@ -49,7 +52,7 @@
     "electron": "44.4.2",
     "esbuild": "0.28.2",
     "firebase": "12.19.0",
-    "firebase-tools": "15.30.2",
+    "firebase-tools": "15.31.0",
     "ical.js": "2.2.1",
     "jose": "6.2.12",
     "jsdom": "29.1.1",
@@ -63,5 +66,9 @@
     "vite": "8.3.0",
     "vitest": "5.0.1",
     "zod": "4.6.5"
+  },
+  "overrides": {
+    "@electron/rebuild": "$@electron/rebuild",
+    "tmp": "0.2.7"
   }
 }

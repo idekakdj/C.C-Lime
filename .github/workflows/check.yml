@@ -1,9 +1,11 @@
 name: Check C.C. Lime
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   windows:
-    # The pinned Electron native builder supports Visual Studio 2022 (v143).
-    # windows-latest can move to a newer, incompatible Visual Studio major.
+    # Keep native builds on a known Visual Studio 2022 image.
+    # Moving the runner/compiler is a separate compatibility change.
     runs-on: windows-2022
     timeout-minutes: 30
     steps:
@@ -13,6 +15,15 @@ jobs:
           node-version: '24.13.0'
           cache: npm
       - run: npm ci
+      - name: Report dependencies (preview evidence; not production approval)
+        run: npm run security:report
+      - name: Retain dependency evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-evidence
+          path: test-results/supply-chain
+          if-no-files-found: error
+          retention-days: 14
       - run: npm run check
       - uses: actions/setup-java@v4
         with:
