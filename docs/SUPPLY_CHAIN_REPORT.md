@@ -24,6 +24,8 @@ Local checks: **158 app unit tests, 36 cloud tests and all 25 packaged desktop c
 
 This is a complete npm-lockfile inventory, not an inventory of internal native dependencies in Electron/Chromium or the Rust extractor. Unknown/new advisories and administrative compromise are not ruled out by a zero npm result. Review those components/provenance separately. The exact 0.1.6 installer and its dependency evidence are retained privately before regeneration; 0.1.5 stays installed. Final package/desktop/CI evidence is recorded in [implementation status](IMPLEMENTATION_STATUS.md).
 
+The initial capable-host CI run passed positive symlink and pre-existing leaf-link cases. Its link-chain assertion was too strong: extraction failure is not atomic rollback, and a relative dangling hop inside the build root may remain after the escaping hop is refused. The follow-up test checks each remaining link's literal and resolved containment and the unchanged outside sentinel. A failed extraction is not consumed by packager. This test correction changes no shipped app or build policy.
+
 ## Historical September 28 follow-up: source 0.1.6, installed 0.1.5
 
 The [follow-up plan](RELEASE_FOLLOWUP_PLAN.md) keeps the requested owner installation at the verified 0.1.5 artifact. Subsequent fixes are separately versioned 0.1.6. No public release or risk acceptance is implied. T-45/T-58 remain open.

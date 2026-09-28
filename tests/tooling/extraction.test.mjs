@@ -41,6 +41,24 @@ function fixture(t) {
   };
 }
 
+function assertContainedLinks(dir) {
+  const root = fs.realpathSync(dir);
+  const inside = target => target === root || target.startsWith(root + path.sep);
+  for (const name of fs.readdirSync(dir)) {
+    const file = path.join(dir, name), stat = fs.lstatSync(file);
+    if (!stat.isSymbolicLink()) continue;
+    const target = fs.readlinkSync(file);
+    assert.equal(path.isAbsolute(target), false);
+    assert.ok(inside(path.resolve(path.dirname(file), target)), 'link target must stay inside extraction root');
+    try { assert.ok(inside(fs.realpathSync(file)), 'resolved link must stay inside extraction root'); }
+    catch (error) {
+      // Rejection need not roll back an earlier in-root hop. An unresolved
+      // relative hop is safe here; the forbidden outside link was never made.
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+}
+
 test('actual packager wrapper resolves the reviewed native extractor and preserves normal files', async t => {
   const f = fixture(t), installed = JSON.parse(fs.readFileSync(path.join(path.dirname(packagerRequire.resolve('extract-zip')), 'package.json')));
   assert.equal(installed.name, '@electron-internal/extract-zip'); assert.equal(installed.version, '1.0.5');
@@ -74,7 +92,7 @@ for (const entries of [
 ]) {
   test(`rejects unsafe or duplicate symlink entries: ${entries.map(e => e.name + ':' + e.data).join(', ')}`, async t => {
     const f = fixture(t); await assert.rejects(extractElectronZip(f.archive(entries), f.dir)); f.intact();
-    for (const entry of fs.readdirSync(f.dir)) assert.equal(fs.lstatSync(path.join(f.dir, entry)).isSymbolicLink(), false);
+    assertContainedLinks(f.dir);
   });
 }
 

@@ -19,6 +19,7 @@ The source targets **0.1.7, an owner-only development preview**, with a reviewed
 - [Archive extraction repair and verification](docs/ARCHIVE_EXTRACTION_PLAN.md)
 - [Privacy data and retention inventory](docs/PRIVACY_DATA_INVENTORY.md)
 - [Initial security and privacy risk register](docs/RISK_REGISTER.md)
+- [Administrative access and repository controls](docs/ACCESS_GOVERNANCE.md)
 - [User guide](docs/USER_GUIDE.md)
 - [Maintainer guide](docs/MAINTAINER_GUIDE.md)
 - [Local cloud configuration](docs/LOCAL_CONFIGURATION.md)
