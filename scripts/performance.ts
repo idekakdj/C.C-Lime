@@ -24,11 +24,19 @@ await fs.writeFile(fixture,createBackup('local-preview',records));
 const executable=path.resolve('out/C.C. Lime-win32-x64/cc-lime.exe');
 let app:ElectronApplication|undefined,page:Page;
 const starts:number[]=[],saves:number[]=[],months:number[]=[],days:number[]=[],searches:number[]=[];
+const startupPhases:Array<{launchMs:number;firstWindowMs:number;openLocalMs:number;headingMs:number;readyMs:number}>=[];
+let lastStartup:typeof startupPhases[number];
 const report:any={date:new Date().toISOString(),complete:false,os:os.version(),release:os.release(),cpu:os.cpus()[0].model,logicalCores:os.cpus().length,memoryGiB:os.totalmem()/1024**3,fixture:{courses:50,masters:5000,occurrences:20000,windowStart:from,days:31,generator:'fixed index schedule; only identities randomized'},profile,note:'UI timings include Playwright overhead. Cold start includes explicitly opening the local calendar. Save measures durable acknowledgment, not cloud synchronization.'};
 const summary=(values:number[])=>{const sorted=[...values].sort((a,b)=>a-b);return{medianMs:sorted.length?(sorted[Math.floor((sorted.length-1)/2)]+sorted[Math.floor(sorted.length/2)])/2:null,slowestMs:sorted.length?Math.max(...values):null,samples:values};};
-async function checkpoint(){Object.assign(report,{coldStart:summary(starts),save:summary(saves),monthNavigation:summary(months),dayExpansion:summary(days),search:summary(searches)});await fs.writeFile('test-results/performance.json',JSON.stringify(report,null,2));}
+async function checkpoint(){Object.assign(report,{coldStart:summary(starts),startupPhases,save:summary(saves),monthNavigation:summary(months),dayExpansion:summary(days),search:summary(searches)});await fs.writeFile('test-results/performance.json',JSON.stringify(report,null,2));}
 async function ready(){await page.locator('.app-shell[data-calendar-ready="true"]').waitFor({timeout:60000});if(await page.locator('.verification-banner.error').count())throw new Error('Calendar reported an error during measurement.');}
-async function launch(){const start=performance.now();app=await electron.launch({executablePath:executable,args:[`--cc-lime-test-profile=${profile}`],timeout:60000});page=await app.firstWindow();await page.getByRole('button',{name:/Explore a local calendar/}).click();await page.getByRole('heading',{name:'Your calendar',exact:true}).waitFor();await ready();return start;}
+async function launch(){
+  const start=performance.now();app=await electron.launch({executablePath:executable,args:[`--cc-lime-test-profile=${profile}`],timeout:60000});
+  const launched=performance.now();page=await app.firstWindow();const windowReady=performance.now();
+  await page.getByRole('button',{name:/Explore a local calendar/}).click();const opened=performance.now();
+  await page.getByRole('heading',{name:'Your calendar',exact:true}).waitFor();const heading=performance.now();await ready();
+  lastStartup={launchMs:launched-start,firstWindowMs:windowReady-launched,openLocalMs:opened-windowReady,headingMs:heading-opened,readyMs:performance.now()-heading};return start;
+}
 try{
   await launch();report.version=await app!.evaluate(({app})=>app.getVersion());
   await page.evaluate(()=>window.lime.call('device',{onboardingDone:true,month:null}));
@@ -37,7 +45,7 @@ try{
   await page.evaluate(token=>window.lime.call('restore.commit',{token,mode:'merge'}),preview.token);
   await page.locator('.calendar-event').first().waitFor({timeout:60000});await ready();report.restoreMs=performance.now()-start;
   await app!.close();app=undefined;await checkpoint();
-  for(let i=0;i<10;i++){start=await launch();await page.locator('.calendar-event').first().waitFor({timeout:60000});await ready();starts.push(performance.now()-start);console.log(`Cold start ${i+1}: ${Math.round(starts.at(-1)!)} ms`);await checkpoint();if(i<9){await app!.close();app=undefined;}}
+  for(let i=0;i<10;i++){start=await launch();await page.locator('.calendar-event').first().waitFor({timeout:60000});await ready();starts.push(performance.now()-start);startupPhases.push(lastStartup);console.log(`Cold start ${i+1}: ${Math.round(starts.at(-1)!)} ms`);await checkpoint();if(i<9){await app!.close();app=undefined;}}
   report.snapshotTransport=await page.evaluate(async()=>{
     const full=await window.lime.call<any>('snapshot'),update=await window.lime.call<any>('snapshot',{recordsRevision:full.recordsRevision});
     const bytes=(value:unknown)=>new TextEncoder().encode(JSON.stringify(value)).byteLength;

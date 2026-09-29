@@ -5,7 +5,7 @@ import { mergeSnapshot } from '../../src/renderer/snapshot-state';
 import { defaultDeviceSettings, type Snapshot } from '../../src/shared/model';
 import { item, recurrence } from '../fixtures';
 
-const request:CalendarRequest={from:'2026-09-01',to:'2026-10-01',today:'2026-09-18',zone:'America/Toronto',now:Date.parse('2026-09-18T12:00:00Z'),search:false};
+const request:CalendarRequest={from:'2026-09-01',to:'2026-10-01',today:'2026-09-18',zone:'America/Toronto',now:Date.parse('2026-09-18T12:00:00Z'),search:''};
 it('transfers only changed view data and resends results the renderer has not acknowledged',()=>{
   const engine=new CalendarEngine(),value=item({recurrence:recurrence({frequency:'DAILY',count:50})});
   const first=engine.read({...request,account:'student',records:[value]});expect(Object.keys(first.result)).toHaveLength(5);
@@ -17,11 +17,11 @@ it('transfers only changed view data and resends results the renderer has not ac
 });
 it('invalidates search, date-only tasks and sidebar results after edits, clock ticks and zone changes',()=>{
   const engine=new CalendarEngine(),value=item({itemType:'task',timing:{mode:'unscheduled',zone:'America/Toronto'}});
-  const first=engine.read({...request,account:'student',records:[value],search:true});expect(first.result.noDate).toHaveLength(1);expect(first.result.search).toHaveLength(1);
-  const updated=engine.read({...request,account:'student',records:[{...value,title:'Edited',status:'completed'}],search:true,known:first.keys});expect(updated.result.search?.[0]).toMatchObject({title:'Edited',status:'completed'});
-  const tick=engine.read({...request,account:'student',now:request.now+30000,search:true,known:updated.keys});expect(Object.keys(tick.result)).toEqual(['upcoming']);
-  const zone=engine.read({...request,account:'student',zone:'Pacific/Honolulu',search:true,known:tick.keys});expect(zone.result.search?.[0].title).toBe('Edited');expect(zone.result.nearTasks).toBeDefined();
-  const midnight=engine.read({...request,account:'student',today:'2026-09-19',search:false,known:updated.keys});expect(midnight.result.nearTasks).toBeDefined();expect(midnight.result.search).toEqual([]);
+  const first=engine.read({...request,account:'student',records:[value],search:'algorithms'});expect(first.result.noDate).toHaveLength(1);expect(first.result.search).toHaveLength(1);
+  const updated=engine.read({...request,account:'student',records:[{...value,title:'Algorithms edited',status:'completed'}],search:'algorithms',known:first.keys});expect(updated.result.search?.[0]).toMatchObject({title:'Algorithms edited',status:'completed'});
+  const tick=engine.read({...request,account:'student',now:request.now+30000,search:'algorithms',known:updated.keys});expect(Object.keys(tick.result)).toEqual(['upcoming']);
+  const zone=engine.read({...request,account:'student',zone:'Pacific/Honolulu',search:'algorithms',known:tick.keys});expect(zone.result.search?.[0].title).toBe('Algorithms edited');expect(zone.result.nearTasks).toBeDefined();
+  const midnight=engine.read({...request,account:'student',today:'2026-09-19',search:'',known:updated.keys});expect(midnight.result.nearTasks).toBeDefined();expect(midnight.result.search).toEqual([]);
 });
 it('never reuses another account’s worker results even when its acknowledged keys are supplied',()=>{
   const engine=new CalendarEngine(),first=engine.read({...request,account:'first',records:[item()]});

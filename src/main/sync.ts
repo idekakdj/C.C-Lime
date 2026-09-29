@@ -13,9 +13,9 @@ export class SyncEngine {
   private cooldownUntil = 0;
   status: SyncStatus;
   constructor(private store: LocalStore, private cloud: CloudAdapter, private session: () => Session | null, private changed: () => void = () => {}, private now = () => performance.now()) {
-    this.status = { state: 'local', pending: store.queue().length, lastSynced: store.metadata('lastSynced', null), message: 'Changes are saved on this computer.' };
+    this.status = { state: 'local', pending: store.queueCount(), lastSynced: store.metadata('lastSynced', null), message: 'Changes are saved on this computer.' };
   }
-  private update(state: SyncStatus['state'], message: string): void { if (this.stopped) return; this.status = { state, message, pending: this.store.queue().length, lastSynced: this.store.metadata('lastSynced', null) }; this.changed(); }
+  private update(state: SyncStatus['state'], message: string): void { if (this.stopped) return; this.status = { state, message, pending: this.store.queueCount(), lastSynced: this.store.metadata('lastSynced', null) }; this.changed(); }
   start(): void { this.stopped = false; this.schedule(0); }
   setVisible(visible: boolean): void { this.visible = visible; if (visible) this.schedule(100); }
   schedule(delay = 700): void { if (this.stopped) return; if (this.timer) clearTimeout(this.timer); this.timer = setTimeout(() => { this.timer = null; void this.sync(); }, Math.max(delay, this.cooldownUntil - this.now())); }
@@ -80,7 +80,7 @@ export class SyncEngine {
       this.store.setMetadata('lastSynced', new Date().toISOString()); this.failures = 0;
       if (this.store.conflicts().length) this.update('conflict', 'Changes need your review. Your versions are preserved.');
       else if (this.store.queue().some(m => m.state === 'failed')) this.update('error', 'Some changes could not sync. They are saved on this computer.');
-      else if (this.store.queue().length) { this.update('local', 'Changes are saved on this computer and waiting to sync.'); this.schedule(); }
+      else if (this.store.queueCount()) { this.update('local', 'Changes are saved on this computer and waiting to sync.'); this.schedule(); }
       else this.update('synced', 'Your calendar is up to date.');
     } catch (error) {
       if (this.stopped) return; this.failures++;

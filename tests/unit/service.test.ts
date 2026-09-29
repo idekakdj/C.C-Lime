@@ -9,6 +9,18 @@ import { expand } from '../../src/domain/calendar';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('reports all unsynced queue states without decoding their contents during a snapshot',async()=>{
+  const {service}=await setup(),store=service.store!;
+  for(let i=0;i<3;i++)await service.command('save',item({title:`Queue sample ${i}`}));
+  const mutations=store.queue();store.markSending(mutations[0].id);store.resetMutation(mutations[1].id,true);
+  const queue=vi.spyOn(store,'queue').mockImplementation(()=>{throw new Error('A status refresh must not read every mutation payload.');});
+  try{expect((await service.command('snapshot',{})).sync.pending).toBe(3);
+    store.acknowledge(mutations[0],{id:mutations[0].recordId,value:mutations[0].value,version:'v1',sequence:1});
+    expect((await service.command('snapshot',{})).sync.pending).toBe(2);store.retryFailed();expect(store.queueCount()).toBe(2);
+    await service.command('auth.signOut',null);expect((await service.command('snapshot',{})).sync.pending).toBe(0);
+    await service.command('localPreview',null);expect((await service.command('snapshot',{})).sync.pending).toBe(2);
+  }finally{queue.mockRestore();}
+});
 it('limits repeated actions before side effects while keeping saves and sign-out usable',async()=>{
   const {service}=await setup(),notify=vi.fn();(service as any).host.notify=notify;
   for(let i=0;i<3;i++)await service.command('testNotification',null);

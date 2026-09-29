@@ -1,5 +1,20 @@
 # Dependency treatment and release evidence
 
+## September 28 performance/recovery build: source 0.1.8, installed 0.1.5
+
+Version 0.1.8 changes calendar search, queue counters and test/evidence procedures. The only manifest/lockfile changes are application version fields; dependency versions and the verified-download/extraction policy are unchanged. Fresh full npm evidence generated **September 29 at 02:08 UTC (September 28 in Ontario)** reports **zero findings**, 1,126 components and dependency-gate exit 0. The September 28 installed-package signature/provenance result below applies to the unchanged installed dependency set; no new signing or native-component audit is claimed.
+
+| Exact 0.1.8 evidence | Value |
+| --- | --- |
+| Lockfile SHA-256 | `45467099db5ba07b12bf7a154e99ea57e2acb849e86ff1f0289b26a66c04287c` |
+| Audit SHA-256 | `f5a3ec0aab8fa3c4309d06de4c1a7369715af18b49f8c30bc09c1fd6c6e03a30` |
+| CycloneDX SHA-256 | `3d740651572fec4f8a72a453c51189d57834380dff2a176f4af8546a73ffb81a` |
+| Unsigned installer | `CC-Lime-0.1.8-Setup-x64.exe`, 166,069,760 bytes |
+| Installer SHA-256 | `fa199d98f2cbb5e00330e4148eb5cc2cb01d726ee1ec7753dc4fc31cd724130c` |
+| Installer package ASAR | 17,843,485 bytes; SHA-256 `17f7bc04af11623f8cb8f5fa41d77af062e56d01aa704f3ff83ca5698c5ddd36` |
+
+The local installer and its report set are retained under ignored `release/0.1.8` and `test-results/supply-chain-0.1.8`. Source/package credential scans pass; the local archive contains 204 entries. The earlier performance run/focused restore used a preliminary 0.1.8 package (`e66496c07297ee946dc534ba1cf103f6d89d4e421cbc5c978df7e4acb06c0203`); the final installer package is identified separately above and receives the full desktop suite. [Implementation status](IMPLEMENTATION_STATUS.md) records final validation and CI. Installed 0.1.5 is unchanged. A clean npm result remains only one release gate.
+
 ## September 28 extraction repair: source 0.1.7, installed 0.1.5
 
 The [ordered extraction plan](ARCHIVE_EXTRACTION_PLAN.md) precedes the change. Forge 7.11.2's packager 18.4.4 was the only resolved consumer of the vulnerable `extract-zip` package. A scoped override now resolves that consumer to `@electron-internal/extract-zip` 1.0.5, the same native implementation already used by Electron 44.4.2. The lockfile removes the old extractor and seven installed helper packages; other consumers are unchanged. This is an implementation replacement with containment checks, not an advisory suppression.

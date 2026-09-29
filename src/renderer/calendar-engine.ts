@@ -1,10 +1,11 @@
 import { addDays, expand, upcoming } from '../domain/calendar';
 import { isTask, type DomainRecord, type Occurrence } from '../shared/model';
+import { searchCalendar } from './calendar-search';
 
 export interface CalendarResult {
   occurrences:Occurrence[]; upcoming:ReturnType<typeof upcoming>; nearTasks:Occurrence[]; noDate:Occurrence[]; search:Occurrence[];
 }
-export interface CalendarRequest {from:string;to:string;today:string;zone:string;now:number;search:boolean;}
+export interface CalendarRequest {from:string;to:string;today:string;zone:string;now:number;search:string;}
 export type CalendarKeys = Partial<Record<keyof CalendarResult,string>>;
 export interface CalendarReply {keys:CalendarKeys;result:Partial<CalendarResult>;}
 export const emptyCalendar:CalendarResult={occurrences:[],upcoming:{upcoming:[],overdue:[],nextEvent:null},nearTasks:[],noDate:[],search:[]};
@@ -38,7 +39,7 @@ export class CalendarEngine {
     // A six-month task list must not expand unrelated daily classes or events.
     // Keep occurrence overrides and completion records for the selected masters.
     part('nearTasks',[...base,today],()=>expand(this.records.filter(r=>r.kind!=='item'||isTask(r)),addDays(today,-30),addDays(today,181),zone,50000));
-    part('search',[...base,today,search],()=>search?this.expand(addDays(today,-365),addDays(today,366),zone).concat(this.values.noDate!):[]);
+    part('search',[...base,today,search],()=>searchCalendar(this.records,addDays(today,-365),addDays(today,366),zone,search,this.values.noDate!));
     return reply;
   }
 }

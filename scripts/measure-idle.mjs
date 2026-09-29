@@ -2,6 +2,7 @@ import { _electron as electron } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { createHash } from 'node:crypto';
 const performance=JSON.parse(await fs.readFile('test-results/performance.json','utf8'));
 if(!performance.complete)throw new Error('Complete the large-fixture performance check first.');
 const profile=path.resolve(performance.profile);
@@ -10,6 +11,9 @@ const app=await electron.launch({executablePath:path.resolve('out/C.C. Lime-win3
 const report={date:new Date().toISOString(),version:performance.version,fixture:performance.fixture,logicalCores:os.cpus().length,complete:false,results:[],note:'Two real five-minute intervals in an isolated packaged local calendar. No cloud polling or active reminder rules in this fixture. CPU is summed across app processes; normalized percent divides by logical cores. Working-set totals may include shared pages.'};
 const sample=()=>app.evaluate(({app})=>app.getAppMetrics().map(m=>({pid:m.pid,type:m.type,cpuSeconds:m.cpu.cumulativeCPUUsage,workingSetKiB:m.memory.workingSetSize})));
 try{
+  report.version=await app.evaluate(({app})=>app.getVersion());
+  if(report.version!==performance.version)throw new Error('The packaged version changed after the performance fixture was measured.');
+  report.asarSha256=createHash('sha256').update(await fs.readFile('out/C.C. Lime-win32-x64/resources/app.asar')).digest('hex');
   const page=await app.firstWindow();await page.getByRole('button',{name:/Explore a local calendar/}).click();await page.locator('.app-shell[data-calendar-ready="true"]').waitFor({timeout:60000});
   for(const mode of ['foreground','tray']){
     if(mode==='tray')await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].hide());

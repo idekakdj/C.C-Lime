@@ -1,6 +1,6 @@
 # C.C. Lime data and retention inventory
 
-Engineering draft, updated September 28, 2026, source version 0.1.7. Data behavior retains 0.1.6's cleanup; the owner's installed 0.1.5 is separate and lacks it. Supports T-54/T-56/A-58/A-59. Reviewed against the code, not approved by the operator or counsel. This is not a published privacy notice or a legal compliance finding.
+Engineering draft, updated September 28, 2026, source version 0.1.8. Data behavior retains 0.1.6's cleanup; the owner's installed 0.1.5 is separate and lacks it. Supports T-54/T-56/A-58/A-59. Reviewed against the code, not approved by the operator or counsel. This is not a published privacy notice or a legal compliance finding.
 
 ## Confirmed boundary
 

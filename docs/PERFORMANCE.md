@@ -1,4 +1,30 @@
-# Performance evidence — development preview 0.1.2
+# Performance evidence — development previews
+
+## Current run: 0.1.8, September 28
+
+The [follow-up plan](PERFORMANCE_FOLLOWUP_PLAN.md) preceded these changes. On the same Windows 11 Home / Core Ultra 7 155H / 22 logical cores / 15.7 GiB host, the complete packaged 0.1.7 baseline and 0.1.8 follow-up used the existing 50-course, 5,000-master, 20,000-occurrence synthetic fixture. Both used ten starts, ten saves/day expansions/searches and twenty month navigations, with no concurrent build or desktop test. Timing endpoints are unchanged; the script now additionally records startup phases. There is no search debounce to subtract. Host load was not controlled, so these runs are observations rather than proof that every difference is caused by the code changes.
+
+| Operation | Target | 0.1.7 median / slowest | 0.1.8 median / slowest | Current sample result |
+| --- | --- | --- | --- | --- |
+| Cold start | ≤3,000 ms | 2,649 / 3,511 ms | 2,175 / 2,561 ms | All ten samples meet target. |
+| Durable local save | ≤200 ms | 24 / 28 ms | 19 / 31 ms | All ten samples meet target. |
+| Month navigation | ≤200 ms | 159 / 302 ms | 154 / 194 ms | All twenty samples meet target. |
+| Expanded day | ≤200 ms | 54 / 83 ms | 43 / 54 ms | All ten samples meet target. |
+| Search | ≤300 ms | 233 / 242 ms | 33 / 63 ms | All ten samples meet target. |
+
+Two bounded changes were retained. Status refreshes now count outbox rows directly instead of decoding every mutation; the 5,070-row baseline comparison measured 8–23 ms for reading/decoding versus 0.2–0.9 ms for a direct count. Sending, failed and pending changes remain counted. Synchronization still reads complete mutation records when actually processing them. Search selects possible matching masters and effective occurrence overrides before expanding the year window, then checks the resulting occurrences; it no longer expands and transfers every unrelated event for a narrow query. Tests preserve course/name/code/note/location matching, renamed/cancelled/moved overrides, completion, zone boundaries, no-date tasks, edited records, account resets and superseded queries. A class-heavy case also confirms unrelated schedules cannot exhaust the search expansion budget.
+
+The search benchmark is a selective title query, not every broad query or worst-case 50,000-result calendar. Initial and changed full snapshots still transport all stored records; month data remains a full occurrence list. No new encryption, cloud protocol, recurrence rules or caching retention was introduced. The measured result advances T-44/A-47 on this host; cloud/reminder-load resource use, lower-spec/second-PC observations and full acceptance remain separate. The visible/tray idle follow-up is recorded below when complete.
+
+Raw synthetic evidence remains ignored:
+
+| Report | SHA-256 |
+| --- | --- |
+| `test-results/performance-0.1.7-baseline.json` | `1d9e5d09c607ec922500c3e1e07db967d38159b5b4798c9bbbf046cc684cc7e0` |
+| `test-results/performance-0.1.8-first.json` | `1caae0655c3972847fd28d8ceb83c4aeabdc469f2c14674d724cc58a85fc1348` |
+| `test-results/queue-profile-0.1.7.json` | `9a933dc3f5a89f8a31061d3729d7a09a38b0a89dd4ce62c71c08e9225a15bfdf` |
+
+The earlier findings below are versioned history, not the latest performance result.
 
 ## Latest run: 0.1.2, September 26
 

@@ -172,6 +172,7 @@ export class LocalStore {
     this.beforeMutation(); this.db.transaction(() => { for (const value of before) this.write(value.id, value.value, true); this.db.prepare('DELETE FROM import_batches WHERE id=?').run(batchId); })();
   }
   queue(): Mutation[] { const groups=this.metadata<Record<string,string[]>>('atomicGroups',{}),groupById=new Map(Object.entries(groups).flatMap(([group,ids])=>ids.map(id=>[id,group] as const)));return (this.db.prepare('SELECT * FROM outbox ORDER BY position').all() as any[]).map(r => ({ id: r.id, order: r.position, recordId: r.record_id, baseVersion: r.base_version, base: parse<DomainRecord>(r.base_payload), value: parse<DomainRecord>(r.payload), state: r.state, attempts: r.attempts,...(groupById.has(r.id)?{groupId:groupById.get(r.id)}:{}) })); }
+  queueCount():number{return (this.db.prepare('SELECT count(*) AS count FROM outbox').get()as {count:number}).count;}
   markSending(id: string): void { this.db.prepare("UPDATE outbox SET state='sending',attempts=attempts+1 WHERE id=?").run(id); }
   resetMutation(id: string, permanent = false): void { this.db.prepare('UPDATE outbox SET state=? WHERE id=?').run(permanent ? 'failed' : 'pending', id); }
   retryFailed(): void { this.db.prepare("UPDATE outbox SET state='pending' WHERE state='failed'").run(); }
