@@ -1,6 +1,6 @@
 # C.C. Lime initial security and privacy risk register
 
-Engineering draft, updated September 29, 2026, T-53–T-60. Ontario operator; owner-only next release; personal student calendar with no patient-record workflow. Legal entity, named control owners and privacy contact remain undecided. **No residual risk is accepted here.** Source and installed owner version 0.1.8; observed/provider results are dated in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+Engineering draft, updated September 29, 2026, T-53–T-60. Ontario operator; owner-only next release; personal student calendar with no patient-record workflow. Legal entity, named control owners and privacy contact remain undecided. **No residual risk is accepted here.** Source version 0.1.9, installed owner version 0.1.8; observed/provider results are dated in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). The 0.1.9 package updates Electron and repairs notice content; actual installed-notice verification, production fuses and broader native review remain open.
 
 ## Method and accountability
 

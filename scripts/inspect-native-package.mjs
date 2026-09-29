@@ -68,6 +68,7 @@ try {
   } finally { clearTimeout(deadline); }
 }
 assert.equal(runtime.version, manifest.version); assert.equal(runtime.packaged, true);
+assert.equal(runtime.versions.electron, manifest.devDependencies.electron, 'Packaged Electron runtime must match its pinned manifest.');
 assert.equal(runtime.platform, 'win32'); assert.equal(runtime.arch, 'x64');
 const gaps = hardeningGaps(fuses);
 const notices = { electronLicensePresent: files.some(file => file.path === 'LICENSE'), chromiumNoticesPresent: files.some(file => file.path === 'LICENSES.chromium.html'),

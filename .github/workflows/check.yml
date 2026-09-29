@@ -32,6 +32,16 @@ jobs:
           java-version: '21'
       - run: npm run test:cloud
       - run: npm run make
+      - name: Verify installer notice content
+        run: pwsh -NoProfile -File scripts/check-installer-notices.ps1
+      - name: Retain installer notice evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-notice-evidence
+          path: test-results/installer-notices/summary.json
+          if-no-files-found: warn
+          retention-days: 14
       - run: node scripts/check-package.mjs
       - name: Inspect native package (inventory, not production approval)
         run: node scripts/inspect-native-package.mjs

@@ -1,4 +1,12 @@
-# C.C. Lime 0.1.8 — installed owner preview
+# C.C. Lime 0.1.9 — development preview
+
+September 29, 2026. This separate build updates Electron to 44.4.5 and fixes the Windows installer omitting Chromium's license notices. The notice file is checked byte-for-byte inside the installer package. The owner's verified installed app remains 0.1.8.
+
+Validation: 171 unit tests, 45 local tooling passes with two permission-limited symlink skips, 36 cloud tests, all 26 packaged desktop tests, populated-calendar upgrade fixture, native inventory and source/package credential scans pass. The npm audit is clean. No calendar schema, cloud protocol or notification behavior changed. See [current evidence](IMPLEMENTATION_STATUS.md) and [exact artifacts](SUPPLY_CHAIN_REPORT.md).
+
+The unsigned 168,004,096-byte installer is retained privately at `release/0.1.9/CC-Lime-0.1.9-Setup-x64.exe`; SHA-256 `71fe90b2b8c0efa711ec0a765010be38c02fe95a6a6385aff6cd8bd50daf1e3e`. It is not installed or publicly released. Production fuse hardening, installed-notice verification, broader native/license review, signing and outstanding product/organizational acceptance remain open. This is not a compliance certification.
+
+## Prior verified 0.1.8 owner upgrade
 
 September 29, 2026. The owner has been updated from 0.1.5 to 0.1.8. **This remains a development preview, not a completed production release or compliance certification.**
 

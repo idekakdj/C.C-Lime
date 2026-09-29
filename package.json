@@ -1,7 +1,7 @@
 {
   "name": "cc-lime",
   "productName": "C.C. Lime",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "A thoughtful calendar and task planner for university life.",
   "author": "idekakdj",
   "private": true,
@@ -53,7 +53,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.1",
-    "electron": "44.4.2",
+    "electron": "44.4.5",
     "esbuild": "0.28.2",
     "firebase": "12.19.0",
     "firebase-tools": "15.31.0",

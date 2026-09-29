@@ -4,10 +4,10 @@ const path = require('node:path');
 const { isDeepStrictEqual } = require('node:util');
 
 const target = Object.freeze({
-  version: '44.4.2', platform: 'win32', arch: 'x64',
-  filename: 'electron-v44.4.2-win32-x64.zip',
-  // https://github.com/electron/electron/releases/download/v44.4.2/SHASUMS256.txt
-  sha256: '6aae435b6cd5c0eedf9fd38824bae4045ffdaecd029f0b8c8328bac3f5b71f03',
+  version: '44.4.5', platform: 'win32', arch: 'x64',
+  filename: 'electron-v44.4.5-win32-x64.zip',
+  // https://github.com/electron/electron/releases/download/v44.4.5/SHASUMS256.txt
+  sha256: '11c395820a5aaa8ebcc0686b476d0ac98a730274ebfbdc8cf5538a7c2815cb5d',
 });
 const owned = new WeakMap();
 const downloadOptions = () => ({ checksums: { [target.filename]: target.sha256 }, unsafelyDisableChecksums: false });

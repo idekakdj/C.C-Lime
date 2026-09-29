@@ -1,6 +1,6 @@
 # C.C. Lime data and retention inventory
 
-Engineering draft, updated September 29, 2026, source and installed version 0.1.8. The owner upgrade includes 0.1.6's expired-undo cleanup. A private local pre-upgrade profile copy is retained for recovery; its retention decision remains open. Supports T-54/T-56/A-58/A-59. Reviewed against the code, not approved by the operator or counsel. This is not a published privacy notice or a legal compliance finding.
+Engineering draft, updated September 29, 2026, source version 0.1.9 and installed version 0.1.8. The 0.1.9 native patch/notice repair does not change calendar data or retention behavior. The owner upgrade includes 0.1.6's expired-undo cleanup. A private local pre-upgrade profile copy is retained for recovery; its retention decision remains open. Supports T-54/T-56/A-58/A-59. Reviewed against the code, not approved by the operator or counsel. This is not a published privacy notice or a legal compliance finding.
 
 ## Confirmed boundary
 

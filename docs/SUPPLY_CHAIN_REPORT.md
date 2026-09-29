@@ -1,5 +1,27 @@
 # Dependency treatment and release evidence
 
+## September 29 native patch: source 0.1.9, installed 0.1.8
+
+The [ordered patch plan](NATIVE_PATCH_019_PLAN.md) updates only Electron from 44.4.2 to **44.4.5**, alongside application version fields. The lockfile has no other dependency changes. Official Windows x64 archive SHA-256 `11c395820a5aaa8ebcc0686b476d0ac98a730274ebfbdc8cf5538a7c2815cb5d` agrees with the updated npm package's checksum map. The downloaded [official checksum list](https://github.com/electron/electron/releases/download/v44.4.5/SHASUMS256.txt) is retained with SHA-256 `a0379166a35f9d3e2e1b63a72b90ddfe54a9558c56a3bde82e98f63823591d72`. Existing custom-download rejection, extraction containment and owned build-root checks remain enforced.
+
+The full npm evidence at **17:02 UTC** has **1,126 components and zero findings**; dependency gate exit zero. `npm audit signatures` verifies **1,172 registry signatures and 145 available attestations**. These package-instance counts differ from the deduplicated CycloneDX component count. Native runtime inspection confirms Electron 44.4.5 and SQLite 3.53.4; all seven selected fuse gaps remain explicit. This patch does not claim complete native provenance/advisory coverage or enable code signing.
+
+| Exact 0.1.9 evidence | Value |
+| --- | --- |
+| Lockfile SHA-256 | `43c833e30bacc0701a5a58ccf5ff59a9fcd99f244506dd3d34a317cde45d0620` |
+| Audit SHA-256 | `f5a3ec0aab8fa3c4309d06de4c1a7369715af18b49f8c30bc09c1fd6c6e03a30` |
+| CycloneDX SHA-256 | `f3cca7b4b4d3af600d1a01a5111a8d75499c3a119a537ebedf40a8f92f523cbf` |
+| Unsigned installer | `CC-Lime-0.1.9-Setup-x64.exe`, 168,004,096 bytes |
+| Installer SHA-256 | `71fe90b2b8c0efa711ec0a765010be38c02fe95a6a6385aff6cd8bd50daf1e3e` |
+| Package ASAR | 17,844,220 bytes; SHA-256 `45890d737426768a423d8bd65edb0a02a8593c9f7e6bc57196198682241a187f` |
+| Full nupkg SHA-256 | `6779be543a235d9ad066156f905fa314dc0acf6efa7e8c995b134c8a74f54674` |
+| Notice-verification summary SHA-256 | `a4354abedbf08841d3aa376d09c50c3d4f757e3f07f875b3d99bcb090ae1ef3c` |
+| Native-inventory summary SHA-256 | `d750f85d29475d952963e09a8df7951353060566027aa0bc04041cff4f2cad4a` |
+
+The Squirrel nupkg now includes the exact **20,472,830-byte Chromium notice file**, SHA-256 `7b328b8c7463ac9bfc7dc648c751533517c8441a0b5b21047d6c0b2620e60d70`. Its metadata version matches 0.1.9. The verifier reads ZIP streams without extraction, rejects missing/duplicate/mismatched notice entries and bounded malformed/ambiguous XML metadata, and removes stale success evidence before checking. Seven positive/negative tooling cases pass. This is an installer-content repair; an installed 0.1.9 notice-file observation and broader JavaScript/license review remain separate.
+
+Reports are retained under ignored `test-results/supply-chain-0.1.9`, `test-results/native-package-0.1.9.json` and `test-results/installer-notices-0.1.9.json`. The package credential scan covers 204 entries with no configured private values. [Implementation status](IMPLEMENTATION_STATUS.md) records final application/CI validation. The owner's installed 0.1.8 and its exact retained installer are preserved; no public release asset is uploaded.
+
 ## September 29 owner installation
 
 The exact retained 0.1.8 installer below is now installed over 0.1.5 at the owner's request. Installer exit zero, installed ASAR equality, real-profile/settings preservation, populated upgrade fixture, shortcut stability and all 26 installed desktop tests pass. See [upgrade plan](UPGRADE_018_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md). The [native security review](NATIVE_SECURITY_REVIEW.md) supplements npm evidence; its scope and open findings remain separate release gates. Older source/install distinctions below are historical.
