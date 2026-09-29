@@ -7,6 +7,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { readElectronFuses, hardeningGaps } from './native-package-policy.mjs';
+import { inspectAsarIntegrity } from './asar-integrity-policy.mjs';
 import { privateValues } from './private-values.mjs';
 
 const output = path.resolve('test-results/native-package');
@@ -33,6 +34,8 @@ async function walk(directory) {
 await walk(root);
 files.sort((a, b) => a.path.localeCompare(b.path));
 const fuses = readElectronFuses(await fs.readFile(executable));
+const asarIntegrity = { ...inspectAsarIntegrity(await fs.readFile(executable), archive),
+  enforcementFusesEnabled: fuses.values.embeddedAsarIntegrityValidation === true && fuses.values.onlyLoadAppFromAsar === true };
 // Static PowerShell program; paths travel as environment data, never shell code.
 const signatureScript = `$ErrorActionPreference='Stop'; $root=$env:CC_LIME_INSPECT_ROOT; $rows=@(Get-ChildItem -LiteralPath $root -File -Recurse | Where-Object { $_.Extension -in '.exe','.dll','.node' } | ForEach-Object { $sig=Get-AuthenticodeSignature -LiteralPath $_.FullName; [pscustomobject]@{path=$_.FullName.Substring($root.Length+1).Replace('\\','/'); status=[string]$sig.Status; signer=$sig.SignerCertificate.Subject; thumbprint=$sig.SignerCertificate.Thumbprint} }); ConvertTo-Json -InputObject $rows -Depth 4 -Compress`;
 const signatures = JSON.parse(execFileSync('pwsh.exe', ['-NoProfile', '-NonInteractive', '-Command', signatureScript], { encoding: 'utf8', timeout: 60000, windowsHide: true, env: { ...process.env, CC_LIME_INSPECT_ROOT: root }, stdio: ['ignore', 'pipe', 'pipe'] }));
@@ -78,7 +81,7 @@ const notices = { electronLicensePresent: files.some(file => file.path === 'LICE
 for (const file of files) assert.equal(await hash(path.join(root, file.path)), file.sha256, 'Package bytes changed during inspection.');
 const report = { generatedAt: new Date().toISOString(), version: manifest.version, scope: 'Read-only Windows package inventory, runtime identities, signature observations and fuse configuration; not comprehensive native advisory coverage or production approval.', runtime, fuses,
   hardening: { evaluated: true, selectedTargetsSatisfied: gaps.length === 0, gaps, limitation: 'Selected fuse targets only; signing, native advisory review and other release gates remain separate.' },
-  files, signatures, notices, nativeFileCount: signatures.length,
+  files, signatures, notices, asarIntegrity, nativeFileCount: signatures.length,
   excluded: ['Squirrel installer/update executables outside this package', 'Internal Chromium third-party versions beyond runtime metadata and notices', 'Build-only Rust/C++ transitive component advisory assessment', 'OS drivers and Windows components'] };
 const body = JSON.stringify(report, null, 2);
 if (/AIza[0-9A-Za-z_-]{35}|GOCSPX-[0-9A-Za-z_-]{20,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(body) || privateValues().some(value => body.includes(value))) throw new Error('Private value detected; evidence not written.');

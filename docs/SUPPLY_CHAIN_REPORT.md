@@ -22,6 +22,16 @@ The Squirrel nupkg now includes the exact **20,472,830-byte Chromium notice file
 
 Reports are retained under ignored `test-results/supply-chain-0.1.9`, `test-results/native-package-0.1.9.json` and `test-results/installer-notices-0.1.9.json`. The package credential scan covers 204 entries with no configured private values. [Implementation status](IMPLEMENTATION_STATUS.md) records final application/CI validation. The owner's installed 0.1.8 and its exact retained installer are preserved; no public release asset is uploaded.
 
+Both 0.1.9 implementation CI runs pass all 280 tests. The [PR run](https://github.com/idekakdj/C.C-Lime/actions/runs/36603201815) retains the following synthetic evidence; each ZIP was downloaded locally and its digest checked before reading the report. These are CI build identities, not substitutes for the local installer hash above.
+
+| CI artifact | ZIP SHA-256 |
+| --- | --- |
+| [Installer notices](https://github.com/idekakdj/C.C-Lime/actions/runs/36603201815/artifacts/11050062813) | `af4e716deb8ed98df6936be1eacd276c5b6ef51e4a80c40ba885251af69d1d55` |
+| [Native inventory](https://github.com/idekakdj/C.C-Lime/actions/runs/36603201815/artifacts/11049838058) | `c90c85bf0397644e8a5fab6adabcd6b1f65b2929343421c09aa25334907fc68a` |
+| [Recovery drill](https://github.com/idekakdj/C.C-Lime/actions/runs/36603201815/artifacts/11049748632) | `917ac881273d615063b5c8fa8a0d5bee5e4e911b3fa3add930c98a3a6ebd4420` |
+
+The subsequent [static ASAR prerequisite](PRODUCTION_FUSE_PLAN.md) adds read-only metadata comparison without altering app bytes or dependencies. Its extended local report `test-results/native-package-0.1.9-asar-prerequisite.json` has SHA-256 `44d9144668c080bc0e5499c2f04d99dbfa0133587e8cfff11b25ca3172f7ed31`: embedded header matches, enforcement fuses remain disabled. Independent production acceptance and actual tamper refusal are still open.
+
 ## September 29 owner installation
 
 The exact retained 0.1.8 installer below is now installed over 0.1.5 at the owner's request. Installer exit zero, installed ASAR equality, real-profile/settings preservation, populated upgrade fixture, shortcut stability and all 26 installed desktop tests pass. See [upgrade plan](UPGRADE_018_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md). The [native security review](NATIVE_SECURITY_REVIEW.md) supplements npm evidence; its scope and open findings remain separate release gates. Older source/install distinctions below are historical.
