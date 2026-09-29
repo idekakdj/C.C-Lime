@@ -33,6 +33,16 @@ jobs:
       - run: npm run test:cloud
       - run: npm run make
       - run: node scripts/check-package.mjs
+      - name: Inspect native package (inventory, not production approval)
+        run: node scripts/inspect-native-package.mjs
+      - name: Retain native package evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-package-evidence
+          path: test-results/native-package/summary.json
+          if-no-files-found: warn
+          retention-days: 14
       - run: npm run test:e2e
       - name: Retain synthetic recovery evidence
         if: always()

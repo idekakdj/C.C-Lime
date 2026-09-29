@@ -1,5 +1,9 @@
 # Dependency treatment and release evidence
 
+## September 29 owner installation
+
+The exact retained 0.1.8 installer below is now installed over 0.1.5 at the owner's request. Installer exit zero, installed ASAR equality, real-profile/settings preservation, populated upgrade fixture, shortcut stability and all 26 installed desktop tests pass. See [upgrade plan](UPGRADE_018_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md). The [native security review](NATIVE_SECURITY_REVIEW.md) supplements npm evidence; its scope and open findings remain separate release gates. Older source/install distinctions below are historical.
+
 ## September 28 performance/recovery build: source 0.1.8, installed 0.1.5
 
 Version 0.1.8 changes calendar search, queue counters and test/evidence procedures. The only manifest/lockfile changes are application version fields; dependency versions and the verified-download/extraction policy are unchanged. Fresh full npm evidence generated **September 29 at 02:08 UTC (September 28 in Ontario)** reports **zero findings**, 1,126 components and dependency-gate exit 0. The September 28 installed-package signature/provenance result below applies to the unchanged installed dependency set; no new signing or native-component audit is claimed.

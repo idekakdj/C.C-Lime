@@ -1,5 +1,9 @@
 # Maintaining C.C. Lime
 
+## Native release evidence
+
+After packaging, run `node scripts/inspect-native-package.mjs` with the pinned Node toolchain and PowerShell 7. An optional executable path inspects an installation instead. The script uses a unique test profile and an in-memory SQLite database; it does not log in or open the owner's profile. Reports are saved in ignored `test-results/native-package/summary.json`; preserve them under versioned names before another run. It requires normal test-process shutdown and rejects unknown fuse schemas. A successful inventory does not mean the selected hardening targets pass or that native advisory/license/signing review is complete. See [native findings](NATIVE_SECURITY_REVIEW.md) and [current installed evidence](IMPLEMENTATION_STATUS.md).
+
 ## Development boundaries
 
 Work in a clone of `https://github.com/idekakdj/C.C-Lime`. The main process owns authentication, SQLite, synchronization and notifications. The sandboxed renderer uses an allowlisted preload API; it has no Node integration. Calendar expansion runs in a browser worker; calendar-file parsing/export runs in a bounded main-process worker.
@@ -44,7 +48,7 @@ SQLite schema version is currently 1. There is no prior production schema upgrad
 
 Automatic snapshots and manual export files contain user data. Do not include them in CI artifacts, bug reports or release assets. CI retains its credential-scanned dependency evidence on successful generation for 14 days; synthetic desktop results upload on failure. Keep live account checks and owner credentials outside public test fixtures. See the [data inventory](PRIVACY_DATA_INVENTORY.md) for actual retention and deletion limitations; its policies are not yet approved.
 
-From source version 0.1.6, quick-undo cleanup removes only rows with `expires_ms < now` on account open, mutation housekeeping, undo attempts, ordinary snapshots and existing scheduler reconciliation. Exact-expiry undo remains valid. Expected SQLite cleanup failures are retried on later lifecycle opportunities without rejecting an already saved mutation; the expiry guard still rejects expired undo. The idle scheduler normally checks within 60 seconds while active and awake. This is logical deletion, not forensic erasure or a guarantee during sleep, closed accounts or storage failure. Pre-migration snapshots preserve the previous schema verbatim. Existing snapshot/import/quarantine history, queues and cloud markers have not acquired a new retention policy. The installed 0.1.5 does not yet have this cleanup.
+From source version 0.1.6, quick-undo cleanup removes only rows with `expires_ms < now` on account open, mutation housekeeping, undo attempts, ordinary snapshots and existing scheduler reconciliation. Exact-expiry undo remains valid. Expected SQLite cleanup failures are retried on later lifecycle opportunities without rejecting an already saved mutation; the expiry guard still rejects expired undo. The idle scheduler normally checks within 60 seconds while active and awake. This is logical deletion, not forensic erasure or a guarantee during sleep, closed accounts or storage failure. Pre-migration snapshots preserve the previous schema verbatim. Existing snapshot/import/quarantine history, queues and cloud markers have not acquired a new retention policy. The verified installed 0.1.8 includes this cleanup.
 
 ## Release procedure
 

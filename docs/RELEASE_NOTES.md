@@ -1,4 +1,14 @@
-# C.C. Lime 0.1.4 — development preview
+# C.C. Lime 0.1.8 — installed owner preview
+
+September 29, 2026. The owner has been updated from 0.1.5 to 0.1.8. **This remains a development preview, not a completed production release or compliance certification.**
+
+Targeted calendar searches now avoid expanding unrelated recurring items, and queue-status refreshes avoid decoding every queued change. Expired quick-undo history is cleaned from active account stores. Build dependency fixes add verified Electron downloads and protected extraction directories. Existing import/recovery copies retain their documented limits.
+
+The exact installer passed profile/settings preservation, a populated eight-record upgrade fixture and all 26 installed desktop tests. Windows shortcuts and the notification activator update automatically and remain stable on repeated launches. The actual profile's one account database contained zero calendar rows; populated-data preservation is established separately. Google/cloud configuration and Windows encrypted storage remain available.
+
+Unsigned retained installer: `release/0.1.8/CC-Lime-0.1.8-Setup-x64.exe`, 166,069,760 bytes; SHA-256 `fa199d98f2cbb5e00330e4148eb5cc2cb01d726ee1ec7753dc4fc31cd724130c`. Installed ASAR SHA-256 `17f7bc04af11623f8cb8f5fa41d77af062e56d01aa704f3ff83ca5698c5ddd36`. No public asset was uploaded. [Current evidence](IMPLEMENTATION_STATUS.md) distinguishes automated checks from remaining native/manual, security, signing and organizational acceptance work. The latest owner-observed banner/click evidence is still the 0.1.4 result below.
+
+## Prior verified 0.1.4 checkpoint
 
 September 27, 2026. **Installed upgrade and native notification activation verified. Not a production release or compliance certification.**
 

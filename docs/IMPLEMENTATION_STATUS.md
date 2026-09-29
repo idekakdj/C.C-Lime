@@ -1,6 +1,21 @@
 # Implementation and verification evidence
 
-Updated September 28, 2026. Source target: **0.1.8 owner-only development preview**, Windows x64. Owner's installed version: **0.1.5**, verified below. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+Updated September 29, 2026. Source and owner's installed version: **0.1.8 owner-only development preview**, Windows x64. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
+
+## September 29: 0.1.8 installed owner upgrade
+
+- The [ordered upgrade plan](UPGRADE_018_PLAN.md) precedes the requested installation. No owner app was running. A private closed-profile copy and fresh 0.1.5 baseline were retained before installing. The existing exact 166,069,760-byte installer exited zero; SHA-256 `fa199d98f2cbb5e00330e4148eb5cc2cb01d726ee1ec7753dc4fc31cd724130c`. Installed ASAR matches the final tested package: `17f7bc04af11623f8cb8f5fa41d77af062e56d01aa704f3ff83ca5698c5ddd36`. No rebuild, public upload or cloud deployment occurred.
+- **Real-profile preservation passed at 07:14 UTC:** same profile path, exact device preferences and active records, legacy feasibility database digest, configured private Google/cloud settings and Windows encrypted-storage availability. Read-only integrity and calendar-row comparison across every account database also passed. The one existing account database held zero calendar rows before and after; the active snapshot was also empty. The backup remains private and local, not an off-device continuity control.
+- The separate **0.1.5-to-0.1.8 populated fixture preserves eight records, eight queued mutations, five reminders and exact preferences** under both packaged and installed 0.1.8. It includes linked course/semester data, recurrence cancellation, a moved occurrence, completion and an assignment. Reminder count reflects this checkpoint's actual rolling scheduling window.
+- **All three app-owned shortcuts aligned before normal startup repair**, verified by Windows file identity. The installed notification activator points to 0.1.8; repeated normal launches preserve shortcut bytes. This is registration evidence, not a newly observed banner/click, sleep/login or clean-PC result.
+- **All 26 desktop tests pass against installed 0.1.8 in one run (2.1 minutes), using isolated profiles.** The installed recovery drill preserves nine linked records and nine pending writes across restore/restart and damaged-backup rejection; recovery measurement 1,794 ms. Its private summary is `test-results/recovery-drill-0.1.8-installed.json`, SHA-256 `5c74e7954e253d9f1eb eaf1d2b11d6c8343ede0d838183f033c20cc462340cf7` (remove the display space when comparing). The earlier package/CI evidence remains separately retained. No new native-banner observation is inferred.
+
+Earlier sections retain their dated source/installed-version distinction as historical evidence; the installed version above is current.
+
+## September 29 native security inventory
+
+- The [native review and ordered plan](NATIVE_SECURITY_REVIEW.md) adds actual runtime/SQLite identities, physical-file hashes, Authenticode observations, Electron fuse inspection and notice-file presence to the npm evidence. Installed and packaged collection pass; seven new parser/policy tests pass, with 38 total tooling passes and two explicit local symlink skips. CI now collects and retains this evidence.
+- Open findings: a newer Electron patch, seven selected fuse settings, omitted installed Chromium notices, additional platform prebuilds and incomplete native/source provenance. All 51 registry crate versions in the extractor's upstream Cargo lockfile return no OSV matches at review; that is bounded source-dependency evidence, not a full binary audit. No installer/application bytes changed; the owner remains on verified 0.1.8. T-45/T-58 and production acceptance remain open.
 
 ## 0.1.8 performance and recovery checkpoint
 
