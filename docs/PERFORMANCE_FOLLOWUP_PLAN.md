@@ -12,3 +12,7 @@ September 28, 2026. T-08/T-20/T-23/T-44, A-47/A-48. Start from tested source/bui
 6. For retained code changes, run the blocking dependency gate, credential/tooling/type/unit/build checks, cloud emulator suite, native Windows installer, archive scan and full desktop suite. Inspect final source and artifact identities, retain a versioned local installer, push the existing branch and require fresh GitHub validation. Update the performance/status/risk evidence and draft PR; leave independent manual, signing, legal/operator and assurance gates open.
 
 The initial measurement is evidence gathering. If an optimization is not justified by both correctness and measurement, retain the limitation and its next diagnostic step instead of claiming completion.
+
+## Execution checkpoint
+
+Steps 1–6 completed for the scoped latency repair: the queue-count and selective-search changes pass 171 unit tests and the same complete packaged fixture. All 60 individual latency samples meet the original thresholds (ten starts/saves/day expansions/searches and twenty month navigations). The final unsigned installer and 26 desktop cases pass; both GitHub Windows runs pass all 266 automated checks. [Performance evidence](PERFORMANCE.md) and [implementation status](IMPLEMENTATION_STATUS.md) contain exact medians, maxima, artifact/commit identities and CI links. No installer was deployed to the owner's profile. Full-snapshot pagination, broad-query/lower-spec/cloud/reminder-load coverage and organizational/manual release gates remain open.

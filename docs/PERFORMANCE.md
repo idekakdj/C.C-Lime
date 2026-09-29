@@ -14,7 +14,16 @@ The [follow-up plan](PERFORMANCE_FOLLOWUP_PLAN.md) preceded these changes. On th
 
 Two bounded changes were retained. Status refreshes now count outbox rows directly instead of decoding every mutation; the 5,070-row baseline comparison measured 8–23 ms for reading/decoding versus 0.2–0.9 ms for a direct count. Sending, failed and pending changes remain counted. Synchronization still reads complete mutation records when actually processing them. Search selects possible matching masters and effective occurrence overrides before expanding the year window, then checks the resulting occurrences; it no longer expands and transfers every unrelated event for a narrow query. Tests preserve course/name/code/note/location matching, renamed/cancelled/moved overrides, completion, zone boundaries, no-date tasks, edited records, account resets and superseded queries. A class-heavy case also confirms unrelated schedules cannot exhaust the search expansion budget.
 
-The search benchmark is a selective title query, not every broad query or worst-case 50,000-result calendar. Initial and changed full snapshots still transport all stored records; month data remains a full occurrence list. No new encryption, cloud protocol, recurrence rules or caching retention was introduced. The measured result advances T-44/A-47 on this host; cloud/reminder-load resource use, lower-spec/second-PC observations and full acceptance remain separate. The visible/tray idle follow-up is recorded below when complete.
+The search benchmark is a selective title query, not every broad query or worst-case 50,000-result calendar. Initial and changed full snapshots still transport all stored records; month data remains a full occurrence list. No new encryption, cloud protocol, recurrence rules or caching retention was introduced. The measured result advances T-44/A-47 on this host; large-import cancellation/concurrent UI use, cloud/reminder-load resource use, lower-spec/second-PC observations and full acceptance remain separate.
+
+Both real five-minute idle intervals completed against the **final 0.1.8 installer package** (ASAR SHA-256 `17f7bc04af11623f8cb8f5fa41d77af062e56d01aa704f3ff83ca5698c5ddd36`), using the same isolated local fixture and no concurrent build/desktop test. The script now checks the actual running version and records its ASAR identity. These measurements contain no cloud polling or active reminder load. Only the synthetic test app was closed afterward.
+
+| Mode | Interval | CPU normalized across 22 cores | Single-core-equivalent CPU | Summed working set |
+| --- | --- | --- | --- | --- |
+| Window visible | 300.140 s | 0.057% | 1.260% | 589 MiB |
+| Tray | 300.127 s | 0.190% | 4.177% | 543 MiB |
+
+Both normalized averages meet the below-1% target on this host. Working-set sums can count shared pages more than once. Tray CPU remains higher than visible-window CPU, so wakeup/polling and smaller-core/cloud/reminder-load investigation remains open; these intervals do not establish the complete A-48 budget. Installer size is 166,069,760 bytes. No paid service was introduced.
 
 Raw synthetic evidence remains ignored:
 
@@ -23,10 +32,11 @@ Raw synthetic evidence remains ignored:
 | `test-results/performance-0.1.7-baseline.json` | `1d9e5d09c607ec922500c3e1e07db967d38159b5b4798c9bbbf046cc684cc7e0` |
 | `test-results/performance-0.1.8-first.json` | `1caae0655c3972847fd28d8ceb83c4aeabdc469f2c14674d724cc58a85fc1348` |
 | `test-results/queue-profile-0.1.7.json` | `9a933dc3f5a89f8a31061d3729d7a09a38b0a89dd4ce62c71c08e9225a15bfdf` |
+| `test-results/idle-0.1.8.json` | `07987357ec3cd1d31007a820c2689f80242f90e4897d1ff1ffadedf1f3991ec4` |
 
 The earlier findings below are versioned history, not the latest performance result.
 
-## Latest run: 0.1.2, September 26
+## Earlier run: 0.1.2, September 26
 
 The same 50-course, 5,000-master, 20,000-occurrence fixture was measured on the Windows 11 machine described below. These are complete packaged-app runs; no build or desktop test ran alongside the benchmark. The 0.1.1 baseline ran at 08:30 UTC and 0.1.2 later that day. Other host load and clock-dependent overdue counts were not held constant, so these runs do not establish a controlled before/after speedup. UI times include Playwright action and readiness-wait overhead.
 

@@ -21,6 +21,7 @@ The source targets **0.1.8, an owner-only development preview**, with faster tar
 - [Initial security and privacy risk register](docs/RISK_REGISTER.md)
 - [Administrative access and repository controls](docs/ACCESS_GOVERNANCE.md)
 - [Incident response and continuity preparation](docs/INCIDENT_CONTINUITY.md)
+- [Windows signing decision and verification gates](docs/SIGNING_DECISION.md)
 - [Large-calendar performance follow-up plan](docs/PERFORMANCE_FOLLOWUP_PLAN.md)
 - [User guide](docs/USER_GUIDE.md)
 - [Maintainer guide](docs/MAINTAINER_GUIDE.md)
