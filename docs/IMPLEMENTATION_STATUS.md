@@ -1,5 +1,13 @@
 # Implementation and verification evidence
 
+## September 30: normal-launch sign-in correction
+
+The owner's fresh-launch screenshot shows disabled cloud sign-in. The [repair plan](SIGNIN_STARTUP_FIX_PLAN.md) precedes the private repair. Earlier installed checks observed the tool's redirected AppData copy, despite reporting the ordinary logical profile path. Their configured flags and account/settings comparisons apply to that tool-launched context; they do not prove the owner's separate normal-desktop profile had its configuration or establish its prior upgrade preservation. Isolated installed desktop, package, cloud-service and CI results remain valid within their stated fixtures.
+
+A read-only diagnostic executed through Explorer's desktop automation context reproduces the actual issue: normal-profile `.local/.env` absent. The validated ignored project environment file was copied into that exact normal profile at 22:16 UTC, without overwriting any existing configuration or touching calendar, session or device files. A second Explorer-context read resolves to the actual ordinary AppData location with all required fields present and exact matching bytes. Private repair report `test-results/normal-signin-config-repair.json` SHA-256 `e839c5582d2ca7faf608a3beaef77a7917ef79b5032bd653dc252defd2ace1b4`. Credentials remain outside source, renderer and installer. No new app version is required.
+
+The owner has been asked to quit from the tray and reopen through their usual shortcut because configuration is loaded once at startup. Normal-launch enabled-button verification is pending that restart; real authentication is a separate observation. Future upgrade checks must resolve physical paths and verify the normal desktop context as described in [local configuration](LOCAL_CONFIGURATION.md).
+
 ## September 30: profile and appearance checkpoint
 
 Source and owner installation **0.1.10**. Installed identity and real-profile preservation passed at 04:28 UTC; all 31 installed desktop tests passed in one 3.5-minute run. This section supersedes older dated version statements below. The [feature plan](PROFILE_THEMES_PLAN.md) and [upgrade sequence](UPGRADE_0110_PLAN.md) precede installation.

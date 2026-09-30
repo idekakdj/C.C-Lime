@@ -10,6 +10,14 @@ The `.local` directory is excluded from Git and desktop packaging. Never use a `
 
 An installer does not contain the project's key. Each computer needs its local environment configuration to enable cloud sign-in. Without it, a clearly labeled local calendar preview remains available. Keep this configuration separate from shared installer/source artifacts.
 
+## Windows normal-launch verification
+
+Verify configuration from the same Windows context that opens the user's app. A tool running with filesystem virtualization can see a private redirected AppData copy at the ordinary logical path; a valid file in that copy does not prove a normal Start-menu/Explorer launch can read it. Microsoft describes the merged and redirected [AppData behavior](https://learn.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes). Resolve the opened file's physical identity and separately check through the normal desktop context before claiming installed cloud configuration is preserved.
+
+On September 30, the owner's normal 0.1.10 profile was missing `.local/.env`, while tool-launched checks saw the valid redirected copy. A hidden read-only diagnostic through Explorer reproduced the missing file. Only the validated private environment file was then copied into the normal profile: no existing configuration was overwritten, and no account database, settings or remembered session was copied or changed. Read-back through Explorer resolves to the ordinary profile and matches the validated bytes. No installer or application code change is needed for this configuration repair.
+
+Configuration is read at application startup. Quit from the tray and reopen through the usual Windows shortcut after repairing it. Verify both email/password and Google controls are enabled before separately checking actual authentication; an isolated test supplied with its own configuration is not sufficient evidence of normal-launch readiness.
+
 The previously hardcoded Firebase client key reached repository history in commit `45333f7`. Removing a file does not erase Git history. The remediation rotates the key and disables the old key; the ignored local rotation record records confirmation. Do not copy the historical key back into any configuration.
 
 Firebase database authorization is still enforced by the committed per-account security rules. A client API key is not an administrator credential and must never replace those rules.
