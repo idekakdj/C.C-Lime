@@ -43,10 +43,10 @@ These 31 cases remain in the original suite. “Partial” means the new indepen
 
 | Existing case and source | Required external observation / replacement | Current migrated status |
 | --- | --- | --- |
-| 404 recovery, [desktop:17](../tests/e2e/desktop.spec.ts) | Actual 404/non-reflection, invalid-sender denial, keyboard return, saved item and axe check | Migrated locally: complete renderer assertions; original retained |
+| 404 recovery, [desktop:17](../tests/e2e/desktop.spec.ts) | Actual 404/non-reflection, invalid-sender denial, keyboard return, saved item and axe check | Migrated locally and in CI: complete renderer assertions; original retained |
 | Crowded day, [desktop:38](../tests/e2e/desktop.spec.ts) | Ordinary fixture commands; DOM paging/access to every saved item | Pending |
 | Large task lists/sign-out, [desktop:48](../tests/e2e/desktop.spec.ts) | DOM paging/edit, ordinary sign-out, reopen persistence | Pending |
-| Event create/day/edit/restart, [desktop:57](../tests/e2e/desktop.spec.ts) | UI create/edit, normal owned restart, visible day detail | Migrated locally: visible day detail before edit and after restart; original retained |
+| Event create/day/edit/restart, [desktop:57](../tests/e2e/desktop.spec.ts) | UI create/edit, normal owned restart, visible day detail | Migrated locally and in CI: visible day detail before edit and after restart; original retained |
 | Crash durability, [desktop:63](../tests/e2e/desktop.spec.ts) | Kill only external launcher's owned child after save acknowledgment; read-only closed SQLite and restart | Pending |
 | Tray/second launch, [desktop:70](../tests/e2e/desktop.spec.ts) | External child/window state and second executable launch; normal tray quit | Pending; OS automation |
 | Seven-day completion/undo, [desktop:81](../tests/e2e/desktop.spec.ts) | Sidebar UI, undo and persisted status | Pending |
@@ -68,14 +68,14 @@ These 31 cases remain in the original suite. “Partial” means the new indepen
 | ICS/backup flows, [desktop:172](../tests/e2e/desktop.spec.ts) | Native file selection/save, actual exported file, preview/copy result | Pending; native dialogs |
 | Profile photo/progress, [profile:12](../tests/e2e/profile.spec.ts) | Actual file picker, uploaded/removed icon, deletion-resistant count and restart | Partial: name restart covered only; photo/progress remain |
 | Invalid photo, [profile:20](../tests/e2e/profile.spec.ts) | Native malformed-file selection and preserved profile | Pending; native dialog |
-| Presets/custom slots, [profile:23](../tests/e2e/profile.spec.ts) | All presets, three-slot cap, edit/delete/cancel and restart | Migrated locally: all presets, cap before/after restart, edit/delete-to-default/reuse and final restart; cancellation in light test |
-| Profile/theme narrow accessibility, [profile:30](../tests/e2e/profile.spec.ts) | External window sizing, axe and screenshots | Renderer portion migrated locally at measured 1000×900 and 800×850; physical window sizing remains separate |
-| Custom light palette, [profile:35](../tests/e2e/profile.spec.ts) | Light editor save/contrast and unsaved cancellation | Migrated locally: axe, cancel preserved name/colors and restart; original retained |
+| Presets/custom slots, [profile:23](../tests/e2e/profile.spec.ts) | All presets, three-slot cap, edit/delete/cancel and restart | Migrated locally and in CI: all presets, cap before/after restart, edit/delete-to-default/reuse and final restart; cancellation in light test |
+| Profile/theme narrow accessibility, [profile:30](../tests/e2e/profile.spec.ts) | External window sizing, axe and screenshots | Renderer portion migrated locally and in CI at measured 1000×900 and 800×850; physical window sizing remains separate |
+| Custom light palette, [profile:35](../tests/e2e/profile.spec.ts) | Light editor save/contrast and unsaved cancellation | Migrated locally and in CI: axe, cancel preserved name/colors and restart; original retained |
 | Recovery drill, [recovery:13](../tests/e2e/recovery-drill.spec.ts) | Native backup/restore files, independent checksum/linked-record comparison, restart and damaged-file rejection | Pending; native dialogs/storage |
 | Test notification identity, [windows:18](../tests/e2e/windows-integration.spec.ts) | Registry/shortcut file identity and observed notification result without main-process introspection | Pending; OS observation |
 | Shortcut repair/cleanup, [windows:35](../tests/e2e/windows-integration.spec.ts) | Existing isolated helper tests plus externally executed Windows shell operations in a synthetic shortcut root | Pending; retain all owned-path invariants |
 
-## Next precise renderer migration batch
+## Renderer migration batch specification
 
 1. Add independent tests for all three presets and the complete three-slot custom editor: create/apply, disabled fourth slot, normal restart, edit/apply, delete-to-default and slot reuse. Observe persisted state through the ordinary UI; retain the original test.
 2. Port custom-light contrast and unsaved-editor cancellation assertions, including the existing automated A/AA scan. Port profile/preset narrow-layout scans using externally controlled and measured renderer viewport dimensions; describe viewport evidence separately from physical window resizing.
@@ -87,4 +87,10 @@ These 31 cases remain in the original suite. “Partial” means the new indepen
 
 The [three appearance tests](../tests/production/appearance.spec.ts) and expanded [two renderer tests](../tests/production/renderer.spec.ts), alongside the paired inspector case, pass together locally (six tests, final run 28.3 seconds). Measured viewport dimensions match requested values. Profile, monochrome, navy, custom-editor and light-palette screenshots were visually reviewed without observed control overlap; automated A/AA scans pass in the defined views. A new day locator initially targeted the day button as if it contained event controls; selecting the actual day cell's button resolves that test-only failure. No application code was changed.
 
-Summaries are now emitted only after successful normal closure; failure artifacts cannot masquerade as completed per-case success. The retained private report `test-results/production-renderer-batch-0.1.10.json` records all six sanitized results and exact source/summary hashes; SHA-256 `7194592fe5aeb1bff49809e6af74462c2a3e8f7efec6c3ed11670297c7563a8d`. Fresh CI for this expanded six-case batch is still required. The owner-installed ASAR still matches `0fa8c59a4da8f6a8821e53cf154957f524a18f305ed86a7e06e474eefdec8d70`.
+Summaries are now emitted only after successful normal closure; failure artifacts cannot masquerade as completed per-case success. The retained private report `test-results/production-renderer-batch-0.1.10.json` records all six sanitized results and exact source/summary hashes; SHA-256 `7194592fe5aeb1bff49809e6af74462c2a3e8f7efec6c3ed11670297c7563a8d`. The owner-installed ASAR still matches `0fa8c59a4da8f6a8821e53cf154957f524a18f305ed86a7e06e474eefdec8d70`.
+
+## Renderer batch CI result
+
+Both [PR](https://github.com/idekakdj/C.C-Lime/actions/runs/36776331011) and [push](https://github.com/idekakdj/C.C-Lime/actions/runs/36776324379) Windows runs pass for `768c43ee2628a5ec29cdc23d9f9e7e4e2b1629c7`: **329 tests**, comprising 188 unit, 56 tooling without skips, 48 cloud, 31 original desktop and six independent cases. The six independent cases take 19 seconds on the PR runner. Fresh dependency, source/type/build, installer/notices, package credential scan and native inventory gates also pass.
+
+The downloaded [six-summary artifact](https://github.com/idekakdj/C.C-Lime/actions/runs/36776331011/artifacts/11126270011) archive SHA-256 `bafa365f9f1b9bedafe2e7eef0dfdee197a2e09c072c78dd896fb97708dd5427` matches GitHub metadata. All six inspected summaries identify 0.1.10, disabled Node CLI inspection and successful normal exit. Private verification report `test-results/ci-independent-renderer-batch-0.1.10.json` SHA-256 `d6588cddd061323317a37250bd78aae0c429e2f060b74129f73405832d283065`. CI artifact retention is 14 days; the downloaded archive is separately retained privately. The migration register above keeps native/manual/authentication and remaining six fuse probes explicitly open.
