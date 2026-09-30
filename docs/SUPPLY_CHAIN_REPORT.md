@@ -2,7 +2,21 @@
 
 ## September 30 feature release 0.1.10
 
-The profile/theme update changes application bytes and its version only; no dependency versions changed from the verified 0.1.9 baseline. Owner-installed 0.1.9 now has exact Chromium notices and matching ASAR bytes. The final 0.1.10 package and installation identities will be recorded after their checks. Seven selected Electron fuse gaps remain; header integrity metadata equality is not runtime enforcement. Earlier sections retain their historical artifact identities.
+The profile/theme update changes application bytes and its version only; no dependency versions changed from the verified 0.1.9 baseline. Owner-installed 0.1.9 now has exact Chromium notices and matching ASAR bytes. Seven selected Electron fuse gaps remain; header integrity metadata equality is not runtime enforcement. Earlier sections retain their historical artifact identities.
+
+The September 30 04:18 UTC npm gate passes with 1,126 components and zero findings at every severity. Lockfile SHA-256: `69c197094d3fdcd6a0e807465a0156097fd760afbd9e9ef439c1be09356e2f9e`. Final package scan covers 204 ASAR entries without private configuration or credential matches. Native inspection records 83 physical files, 15 native files, Electron 44.4.5, SQLite 3.53.4, matching embedded ASAR-header metadata, all seven remaining fuse gaps and exact Chromium notices. An initial isolated collector close timed out and produced no report; a fresh retry closed normally and passed. Neither run accessed the owner profile.
+
+| Exact 0.1.10 artifact | SHA-256 |
+| --- | --- |
+| Retained installer, 168,019,968 bytes | `2ae92c88f91800c0e71b06d3fad8e2b18d5275a0ac136f73de6cc5e83dc4a0c9` |
+| Packaged ASAR, 17,906,956 bytes | `0fa8c59a4da8f6a8821e53cf154957f524a18f305ed86a7e06e474eefdec8d70` |
+| Packaged native report | `28d7068d7a6b67d6e6185db0520a6c9287a541e8d6bb34d7f93b823e1ee848d5` |
+| Installer notice report | `747bdd38b79c215fd019a49d2e4fc97ff481fc9712460235ca277cec9175822a` |
+| Dependency summary | `caa3571538e14879c35334d231e672bcc922f97ed1ed1b44c80f2e8e93db2917` |
+| Live profile/sync/deletion report | `1cd6c21e2216798363e6a57fad1f0a96c7f1109bb46813c6fb3d863dda76051c` |
+| Live quota/retry/deletion report | `932f0d857a6c04145fb57a2ebf7b692eec6028e449e14d41c1dcac7cb14a6617` |
+
+Reports and installer remain ignored local evidence. The deployed rules match source SHA-256 `8b096603051115c31edaf5f92eda3ff7bdf854365e424046fc7f38885a3d2977`. Seven live quota checks pass, including raw REST slot-61/reset/omission denial, preserved queued work and automatic retry after server-window reset; both quota-test accounts were removed.
 
 
 ## September 29 native patch: source 0.1.9, installed 0.1.8
