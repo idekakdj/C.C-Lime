@@ -1,5 +1,12 @@
 # C.C. Lime initial security and privacy risk register
 
+## September 30 update
+
+Source 0.1.10, verified installed 0.1.9 pending update; dated statements below are historical. Installed Electron patch and exact notice repair have now passed acceptance. Seven production-fuse gaps and broader provenance/signing controls remain open.
+
+Profile photos and lifetime completion records extend RK-03's personal-data exposure in local databases, sync and backups. Bounded native conversion, per-account rules, fixed identity, three-theme limits and synthetic sync/deletion checks reduce implementation risk. Photo removal/item deletion deliberately do not erase old backups or the lifetime ledger. Operator approval of retention/disposal and privacy notices is still required before broader distribution; no residual risk is accepted here.
+
+
 Engineering draft, updated September 29, 2026, T-53–T-60. Ontario operator; owner-only next release; personal student calendar with no patient-record workflow. Legal entity, named control owners and privacy contact remain undecided. **No residual risk is accepted here.** Source version 0.1.9, installed owner version 0.1.8; observed/provider results are dated in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). The 0.1.9 package updates Electron and repairs notice content; actual installed-notice verification, production fuses and broader native review remain open.
 
 ## Method and accountability

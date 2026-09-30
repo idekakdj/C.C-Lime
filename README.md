@@ -1,12 +1,12 @@
 # C.C. Lime
 
-C.C. Lime is a Windows-first calendar and task app for university students, with a black and purple interface.
+C.C. Lime is a Windows-first calendar and task app for university students, with profile photos and customizable colors.
 
 The home screen is a conventional month calendar with events beneath each date. Selecting a day expands its detailed schedule. An upcoming-task sidebar shows today and the following six days, with overdue work listed separately.
 
 ## Project status
 
-The source targets **0.1.9, an owner-only development preview**, updating Electron and retaining Chromium notices in the Windows installer. The owner's verified installed version is **0.1.8**; the September 29 upgrade from 0.1.5 preserved the saved profile and settings. Faster targeted calendar search, lighter queue-status refreshes, reviewed extraction safeguards and expired quick-undo cleanup are included. Automatic Windows notification shortcut alignment, sensitive-action rate guards, server-enforced calendar write quotas and secure 404 recovery remain. The operator is based in Ontario, Canada. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
+The source targets **0.1.10, an owner-only development preview**, adding synced profile names/photos, joined dates, lifetime task progress, three color presets and up to three custom palettes. The verified owner installation is currently **0.1.9**; the [0.1.10 upgrade](docs/UPGRADE_0110_PLAN.md) is in progress. Automatic notification shortcut alignment, server write quotas and secure 404 recovery remain. The operator is based in Ontario, Canada. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
 
 ## Project documents
 

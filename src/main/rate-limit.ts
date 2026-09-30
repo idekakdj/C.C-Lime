@@ -26,6 +26,7 @@ export class CommandRateLimits {
       [10, ['auth.signIn', 'auth.signUp', 'auth.google', 'auth.linkPassword', 'auth.reauthenticate']],
       [3, ['auth.verify', 'auth.reset']],
       [6, ['auth.refresh']], [6, ['sync']], [3, ['testNotification']],
+      [6, ['profile.photo']],
       [10, ['import.preview', 'restore.preview', 'export', 'backup', 'diagnostics']],
     ];
     this.buckets = new Map(policies.flatMap(([limit, commands]) => {

@@ -1,5 +1,10 @@
 # Dependency treatment and release evidence
 
+## September 30 feature release 0.1.10
+
+The profile/theme update changes application bytes and its version only; no dependency versions changed from the verified 0.1.9 baseline. Owner-installed 0.1.9 now has exact Chromium notices and matching ASAR bytes. The final 0.1.10 package and installation identities will be recorded after their checks. Seven selected Electron fuse gaps remain; header integrity metadata equality is not runtime enforcement. Earlier sections retain their historical artifact identities.
+
+
 ## September 29 native patch: source 0.1.9, installed 0.1.8
 
 The [ordered patch plan](NATIVE_PATCH_019_PLAN.md) updates only Electron from 44.4.2 to **44.4.5**, alongside application version fields. The lockfile has no other dependency changes. Official Windows x64 archive SHA-256 `11c395820a5aaa8ebcc0686b476d0ac98a730274ebfbdc8cf5538a7c2815cb5d` agrees with the updated npm package's checksum map. The downloaded [official checksum list](https://github.com/electron/electron/releases/download/v44.4.5/SHASUMS256.txt) is retained with SHA-256 `a0379166a35f9d3e2e1b63a72b90ddfe54a9558c56a3bde82e98f63823591d72`. Existing custom-download rejection, extraction containment and owned build-root checks remain enforced.

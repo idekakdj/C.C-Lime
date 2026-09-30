@@ -10,6 +10,8 @@ import { AuthService, type SecureStorage } from './auth';
 import { FirestoreCloud } from './cloud';
 import { SyncEngine } from './sync';
 import { CommandRateLimits } from './rate-limit';
+import { PROFILE_ID, profileSchema, avatarSchema, type UserProfile } from '../shared/model';
+import { appearanceSchema, defaultAppearance } from '../shared/appearance';
 import { ReminderScheduler, type ReminderNotice } from './scheduler';
 import { atDate, recurringDates, sourceDate, addDays, localInstant } from '../domain/calendar';
 import { createBackup, readBackup, remapBackup, previewImport, type ParsedCalendar, type ParseOptions } from '../domain/interchange';
@@ -18,6 +20,7 @@ import { defaultDeviceSettings, parseRecord, preferencesSchema, itemSchema, seme
 
 const deviceSchema=z.object({notifications:z.boolean(),startAtLogin:z.boolean(),closeToTray:z.boolean(),quietStart:localTime.nullable(),quietEnd:localTime.nullable(),privacy:z.boolean(),followZone:z.boolean(),onboardingDone:z.boolean(),view:z.enum(['month','week','agenda']),month:z.string().regex(/^\d{4}-\d{2}$/).nullable(),hideCompleted:z.boolean()}).strict();
 export interface HostServices {
+  chooseAvatar?():Promise<string|null>;
   secure:SecureStorage; openBrowser(url:string):Promise<void>; changed():void; notify(notice:ReminderNotice):void;
   openFile(kind:'ics'|'backup'):Promise<string|null>; saveFile(kind:'ics'|'backup'|'diagnostics'):Promise<string|null>;
   setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string; timeZone?():string;
@@ -68,6 +71,8 @@ export class ApplicationService {
     try{
       this.store=new LocalStore(this.root,accountId);this.recoveryError=null;
       if(this.store.metadata('deleting',false))return;
+      if(!this.store.metadata('profileFirstUsed',''))this.store.setMetadata('profileFirstUsed',new Date().toISOString());
+      this.store.retainCompletionHistory();
       this.scheduler=new ReminderScheduler(this.store,()=>this.device,()=>this.displayZone(),n=>this.host.notify(n),()=>this.host.changed());this.scheduler.start();
       if(this.config&&!local){this.cloud=new FirestoreCloud(this.config.projectId,accountId,()=>this.auth.token());this.sync=new SyncEngine(this.store,this.cloud,()=>this.auth.session,()=>{if(this.store?.metadata('deleting',false))this.scheduler?.stop();else this.scheduler?.reconcile();this.host.changed();});this.sync.start();}
     }catch(error){this.recoveryError=(error as Error).message;}
@@ -85,9 +90,13 @@ export class ApplicationService {
   resume(){this.scheduler?.reconcile();this.sync?.schedule(100);}
   private active():LocalStore{if(this.switching||!this.store||(!this.localMode&&this.store.accountId!==this.auth.session?.uid))throw new Error('Open a calendar account first.');return this.store;}
   private changed(){this.scheduler?.reconcile();this.sync?.schedule();this.host.changed();}
+  private profile(store:LocalStore):UserProfile{
+    const saved=store.get(PROFILE_ID);if(saved?.kind==='profile')return saved;
+    return profileSchema.parse({id:PROFILE_ID,kind:'profile',name:this.auth.session?.displayName?.trim()||'Student',avatar:null,joinedAt:this.auth.session?.createdAt??null,appearance:defaultAppearance});
+  }
   snapshot():Snapshot&{recoveryError:string|null;remembered:boolean;dataPath:string;startup:{enabled:boolean;wasOpenedAtLogin:boolean}}{
     const visible=!this.switching&&(this.localMode||this.store?.accountId===this.auth.session?.uid)?this.store:null;
-    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,device:this.device,sync:this.sync?.status??{state:'local',pending:visible?.queueCount()??0,lastSynced:null,message:visible?.metadata('deleting',false)?'Account deletion is paused. Resume it in Settings.':this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'},conflicts:visible?.conflicts()??[],reminders:visible?.reminders().slice(0,500)??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
+    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),profile:visible?this.profile(visible):undefined,localCreatedAt:visible?.metadata('profileFirstUsed',undefined),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,device:this.device,sync:this.sync?.status??{state:'local',pending:visible?.queueCount()??0,lastSynced:null,message:visible?.metadata('deleting',false)?'Account deletion is paused. Resume it in Settings.':this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'},conflicts:visible?.conflicts()??[],reminders:visible?.reminders().slice(0,500)??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
   }
   private async work<T>(type:'parse'|'export',payload:unknown):Promise<T>{
     if(this.worker)throw new Error('Another calendar file is being processed.');
@@ -101,6 +110,10 @@ export class ApplicationService {
     this.rateLimits.take(command);
     if(this.store?.metadata('deleting',false)&&!['snapshot','auth.reauthenticate','auth.cancel','auth.signOut','account.delete','backup','dataFolder','diagnostics'].includes(command))throw new Error('Account deletion has started. Resume it in Settings; editing and reminders are paused.');
     switch(command){
+      case 'profile.save':{const p=z.object({name:z.string().trim().min(1).max(100)}).strict().parse(payload),store=this.active();store.save({...this.profile(store),name:p.name,joinedAt:this.auth.session?.createdAt??this.profile(store).joinedAt});this.changed();return true;}
+      case 'profile.photo':{const store=this.active();if(!this.host.chooseAvatar)throw new Error('Photo selection is unavailable.');const photo=await this.host.chooseAvatar();if(this.active()!==store)throw new Error('The account changed while choosing the photo. Please try again.');if(photo===null)return null;store.save({...this.profile(store),avatar:avatarSchema.parse(photo)});this.changed();return true;}
+      case 'profile.removePhoto':{const store=this.active();store.save({...this.profile(store),avatar:null});this.changed();return true;}
+      case 'appearance':{const appearance=appearanceSchema.parse(payload),store=this.active();store.save({...this.profile(store),appearance});this.changed();return true;}
       case 'snapshot':{
         const p=z.object({recordsRevision:z.string().max(200).optional()}).strict().parse(payload??{}),snapshot=this.snapshot();
         // A store's revision contains its random instance identity. It cannot

@@ -25,11 +25,11 @@ describe('durable local storage and recovery', () => {
     expect(()=>store.save({...original,title:'Not saved'})).toThrow();expect(store.get(original.id)).toEqual(original);expect(store.queue()).toEqual(queue);store.db.pragma('query_only = OFF');
   });
   it('refuses a newer database schema while preserving the existing calendar',()=>{
-    const store=open(),original=item();store.save(original);store.db.pragma('user_version = 2');store.close();
+    const store=open(),original=item();store.save(original);store.db.pragma('user_version = 3');store.close();
     expect(()=>open()).toThrow('newer C.C. Lime version');
     // The original connection is closed. Inspect without opening it through the app.
     const Database=store.db.constructor as new(filename:string)=>typeof store.db,inspection=new Database(store.filename);
-    try{expect(inspection.pragma('user_version',{simple:true})).toBe(2);expect(JSON.parse((inspection.prepare('SELECT payload FROM records WHERE id=?').get(original.id)as {payload:string}).payload)).toEqual(original);}finally{inspection.close();}
+    try{expect(inspection.pragma('user_version',{simple:true})).toBe(3);expect(JSON.parse((inspection.prepare('SELECT payload FROM records WHERE id=?').get(original.id)as {payload:string}).payload)).toEqual(original);}finally{inspection.close();}
   });
   it('refreshes cached records after another connection commits and after a failed group',()=>{
     const a=open(),first=item(),second=item();a.save(first);a.save(second);a.list();

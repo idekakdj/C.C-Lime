@@ -17,7 +17,8 @@ const messages: Record<string, string> = {
   CREDENTIAL_TOO_OLD_LOGIN_AGAIN: 'Please sign in again before changing your account.', EMAIL_NOT_VERIFIED: 'Verify your email before syncing your calendar.',
   NEED_CONFIRMATION: 'Sign in with the existing email account, then link Google in Settings.', FEDERATED_USER_ID_ALREADY_LINKED: 'That Google identity is already linked to another account.',
 };
-const savedSchema = z.object({ projectId: z.string(), refreshToken: z.string().min(1), session: z.object({ uid: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/), email: z.string(), displayName: z.string(), verified: z.boolean(), providers: z.array(z.string()) }) });
+const savedSchema = z.object({ projectId: z.string(), refreshToken: z.string().min(1), session: z.object({ uid: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/), email: z.string(), displayName: z.string(), verified: z.boolean(), providers: z.array(z.string()), createdAt:z.string().datetime().optional() }) });
+function accountCreatedAt(value:unknown):string|undefined{const milliseconds=typeof value==='string'&&/^\d{1,16}$/.test(value)?Number(value):NaN;return Number.isFinite(milliseconds)&&milliseconds>0&&milliseconds<=Date.now()?new Date(milliseconds).toISOString():undefined;}
 export class AuthService {
   private readonly providerCooldown = new ProviderCooldown();
   session: Session | null = null;
@@ -73,7 +74,7 @@ export class AuthService {
     const profile = await this.request('lookup', { idToken: result.idToken }); const user = profile.users?.[0];
     if (!user || user.localId !== result.localId) throw new Error('Unable to verify this account.');
     this.idToken = result.idToken; this.refreshToken = result.refreshToken; this.expires = Date.now() + Math.min(3600, Number(result.expiresIn) || 3600) * 1000;
-    this.session = { uid: user.localId, email: user.email ?? '', displayName: user.displayName ?? '', verified: user.emailVerified === true, providers: (user.providerUserInfo ?? []).map((p: any) => p.providerId) };
+    this.session = { uid: user.localId, email: user.email ?? '', displayName: user.displayName ?? '', verified: user.emailVerified === true, providers: (user.providerUserInfo ?? []).map((p: any) => p.providerId), createdAt:accountCreatedAt(user.createdAt) };
     this.persist(); this.changed(); return this.session;
   }
   async signIn(email: string, password: string): Promise<Session> {
@@ -100,7 +101,7 @@ export class AuthService {
   async refreshProfile(): Promise<Session> {
     const token = await this.token(true); const result = await this.request('lookup', { idToken: token }); const user = result.users?.[0];
     if (!this.session || user?.localId !== this.session.uid) throw new Error('The account could not be verified.');
-    this.session = { ...this.session, verified: user.emailVerified === true, displayName: user.displayName ?? '', providers: (user.providerUserInfo ?? []).map((p: any) => p.providerId), offline: false };
+    this.session = { ...this.session, verified: user.emailVerified === true, displayName: user.displayName ?? '', providers: (user.providerUserInfo ?? []).map((p: any) => p.providerId), createdAt:accountCreatedAt(user.createdAt)??this.session.createdAt, offline: false };
     this.persist(); this.changed(); return this.session;
   }
   async token(force = false): Promise<string> {

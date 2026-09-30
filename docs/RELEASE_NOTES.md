@@ -1,5 +1,14 @@
 # C.C. Lime 0.1.9 — development preview
 
+## September 30: 0.1.10 profile and appearance update
+
+Adds account-synced profile photos/names, joined dates when available, lifetime completed-task statistics, Black & white and Navy & gold presets, and a color editor with up to three saved themes. Purple & black remains the default. Uploaded images are cropped to square icons; completed-task history survives subsequent deletion but cannot recover tasks deleted before tracking began.
+
+SQLite and full-backup compatibility advance to version 2 for the new records. Update every computer using this account before using the new features. Calendar copies exclude profiles and lifetime history; same-account merge retains them when missing or identical. Backup files can contain photos and are not encrypted.
+
+0.1.9 is installed and verified; 0.1.10 installation is in progress. Live account sync and cleanup passed. See [current results](IMPLEMENTATION_STATUS.md) and [installation gates](UPGRADE_0110_PLAN.md). This remains an unsigned owner-only preview, without a compliance certification. Older sections below describe historical checkpoints.
+
+
 September 29, 2026. This separate build updates Electron to 44.4.5 and fixes the Windows installer omitting Chromium's license notices. The notice file is checked byte-for-byte inside the installer package. The owner's verified installed app remains 0.1.8.
 
 Validation: 171 unit tests, 45 local tooling passes with two permission-limited symlink skips, 36 cloud tests, all 26 packaged desktop tests, populated-calendar upgrade fixture, native inventory and source/package credential scans pass. The npm audit is clean. No calendar schema, cloud protocol or notification behavior changed. See [current evidence](IMPLEMENTATION_STATUS.md) and [exact artifacts](SUPPLY_CHAIN_REPORT.md).

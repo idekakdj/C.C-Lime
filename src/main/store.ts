@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseRecord, type Conflict, type DomainRecord, type ReminderEntry } from '../shared/model';
 import { recurringDates } from '../domain/calendar';
+import { completionFor } from './profile';
 
 export interface Mutation { id: string; order: number; recordId: string; baseVersion: string | null; base: DomainRecord | null; value: DomainRecord | null; state: string; attempts: number; groupId?:string; }
 export interface RemoteRecord { id: string; value: DomainRecord | null; version: string; sequence: number; }
@@ -29,7 +30,7 @@ export class LocalStore {
       this.db.pragma('journal_mode = WAL'); this.db.pragma('synchronous = FULL'); this.db.pragma('foreign_keys = ON');
       const integrity = this.db.pragma('quick_check', { simple: true }); if (integrity !== 'ok') throw new Error('The calendar database needs recovery. The existing file has been preserved.');
       const version = this.db.pragma('user_version', { simple: true }) as number;
-      if (version > 1) throw new Error('This calendar was saved by a newer C.C. Lime version. Update the app to open it.');
+      if (version > 2) throw new Error('This calendar was saved by a newer C.C. Lime version. Update the app to open it.');
       if (version < 1) {
         if (fs.statSync(this.filename).size > 0 && this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().length) this.snapshot('pre-migration');
         this.db.transaction(() => {
@@ -52,6 +53,7 @@ export class LocalStore {
           `);
         })();
       }
+      if(version<2){if(version===1)this.snapshot('pre-profile-migration');this.db.pragma('user_version = 2');}
       this.pruneExpiredUndo();
       this.db.prepare("UPDATE outbox SET state='pending' WHERE state='sending'").run();
       for (const entry of this.reminders()) if (entry.state === 'dispatching') this.putReminder({ ...entry, state: 'uncertain' });
@@ -112,9 +114,16 @@ export class LocalStore {
       .run(recordId, value?.kind ?? existing?.kind ?? 'item', value ? JSON.stringify(value) : null, value ? 0 : 1);
     if (enqueue) {
       const shadow = this.shadow(recordId);
-      const mutationId=randomUUID();this.db.prepare('INSERT INTO outbox(id,record_id,base_version,base_payload,payload) VALUES (?,?,?,?,?)').run(mutationId, recordId, shadow?.version ?? null, shadow?.value ? JSON.stringify(shadow.value) : null, value ? JSON.stringify(value) : null);return mutationId;
+      const mutationId=randomUUID();this.db.prepare('INSERT INTO outbox(id,record_id,base_version,base_payload,payload) VALUES (?,?,?,?,?)').run(mutationId, recordId, shadow?.version ?? null, shadow?.value ? JSON.stringify(shadow.value) : null, value ? JSON.stringify(value) : null);
+      const completion=value?completionFor(value,id=>this.get(id)):null;
+      if(completion&&!this.get(completion.id))this.write(completion.id,completion,true);
+      return mutationId;
     }
     return null;
+  }
+  retainCompletionHistory(): void {
+    const missing=this.list().map(value=>completionFor(value,id=>this.get(id))).filter(value=>value&&!this.get(value.id));
+    if(missing.length){this.beforeMutation();this.db.transaction(()=>{for(const value of missing)if(value)this.write(value.id,value,true);})();}
   }
   saveGroup(inputs:Array<{id:string;value:DomainRecord|null}>):{undoToken:string}{
     if(!inputs.length||inputs.length>5000||new Set(inputs.map(v=>v.id)).size!==inputs.length)throw new Error('A linked change must contain at most 5,000 distinct records.');
@@ -137,6 +146,7 @@ export class LocalStore {
   }
   remove(recordId: string): string {
     const existing = this.get(recordId); if (!existing) throw new Error('This item has already been removed.');
+    if(existing.kind==='profile'||existing.kind==='completion')throw new Error('Use profile controls or account deletion to remove personal profile data.');
     const all = this.list();
     if (existing.kind === 'course' && all.some(r => r.kind === 'item' && r.courseId === recordId)) throw new Error('This course has scheduled items. Archive it instead.');
     if (existing.kind === 'semester' && all.some(r => r.kind === 'course' && r.semesterId === recordId)) throw new Error('This semester has courses. Archive it instead.');
@@ -201,6 +211,7 @@ export class LocalStore {
     })();
   }
   conflict(mutation: Mutation, remote: RemoteRecord | null): void {
+    if(mutation.value?.kind==='completion'&&remote?.value?.kind==='completion'&&remote.id===mutation.recordId){this.acknowledge(mutation,remote);return;}
     this.db.transaction(() => {
       this.db.prepare('INSERT OR REPLACE INTO conflicts VALUES (?,?,?,?,?,?)').run(randomUUID(), mutation.recordId, mutation.base ? JSON.stringify(mutation.base) : null, this.get(mutation.recordId) ? JSON.stringify(this.get(mutation.recordId)) : null, remote?.value ? JSON.stringify(remote.value) : null, remote?.version ?? null);
       this.db.prepare("UPDATE outbox SET state='conflict' WHERE record_id=?").run(mutation.recordId); if (remote) this.writeShadow(remote);
@@ -209,6 +220,7 @@ export class LocalStore {
   conflicts(): Conflict[] { return (this.db.prepare('SELECT * FROM conflicts').all() as any[]).map(r => ({ id: r.id, recordId: r.record_id, base: parse<DomainRecord>(r.base), local: parse<DomainRecord>(r.local), remote: parse<DomainRecord>(r.remote), remoteVersion: r.remote_version })); }
   resolve(conflictId: string, choice: 'local' | 'remote' | 'both', current: RemoteRecord | null): void {
     const conflict = this.conflicts().find(c => c.id === conflictId); if (!conflict) throw new Error('This conflict has already been resolved.');
+    if(choice==='both'&&(conflict.local?.kind==='profile'||conflict.local?.kind==='completion'))throw new Error('Choose one version of this profile or progress record.');
     if ((current?.version ?? null) !== conflict.remoteVersion) { this.conflict({ id: '', order: 0, recordId: conflict.recordId, baseVersion: conflict.remoteVersion, base: conflict.remote, value: conflict.local, state: 'conflict', attempts: 0 }, current); throw new Error('The cloud item changed again. Review the updated comparison.'); }
     this.beforeMutation();
     this.db.transaction(() => {
@@ -216,7 +228,7 @@ export class LocalStore {
       if (current) this.writeShadow(current);
       if (choice === 'remote' || choice === 'both' || !current?.value) this.write(conflict.recordId, current?.value ?? null, false);
       if (choice === 'local' && current?.value) this.write(conflict.recordId, conflict.local, true);
-      else if ((choice === 'both' || choice === 'local') && conflict.local) { const newId = randomUUID(); this.write(newId, { ...conflict.local, id: newId }, true); }
+      else if ((choice === 'both' || choice === 'local') && conflict.local) { if(conflict.local.kind==='profile'||conflict.local.kind==='completion')this.write(conflict.recordId,conflict.local,true);else {const newId = randomUUID(); this.write(newId, { ...conflict.local, id: newId }, true);} }
     })();
   }
   pruneExpiredUndo(now = Date.now()): boolean {

@@ -1,5 +1,10 @@
 # Owner upgrade from 0.1.8 to 0.1.9
 
+## Completed September 29
+
+All gates completed: owner profile backup and comparison across two account databases, exact installer/installed ASAR and Chromium notices, populated eight-record fixture, all 26 installed desktop tests, installed native inventory and stable notification shortcuts. The actual profile contained zero calendar rows. This closes the 0.1.9 installation step, not production or compliance acceptance. The next requested installation is [0.1.10](UPGRADE_0110_PLAN.md).
+
+
 September 29, 2026. This follows the requested update and the [completed 0.1.8 upgrade](UPGRADE_018_PLAN.md). The new [patch and notice repair](NATIVE_PATCH_019_PLAN.md) has passed local checks. Install only after its GitHub checks pass and the owner has closed the active app normally. Preserve the owner's calendar; never terminate an owner session to make installation possible.
 
 ## Exact sequence and acceptance gates

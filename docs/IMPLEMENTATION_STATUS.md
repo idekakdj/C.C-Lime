@@ -1,5 +1,17 @@
 # Implementation and verification evidence
 
+## September 30: profile and appearance checkpoint
+
+Source **0.1.10**; verified owner installation **0.1.9**, with 0.1.10 installation in progress. This section supersedes older dated version statements below. The [feature plan](PROFILE_THEMES_PLAN.md) and [upgrade sequence](UPGRADE_0110_PLAN.md) precede installation.
+
+- Adds synced display name, bounded uploaded PNG/JPEG avatar, provider joined date when available, durable unique lifetime task/occurrence completions, three presets and at most three custom palettes. Deleted pre-upgrade task history cannot be reconstructed. Photo conversion strips original metadata; cancellation/invalid images preserve the previous icon.
+- SQLite schema 2 snapshots before migration and blocks older local writers. Same-account format-2 backup merges retain profile/history; calendar copies exclude identity/history. The UI discloses unencrypted photo/history backup content.
+- **188 unit tests, 54 tooling passes with two explicit local symlink-permission skips, 48 cloud-rule tests, type checks and build pass.** The 31 desktop tests pass including upload/removal, restart, deletion-resistant progress, theme limits/edit/delete, presets and custom-light accessibility. Final backup-copy text is being checked in the rebuilt artifact. Profile and preset screenshots were visually reviewed; no layout overlap was observed.
+- Additive cloud rules were backed up, deployed and read back exactly at 04:15 UTC. Six live synthetic checks pass: provider creation date, two-device profile/photo/palette convergence, other-account read denial, explicit conflict resolution without duplicate profiles, deletion-resistant completion sync, and restart persistence. Both synthetic identities/data were deleted successfully. Local credential/package scans remain clean.
+- **0.1.9 installation completed September 29:** exact retained installer exited zero, installed ASAR and Chromium notices matched, both real account databases/settings were preserved, all 26 installed desktop tests passed, eight-record populated upgrade and nine-record recovery passed, and three shortcut identities/normal-launch stability passed. No new banner observation is inferred. Private installed native report SHA-256 `69937c323862c201eee5f0454c440403baa2e620d3a936d3ba7c877c1a1960a0`; recovery `bb01b79183f9b88624ac1302f20da394e739f239651f547a08bc37de74692aa5`.
+- Prior ASAR-prerequisite commit `bf880eebffaf3da220faa8e2e05e97e776118fb4` passed both [PR CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36604982980) and [push CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36604975766). This is separate from new feature CI. Production fuses, signing, broader native review, manual acceptance and organizational assurance remain open.
+
+
 Updated September 29, 2026. Source target: **0.1.9 owner-only development preview**, Windows x64. Owner's verified installed version: **0.1.8**. The production release is **not complete** under the plan's definition of done. “Implemented” means code exists, not that every acceptance scenario has passed.
 
 ## 0.1.9 native patch and installer notice repair

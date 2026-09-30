@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { FirestoreCloud, VersionConflict, encode } from '../../src/main/cloud';
 import type { Mutation } from '../../src/main/store';
 import { item, recurrence } from '../fixtures';
+import { PROFILE_ID, profileSchema } from '../../src/shared/model';
 
 const project = 'demo-cc-lime';
 const origin = 'http://127.0.0.1:8080';
@@ -23,6 +24,32 @@ async function rawCommit(value:ReturnType<typeof item>){
   return fetch(`${origin}/v1/projects/${project}/databases/(default)/documents:commit`,{method:'POST',headers:{Authorization:`Bearer ${token()}`,'Content-Type':'application/json'},body:JSON.stringify({writes})});
 }
 beforeEach(async () => { await fetch(`${origin}/emulator/v1/projects/${project}/databases/(default)/documents`, { method: 'DELETE' }); });
+
+const profilePhoto='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jYykAAAAASUVORK5CYII=';
+function userProfile(){return profileSchema.parse({id:PROFILE_ID,kind:'profile',name:'Student',avatar:profilePhoto,joinedAt:'2024-09-01T00:00:00Z',appearance:{active:'navy',custom:Array.from({length:3},(_,i)=>({id:randomUUID(),name:`Theme ${i}`,colors:{background:'#111111',surface:'#222222',accent:'#abcdef'}}))}});}
+it('syncs bounded profile photos and three palettes through a second account client',async()=>{
+ const value=userProfile(),a=cloud(),b=cloud();await a.commit(mutation(value as any));expect((await b.get(PROFILE_ID))?.value).toEqual(value);
+ const denied=await fetch(`${origin}/v1/projects/${project}/databases/(default)/documents/users/alice/records/${PROFILE_ID}`,{headers:{Authorization:`Bearer ${token('bob')}`}});expect(denied.status).toBe(403);
+});
+it.each(['fourth','duplicate','invalidColor','unknownActive','oversizedPhoto','nonPng','wrongIdentity','emptyName','extraField'])('rejects direct invalid profile writes: %s',async kind=>{
+ const value:any=userProfile();
+ if(kind==='fourth')value.appearance.custom.push({...value.appearance.custom[0],id:randomUUID()});
+ if(kind==='duplicate')value.appearance.custom[1]=value.appearance.custom[0];
+ if(kind==='invalidColor')value.appearance.custom[0].colors.background='url(https://example.test)';
+ if(kind==='unknownActive')value.appearance.active='missing';
+ if(kind==='oversizedPhoto')value.avatar='data:image/png;base64,iVBORw0KGgo'+'A'.repeat(100000);
+ if(kind==='nonPng')value.avatar='data:image/svg+xml;base64,PHN2Zz4=';
+ if(kind==='wrongIdentity')value.id=randomUUID();
+ if(kind==='emptyName')value.name='';
+ if(kind==='extraField')value.admin=true;
+ expect((await rawCommit(value)).status).toBe(403);expect(await cloud().head()).toBe(0);
+});
+it('accepts lifetime progress without retaining a deleted task title or requiring its continued existence',async()=>{
+ const value:any={id:randomUUID(),kind:'completion',taskId:randomUUID(),originalDate:null,completedAt:'2026-09-29T10:00:00Z'};await cloud().commit(mutation(value));expect((await cloud().get(value.id))?.value).toEqual(value);
+});
+it('rejects malformed lifetime progress through raw requests',async()=>{
+ const value:any={id:randomUUID(),kind:'completion',taskId:'invalid',originalDate:null,completedAt:'not a timestamp'};expect((await rawCommit(value)).status).toBe(403);
+});
 
 describe('Firestore protocol with deployed authorization rules', () => {
   it('accepts the raw request control used for adversarial payload checks',async()=>{expect((await rawCommit(item())).status).toBe(200);});

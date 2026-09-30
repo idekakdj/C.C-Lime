@@ -1,5 +1,19 @@
 # C.C. Lime data and retention inventory
 
+## September 30 profile and appearance extension
+
+Current source 0.1.10; verified installed owner version 0.1.9 pending the requested update. This supersedes the older version summary below. The user explicitly chose account sync for photo, display name and themes.
+
+| Added holding | Purpose, location and lifecycle |
+| --- | --- |
+| Display name and resized profile photo | Personalization; one fixed account-owned record in SQLite, its ordinary outbox/shadow history and Firestore. Native PNG/JPEG selection is bounded to 5 MiB and 4,096-pixel dimensions, converted to a 128-pixel PNG with a 100,000-character limit. Original path/metadata are not stored. Removing a current photo does not erase older snapshots or exports. |
+| Joined date | Identity-provider creation date in the encrypted remembered session and profile when available. Old offline sessions may show unavailable; local tracking start is labelled separately. |
+| Color presets and up to three palettes | Account preferences in the same profile record, synced and included in backups; no device credentials. |
+| Lifetime completion ledger | Minimal deterministic item/occurrence IDs, occurrence date and completion timestamp; no copied titles/notes. Retained after item deletion to count unique lifetime progress, across restart and sync. Existing completed tasks can be backfilled; previously deleted history cannot be reconstructed. |
+
+Existing account deletion removes these cloud records through the same deletion protocol; live synthetic deletion was verified. Full backups and automatic snapshots can retain prior copies and are not encrypted by the application. Same-account format-2 backup merges include profile/history; calendar-copy transfers exclude them. Local preview stays on this computer. No public profile-photo hosting is introduced. Retention duration, old snapshot/export disposal and operator notices remain open decisions before broader distribution. Legal scope and certification statements below remain unchanged.
+
+
 Engineering draft, updated September 29, 2026, source version 0.1.9 and installed version 0.1.8. The 0.1.9 native patch/notice repair does not change calendar data or retention behavior. The owner upgrade includes 0.1.6's expired-undo cleanup. A private local pre-upgrade profile copy is retained for recovery; its retention decision remains open. Supports T-54/T-56/A-58/A-59. Reviewed against the code, not approved by the operator or counsel. This is not a published privacy notice or a legal compliance finding.
 
 ## Confirmed boundary

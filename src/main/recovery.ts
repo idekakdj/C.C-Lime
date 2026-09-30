@@ -11,7 +11,7 @@ export function recoverSnapshot(root:string,accountId:string,name:string):void{
   if(!recoverySnapshots(root,accountId).some(value=>value.name===name))throw new Error('Choose an available recovery snapshot.');
   const folder=directory(root,accountId),source=path.join(folder,'backups',name),copy=path.join(folder,`recovery-${randomUUID()}.sqlite`);
   fs.copyFileSync(source,copy);let db:Database.Database|undefined;
-  try{db=new Database(copy,{readonly:true});if(db.pragma('quick_check',{simple:true})!=='ok')throw new Error('This recovery snapshot is damaged.');const version=Number(db.pragma('user_version',{simple:true}));if(version!==1)throw new Error('This snapshot needs a different app version.');db.prepare('SELECT id,payload FROM records LIMIT 1').all();}
+  try{db=new Database(copy,{readonly:true});if(db.pragma('quick_check',{simple:true})!=='ok')throw new Error('This recovery snapshot is damaged.');const version=Number(db.pragma('user_version',{simple:true}));if(version!==1&&version!==2)throw new Error('This snapshot needs a different app version.');db.prepare('SELECT id,payload FROM records LIMIT 1').all();}
   catch(error){db?.close();db=undefined;fs.unlinkSync(copy);throw error;}finally{db?.close();}
   const quarantine=path.join(folder,`preserved-before-recovery-${randomUUID()}`);fs.mkdirSync(quarantine);
   const moved:string[]=[];
