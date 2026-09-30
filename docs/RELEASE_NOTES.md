@@ -1,4 +1,4 @@
-# C.C. Lime 0.1.9 — development preview
+# C.C. Lime 0.1.10 — development preview
 
 ## September 30: 0.1.10 profile and appearance update
 
@@ -6,8 +6,10 @@ Adds account-synced profile photos/names, joined dates when available, lifetime 
 
 SQLite and full-backup compatibility advance to version 2 for the new records. Update every computer using this account before using the new features. Calendar copies exclude profiles and lifetime history; same-account merge retains them when missing or identical. Backup files can contain photos and are not encrypted.
 
-0.1.9 is installed and verified; 0.1.10 installation is in progress. Live account sync and cleanup passed. See [current results](IMPLEMENTATION_STATUS.md) and [installation gates](UPGRADE_0110_PLAN.md). This remains an unsigned owner-only preview, without a compliance certification. Older sections below describe historical checkpoints.
+0.1.10 is installed; exact package identity, private profile comparison and populated migration passed. Live account sync and cleanup passed. See [current results](IMPLEMENTATION_STATUS.md) and [installation gates](UPGRADE_0110_PLAN.md). This remains an unsigned owner-only preview, without a compliance certification. Older sections below describe historical checkpoints.
 
+
+## Historical 0.1.9 build checkpoint
 
 September 29, 2026. This separate build updates Electron to 44.4.5 and fixes the Windows installer omitting Chromium's license notices. The notice file is checked byte-for-byte inside the installer package. The owner's verified installed app remains 0.1.8.
 

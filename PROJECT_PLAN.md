@@ -479,3 +479,13 @@ All mandatory task-register items are complete with evidence; all required accep
 The final delivery contains the installer, source, dependency lockfile, setup guide, user guide, release notes, actual test results, and cloud ownership/configuration instructions. The delivery clearly distinguishes a local installer from a publicly hosted download and distinguishes emulator coverage from live two-device verification.
 
 The requested planning phase ends with these documents. Application implementation follows this recorded specification; changes to the requirements should update the plan and affected tests before the changed behavior is built.
+
+## 20. Approved profile and appearance extension
+
+The owner added these requirements in September 2026 and explicitly chose account synchronization. The detailed [profile/theme implementation plan](docs/PROFILE_THEMES_PLAN.md) was recorded before implementation; this section maps it into the original register.
+
+| Requirement | Exact behavior | Task / acceptance |
+| --- | --- | --- |
+| R-22 Profile | Editable display name, bounded locally uploaded icon, actual joined date when available, unique lifetime task/occurrence completions surviving later deletion; account sync and isolation. | T-63 / A-65 |
+| R-23 Appearance | Purple & black, Black & white, Navy & gold; background/surface/accent editor with at most three saved palettes; apply/edit/delete, readable text, account sync. | T-64 / A-66 |
+| R-24 Feature upgrade | Install the completed profile/theme version before resuming independent production-security work; preserve calendar/settings and old private backup. | T-65 / A-67 |

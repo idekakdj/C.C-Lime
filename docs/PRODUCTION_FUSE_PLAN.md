@@ -29,6 +29,10 @@ Leave browser-specific V8 snapshot and WASM trap settings unchanged until there 
 7. **Final acceptance.** Run unit/tooling/cloud/build/package checks and migrated production desktop acceptance on the exact hardened bytes. Verify worker imports, Google loopback mechanics, encrypted sessions, tray/startup/notification identity and logical recovery. Re-run populated fixture preservation and the installed upgrade only after normal owner closure. Fresh banner/click, sleep/login and clean-PC behavior need their own observed results.
 8. **Evidence and continuation.** CI must exercise the hardening and negative gates and retain versioned sanitized evidence. Update risks and the draft PR only with observed results. Do not remove legacy coverage before equivalent checks pass. Signing, broader native provenance, complete notices, remote abuse controls and organizational/independent assurance remain separate work.
 
-## Initial checkpoint
+## September 30 continuation after the feature upgrade
+
+The owner is now on verified 0.1.10. The [independent acceptance probe](../scripts/probe-production-transport.mjs) succeeds on a disposable copy with `nodeCliInspect` disabled: loopback Chromium connection, calendar render and normal exit zero, without forced cleanup. No installed/retained bytes were changed and the other fuse targets remain open. The [coverage migration map](PRODUCTION_ACCEPTANCE_MAP.md) identifies remaining renderer, dialog, OS, runtime and negative-control work before shipping disabled main-process inspection. This completes transport feasibility only; no production hardening or full independent acceptance is claimed.
+
+## Historical initial checkpoint
 
 The final 0.1.9 executable has seven unmet targets. Current desktop tests and runtime inventory rely on Playwright's main-process inspector. The read-only PE/header prerequisite is implemented and passes nine new tests plus actual package inspection. It requires the pinned Packager's canonical resource JSON and uppercase `SHA256` algorithm spelling; unexpected formats fail rather than being guessed. Header digest `71cfe08d7f1aa068d4cb6634f14a13303424ca189d8c4b97dd1c412762b947b2` matches. No production fuse has been changed and no new owner installation is implied. Independent acceptance feasibility is next.

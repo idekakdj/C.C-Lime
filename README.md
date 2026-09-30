@@ -6,13 +6,13 @@ The home screen is a conventional month calendar with events beneath each date. 
 
 ## Project status
 
-The source targets **0.1.10, an owner-only development preview**, adding synced profile names/photos, joined dates, lifetime task progress, three color presets and up to three custom palettes. The verified owner installation is currently **0.1.9**; the [0.1.10 upgrade](docs/UPGRADE_0110_PLAN.md) is in progress. Automatic notification shortcut alignment, server write quotas and secure 404 recovery remain. The operator is based in Ontario, Canada. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
+The source targets **0.1.10, an owner-only development preview**, adding synced profile names/photos, joined dates, lifetime task progress, three color presets and up to three custom palettes. The owner is now on **0.1.10**; the [upgrade evidence](docs/UPGRADE_0110_PLAN.md) records preserved data/settings and separate installed acceptance. Automatic notification shortcut alignment, server write quotas and secure 404 recovery remain. The operator is based in Ontario, Canada. It is not yet an accepted production release: the [implementation evidence](docs/IMPLEMENTATION_STATUS.md) records results and remaining work. macOS and Linux packages have not been tested or published. No SOC 2, ISO 27001, CAN/DGSI 118, PIPEDA or PHIPA compliance claim is made; the [assurance plan](docs/SECURITY_PRIVACY_PLAN.md) tracks the requested targets and organizational obligations.
 
 ## Project documents
 
 - [Product specification and project plan](PROJECT_PLAN.md)
-- [Implementation task register — 62 tasks](docs/IMPLEMENTATION_TASKS.md)
-- [Acceptance test specification — 64 scenarios](docs/ACCEPTANCE_TESTS.md)
+- [Implementation task register — 65 tasks](docs/IMPLEMENTATION_TASKS.md)
+- [Acceptance test specification — 67 scenarios](docs/ACCEPTANCE_TESTS.md)
 - [Security, privacy and assurance extension](docs/SECURITY_PRIVACY_PLAN.md)
 - [Dependency treatment and release gate](docs/SUPPLY_CHAIN_REPORT.md)
 - [Owner upgrade and follow-up engineering plan](docs/RELEASE_FOLLOWUP_PLAN.md)

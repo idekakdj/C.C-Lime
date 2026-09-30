@@ -18,6 +18,16 @@ Sync can pause briefly when an account sends many changes or the cloud provider 
 
 If an app address is unavailable, C.C. Lime shows **404 — Page not found** with a **Return to calendar** link. Use that link to reopen your saved calendar.
 
+## Your profile and colors
+
+Select your avatar or the account card at the bottom of the sidebar to open **Profile**. Change your display name or upload a PNG/JPEG from your computer (up to 5 MiB and 4,096 pixels per side). The app crops it to a square icon and removes original image metadata. You can replace or remove the icon later. The joined date comes from your account provider when available; local preview shows when profile tracking began.
+
+Lifetime progress counts each completed task, assignment, exam or study occurrence once, including items you later reopen or delete. Previously deleted tasks from before this feature cannot be reconstructed.
+
+In **Settings → Appearance**, choose Purple & black, Black & white or Navy & gold. Create up to three custom palettes using the background, surface and accent pickers or hex fields. Save to apply; cancelling preserves your previous theme. You can edit/delete a saved palette. Text colors adapt for readability; incompatible light/dark background combinations are rejected.
+
+Profile name, photo and saved themes sync with your signed-in account. Local preview stays separate on this computer. Update every computer using the account to **0.1.10 or later** before using these features. Profile conflicts require choosing one version; they cannot create duplicate profiles.
+
 ## Plan your semester
 
 Open **Courses & Semesters**, add semester dates and breaks, then add courses with their names, colors, instructor and usual room. A new class inherits its selected course's semester dates and time zone, proposes weekly meetings, and skips semester breaks by default. Review the selected weekdays and meeting times; lectures and labs should be separate items. Saving a repeating class opens a meeting-date preview before anything is written.
@@ -56,7 +66,7 @@ In Calendar settings, **Follow this computer's time zone** changes this device's
 
 In Settings, preview an `.ics` file before importing. Unchanged imported UIDs are skipped; replacing changed imports is optional. Unsupported recurrence or custom time zones may need finite conversion. Read the preview warnings before committing. Files are limited to 10 MiB and 5,000 imported records.
 
-Use `.ics` export for calendar interoperability. Use **Save a full backup** for complete app recovery, including courses, preferences and completion history. Full backups omit passwords, sign-in tokens and reminder delivery history. Treat them as private files. Calendar-format export does not preserve all app-specific data or per-occurrence completion history.
+Use `.ics` export for calendar interoperability. Use **Save a full backup** for app recovery, including courses, preferences, profile photos, saved themes and completion history. Full backups omit passwords, sign-in tokens and reminder delivery history. These files are not encrypted. Calendar-format export does not preserve all app-specific data or per-occurrence completion history. Copying a backup's calendar into any account excludes its profile and lifetime ledger; a same-account merge includes them only when missing or identical. Removing a photo or item does not erase older exported backups.
 
 Restore first previews the backup. Restoring copies remaps identities; merging into the same account preserves identities. Automatic daily snapshots retain seven daily copies, one pre-migration copy and three manual snapshots. If the database is unreadable, the recovery screen can restore a valid snapshot while preserving the damaged files. Actual older-version migration and full-disk recovery still require release verification.
 

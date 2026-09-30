@@ -2,7 +2,7 @@
 
 ## September 30 profile and appearance extension
 
-Current source 0.1.10; verified installed owner version 0.1.9 pending the requested update. This supersedes the older version summary below. The user explicitly chose account sync for photo, display name and themes.
+Current source and owner installation 0.1.10; private profile/settings preservation passed. This supersedes the older version summary below. The user explicitly chose account sync for photo, display name and themes.
 
 | Added holding | Purpose, location and lifecycle |
 | --- | --- |

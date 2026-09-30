@@ -2,7 +2,7 @@
 
 ## September 30 update
 
-Source 0.1.10, verified installed 0.1.9 pending update; dated statements below are historical. Installed Electron patch and exact notice repair have now passed acceptance. Seven production-fuse gaps and broader provenance/signing controls remain open.
+Source and owner installation 0.1.10; dated statements below are historical. Installed Electron patch and exact notice repair have now passed acceptance. Seven production-fuse gaps and broader provenance/signing controls remain open.
 
 Profile photos and lifetime completion records extend RK-03's personal-data exposure in local databases, sync and backups. Bounded native conversion, per-account rules, fixed identity, three-theme limits and synthetic sync/deletion checks reduce implementation risk. Photo removal/item deletion deliberately do not erase old backups or the lifetime ledger. Operator approval of retention/disposal and privacy notices is still required before broader distribution; no residual risk is accepted here.
 

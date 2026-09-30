@@ -435,7 +435,19 @@ The [detailed extension](SECURITY_PRIVACY_PLAN.md) is authoritative for T-49 sco
 | R-20 Rate limiting | T-50/T-51/T-53 | A-53–A-55/A-57 |
 | R-21 Missing-page recovery | T-52 | A-56 |
 
-## Reporting rules (including extensions)
+## Profile and appearance extension: T-63–T-65
+
+The [ordered feature plan](PROFILE_THEMES_PLAN.md) records implementation details and limits. Added by the owner, with account synchronization explicitly selected.
+
+| Task | Output and completion criterion | Verification |
+| --- | --- | --- |
+| T-63 Profile and progress | Bounded converted photo, editable name, truthful joined/tracking date and durable deduplicated lifetime ledger. Verify restart, invalid/cancelled photo, account-switch isolation, transactional completion failure, reopen/delete, cross-device conflict and full account deletion. | A-65; unit/profile, desktop/profile and live synthetic evidence. |
+| T-64 Appearance | Three named presets and at most three saved custom palettes with accessible controls and readable light/dark combinations. Verify direct cloud fourth-slot denial, edits/deletion, unsaved cancellation, restart and cross-device sync. | A-66; appearance/profile units, cloud protocol and desktop/profile. |
+| T-65 Owner feature installation | Fresh private baseline/backup; exact installed bytes and notices; all account rows/settings preserved; populated upgrade and all installed desktop checks; record CI separately. Then resume independent security work. | A-67; [0.1.10 sequence](UPGRADE_0110_PLAN.md). |
+
+Current statuses are recorded in [implementation evidence](IMPLEMENTATION_STATUS.md); no organizational/security acceptance is implied by completing these feature tasks.
+
+## Reporting rules for all tasks
 
 - Allowed task statuses: planned, in progress, blocked by named dependency, ready for verification, complete, reopened.
 - Allowed test statuses: not run, pass, fail, blocked by named environment.
