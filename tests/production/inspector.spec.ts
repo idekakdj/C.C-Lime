@@ -33,8 +33,8 @@ test('paired control proves disabled Node CLI inspection refuses the listening e
       catch (error) { refused = (error as Error & { cause?: { code?: string } }).cause?.code === 'ECONNREFUSED'; }
       expect(refused).toBe(true);
     }
-    await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: hardened.version, controlNodeTargetObserved: true,
-      disabledInspectorAnnouncementAbsent: true, disabledInspectorPortRefused: true, nodeCliInspect: false,
-      scope: 'Paired disposable control; Node CLI inspection only. Other fuses remain unchanged.' }, null, 2));
   } finally { await second.close(); }
+  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: hardened.version, controlNodeTargetObserved: true,
+    disabledInspectorAnnouncementAbsent: true, disabledInspectorPortRefused: true, normalExit: true, nodeCliInspect: false,
+    scope: 'Paired disposable control; Node CLI inspection only. Other fuses remain unchanged.' }, null, 2));
 });

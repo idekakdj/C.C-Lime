@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import AxeBuilder from '@axe-core/playwright';
 // JavaScript fixture deliberately starts the executable without Electron's inspector launcher.
 import { acceptanceCopy, startDesktop } from './desktop.mjs';
 let copy: Awaited<ReturnType<typeof acceptanceCopy>>;
@@ -16,7 +17,14 @@ test('calendar edits and local profile appearance survive an independently launc
     await editor.getByLabel('Title', { exact: true }).fill('Independent acceptance event');
     await editor.getByRole('button', { name: 'Add to calendar' }).click();
     await expect(editor).not.toBeVisible();
-    await page.locator('.calendar-event').filter({ hasText: 'Independent acceptance event' }).first().click();
+    // Use the actual rendered day rather than the runner's UTC date near midnight.
+    const eventDay = page.locator('.day-cell').filter({ has: page.locator('.calendar-event').filter({ hasText: 'Independent acceptance event' }) }).first().locator('[data-day]');
+    const date = await eventDay.getAttribute('data-day');
+    expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    await eventDay.click();
+    const dayPanel = page.locator(`#day-panel-${date}`);
+    await expect(dayPanel).toBeVisible();
+    await dayPanel.getByRole('button', { name: /Independent acceptance event/ }).click();
     await editor.getByLabel('Title', { exact: true }).fill('Independent accepted edit');
     await editor.getByRole('button', { name: 'Save changes' }).click();
     await expect(editor).not.toBeVisible();
@@ -28,12 +36,15 @@ test('calendar edits and local profile appearance survive an independently launc
     await expect(page.locator('html')).toHaveAttribute('data-appearance', 'navy');
     await desktop.close(); desktop = await startDesktop(copy, profile); page = desktop.page;
     await expect(page.locator('.calendar-event').filter({ hasText: 'Independent accepted edit' }).first()).toBeVisible();
+    await page.locator(`[data-day="${date}"]`).click();
+    await expect(page.locator(`#day-panel-${date}`).getByRole('button', { name: /Independent accepted edit/ })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-appearance', 'navy');
     await page.getByRole('button', { name: 'Open profile', exact: true }).click();
     await expect(page.getByLabel('Display name', { exact: true })).toHaveValue('Independent student');
-    await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, calendarCreatedAndEdited: true,
-      nameAndThemePreserved: true, restart: true, nodeCliInspect: false, scope: 'Renderer/local durability only; no main-process stubs or real account.' }, null, 2));
   } finally { await desktop.close(); }
+  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, calendarCreatedAndEdited: true,
+    dayExpansionPreserved: true, nameAndThemePreserved: true, restart: true, normalExit: true, nodeCliInspect: false,
+    scope: 'Renderer/local durability only; no main-process stubs or real account.' }, null, 2));
 });
 
 test('404 recovery retains saved calendar and exposes no renderer Node API', async ({}, testInfo) => {
@@ -41,6 +52,7 @@ test('404 recovery retains saved calendar and exposes no renderer Node API', asy
   try {
     const page = desktop.page;
     expect(await page.evaluate(() => ({ node: typeof (window as any).require, process: typeof (window as any).process }))).toEqual({ node: 'undefined', process: 'undefined' });
+    expect(await page.evaluate(() => ({ local: Object.keys(localStorage), session: Object.keys(sessionStorage) }))).toEqual({ local: [], session: [] });
     await expect(page.evaluate(() => window.lime.call('unsupported.acceptance-command'))).rejects.toThrow('not supported');
     await page.getByRole('button', { name: 'Add item', exact: true }).first().click();
     await page.getByRole('dialog').getByLabel('Title', { exact: true }).fill('Before missing page');
@@ -51,9 +63,15 @@ test('404 recovery retains saved calendar and exposes no renderer Node API', asy
     await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
     await expect(page.locator('body')).not.toContainText('do-not-reflect');
     await expect(page.evaluate(() => window.lime.call('snapshot'))).rejects.toThrow('Invalid sender');
-    await page.getByRole('link', { name: 'Return to calendar', exact: true }).click();
+    expect((await new AxeBuilder({ page }).setLegacyMode(true).analyze()).violations).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath('missing-page.png') });
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: 'Return to calendar', exact: true })).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.locator('.calendar-event').filter({ hasText: 'Before missing page' }).first()).toBeVisible();
-    await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, secure404Recovery: true,
-      rendererNodeUnavailable: true, unknownCommandDenied: true, nodeCliInspect: false, scope: 'Renderer observations; no main-process sandbox-policy inspection.' }, null, 2));
   } finally { await desktop.close(); }
+  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, secure404Recovery: true,
+    keyboardReturn: true, automated404Accessibility: true, localProfileBrowserStorageEmpty: true, normalExit: true,
+    rendererNodeUnavailable: true, unknownCommandDenied: true, nodeCliInspect: false,
+    scope: 'Renderer observations in a synthetic local profile; no signed-in token or main-process sandbox-policy inspection.' }, null, 2));
 });
