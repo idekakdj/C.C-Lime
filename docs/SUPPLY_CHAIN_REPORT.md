@@ -1,5 +1,9 @@
 # Dependency treatment and release evidence
 
+## September 30 evening: repaired Firebase test dependency
+
+Fresh CI for the independent security-test tooling was blocked by five propagated high findings rooted in gRPC 1.9.16. The [ordered repair and exact evidence](GRPC_DEPENDENCY_PLAN.md) replaces only Firebase Firestore's gRPC dependency with maintainer-patched 1.13.6. Existing 1.14.5 branches remain unchanged. The refreshed full gate has 1,126 components and zero findings; registry signatures/attestations and the 48-test cloud suite pass. Source dependency tooling is updated; the installed 0.1.10 artifact and retained installer remain the previously verified bytes. Fresh CI for this repair is recorded separately when complete. Historical earlier lockfile/audit identities below remain retained.
+
 ## September 30 feature release 0.1.10
 
 The profile/theme update changes application bytes and its version only; no dependency versions changed from the verified 0.1.9 baseline. Owner-installed 0.1.9 now has exact Chromium notices and matching ASAR bytes. Seven selected Electron fuse gaps remain; header integrity metadata equality is not runtime enforcement. Earlier sections retain their historical artifact identities.

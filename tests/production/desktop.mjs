@@ -14,7 +14,8 @@ async function bounded(operation, milliseconds, message) {
   finally { clearTimeout(timer); }
 }
 
-export async function acceptanceCopy() {
+export async function acceptanceCopy(disableInspection = true) {
+  assert.equal(typeof disableInspection, 'boolean');
   const base = path.resolve('test-results/production-acceptance');
   await fs.mkdir(base, { recursive: true });
   const root = path.join(base, randomUUID()), bundle = path.join(root, 'package');
@@ -23,21 +24,24 @@ export async function acceptanceCopy() {
   await fs.cp(path.resolve('out/C.C. Lime-win32-x64'), bundle, { recursive: true, errorOnExist: true, force: false });
   const executable = path.join(bundle, 'cc-lime.exe'), bytes = await fs.readFile(executable), before = readElectronFuses(bytes);
   assert.equal(before.values.nodeCliInspect, true, 'This migration fixture expects the unchanged development package.');
-  const slot = bytes.indexOf(fuseSentinel) + fuseSentinel.length + 2 + 3;
-  assert.equal(bytes[slot], 0x31); bytes[slot] = 0x30;
-  assert.deepEqual(readElectronFuses(bytes).values, { ...before.values, nodeCliInspect: false });
-  await fs.writeFile(executable, bytes);
+  if (disableInspection) {
+    const slot = bytes.indexOf(fuseSentinel) + fuseSentinel.length + 2 + 3;
+    assert.equal(bytes[slot], 0x31); bytes[slot] = 0x30;
+    assert.deepEqual(readElectronFuses(bytes).values, { ...before.values, nodeCliInspect: false });
+    await fs.writeFile(executable, bytes);
+  }
   const manifest = JSON.parse(extractFile(path.join(bundle, 'resources/app.asar'), 'package.json').toString('utf8'));
   return { root, executable, version: manifest.version };
 }
 
-export async function startDesktop(copy, profile) {
+export async function startDesktop(copy, profile, inspectPort) {
   assert.equal(path.dirname(profile), copy.root, 'Synthetic profile must stay in the owned fixture root.');
+  if (inspectPort !== undefined) assert.ok(Number.isInteger(inspectPort) && inspectPort > 1024 && inspectPort < 65536);
   await fs.mkdir(profile, { recursive: true });
   await fs.writeFile(path.join(profile, 'quit-explained'), '1');
   await fs.writeFile(path.join(profile, 'tray-explained'), '1');
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.NODE_OPTIONS;
-  const child = spawn(copy.executable, [`--cc-lime-test-profile=${profile}`, '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', '--no-error-dialogs'], {
+  const child = spawn(copy.executable, [`--cc-lime-test-profile=${profile}`, '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', '--no-error-dialogs', ...(inspectPort === undefined ? [] : [`--inspect=127.0.0.1:${inspectPort}`])], {
     cwd: path.dirname(copy.executable), env, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'],
   });
   let stderr = '', outcome, browser, page, closed = false;
@@ -77,6 +81,7 @@ export async function startDesktop(copy, profile) {
     }
     return {
       page,
+      nodeInspectorAnnounced: () => /Debugger listening on ws:\/\/127\.0\.0\.1:\d+\//.test(stderr),
       async close() {
         if (closed) return;
         closed = true;

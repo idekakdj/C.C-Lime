@@ -72,6 +72,9 @@
     "zod": "4.6.5"
   },
   "overrides": {
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.13.6"
+    },
     "@electron/rebuild": "$@electron/rebuild",
     "@electron/packager": {
       "extract-zip": "npm:@electron-internal/extract-zip@1.0.5"
