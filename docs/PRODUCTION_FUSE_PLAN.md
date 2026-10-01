@@ -1,5 +1,9 @@
 # Production executable hardening and acceptance plan
 
+## October 1 hardened password-account checkpoint
+
+The [live-account continuation](HARDENED_ACCOUNT_ACCEPTANCE_PLAN.md) now observes a real synthetic password identity on retained-byte baseline/all-seven copies: encrypted-session migration, refreshed authentication, exact calendar/profile/history preservation, cloud writes, ordinary restart, sign-out and fresh-profile cloud convergence. Eight checks, four normal exits and complete independent identity/data/configuration cleanup pass. Exact evidence/fingerprints and two failed baseline attempts are in [the implementation register](IMPLEMENTATION_STATUS.md). A discovered snapshot acknowledgment race has a source-only repair; no owner installation or version metadata changed. This narrows the signed-in gate to remaining Google/provider-hosted interaction, native/OS/second-PC and exact final artifact acceptance. All seven installed fuse gaps still remain; these copies do not ship production hardening.
+
 ## October 1 current combined-copy checkpoint
 
 The [continued batch](SECURITY_CONTINUATION_0115.md) now has scoped positive/negative evidence for all seven areas, including both Node environment variables, two fallback paths, raw-header/loaded-file integrity, file fetch and synthetic cookie migration. Final local baseline has 34 passing cases. All 24 existing renderer workflows also pass with all seven target values enabled together on disposable copies, exact executable/archive/fuse/header policy checked at each restart. The first continued Windows CI checkpoint passes 449 tests; downloaded 34/24-case ZIP digests and exact CI archive/fuse identities are verified. The subsequent Node 24 action migration has separate fresh verification. Detailed results and limitations are in [implementation evidence](IMPLEMENTATION_STATUS.md).

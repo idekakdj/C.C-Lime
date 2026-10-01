@@ -1,5 +1,9 @@
 # C.C. Lime initial security and privacy risk register
 
+## October 1 hardened-account treatment evidence
+
+The [hardened-account continuation](HARDENED_ACCOUNT_ACCEPTANCE_PLAN.md) adds eight real synthetic password-account checks, including Windows encrypted-session migration, cloud task/history/profile/theme preservation/writes, restart, sign-out and fresh-profile convergence on all-seven copies. Four launches exit normally and all three attempts have verified identity/data cleanup. A stale synced-state/pending-count defect is reproduced and repaired in source with acknowledgment regression coverage; it is not installed. This advances RK-01/RK-12/T-58, with exact identities and scope in [implementation evidence](IMPLEMENTATION_STATUS.md). The installed release remains unchanged with seven fuse gaps; native dialogs, Google/OS/second-PC/final artifact acceptance, remote abuse/provider controls, signing and organizational assurance remain open. Risk owners/scoring/acceptance are still unapproved; no residual risk is accepted.
+
 ## October 1 continued treatment evidence
 
 The [continued plan](SECURITY_CONTINUATION_0115.md) adds scoped fuse controls, 34 independent baseline passes and 24 combined-fuse renderer passes on disposable copies, plus immutable CI action references and checkout-token/policy guards. RK-01/T-58 and release/access controls gain engineering evidence; the installed release still has seven fuse gaps and native/manual/signed-in/OS/second-PC acceptance is incomplete. An isolated native-dialog check awaits human observation. Exact limitations are recorded in [implementation evidence](IMPLEMENTATION_STATUS.md). No production integration, remote repository enforcement or risk acceptance is inferred. Residual scoring/approval and organizational/independent assurance remain outstanding.

@@ -6,9 +6,22 @@ import { ApplicationService, type HostServices } from '../../src/main/service';
 import { parseCalendar } from '../../src/domain/interchange';
 import { item, recurrence } from '../fixtures';
 import { expand } from '../../src/domain/calendar';
+import { SyncEngine } from '../../src/main/sync';
+import type { Mutation } from '../../src/main/store';
+import type { CloudAdapter } from '../../src/main/cloud';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('reports a newly queued save immediately instead of retaining the previous up-to-date status',async()=>{
+ const {service}=await setup();let sequence=0;
+ const commit=vi.fn(async(m:Mutation)=>({id:m.recordId,value:m.value,version:'synthetic-v1',sequence:++sequence}));
+ const cloud:CloudAdapter={head:async()=>sequence,get:async()=>null,changes:async()=>[],commit};
+ service.sync=new SyncEngine(service.store!,cloud,()=>({uid:'synthetic-status-account',email:'student@example.test',displayName:'Synthetic',verified:true,providers:['password']}),()=>{});
+ await service.sync.sync();expect(service.snapshot().sync).toMatchObject({state:'synced',pending:0});
+ await service.command('save',item());
+ expect(service.snapshot().sync).toMatchObject({state:'local',pending:1});expect(service.snapshot().sync.message).toContain('waiting to sync');expect(commit).not.toHaveBeenCalled();
+ await service.command('sync',null);expect(commit).toHaveBeenCalledTimes(1);expect(service.snapshot().sync).toMatchObject({state:'synced',pending:0});
+},15000);
 it('reapplies an explicit startup preference and validates before native effects',async()=>{
  const {service}=await setup(),apply=vi.fn();(service as any).host.setStartup=apply;
  await service.command('device',{startAtLogin:true});await service.command('device',{startAtLogin:true});
