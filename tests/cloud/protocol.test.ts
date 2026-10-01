@@ -52,6 +52,16 @@ it('rejects malformed lifetime progress through raw requests',async()=>{
 });
 
 describe('Firestore protocol with deployed authorization rules', () => {
+  it.each(['class','event','assignment','exam','study','task'] as const)('syncs repeating %s and denies another account access',async itemType=>{
+    const value=item({itemType,recurrence:recurrence({count:3})});await cloud().commit(mutation(value));expect((await cloud().get(value.id))?.value).toEqual(value);
+    await expect(new FirestoreCloud(project,'alice',async()=>token('bob'),origin).get(value.id)).rejects.toMatchObject({code:'PERMISSION_DENIED'});
+  });
+  it.each([null,'09:00'])('accepts recurring deadlines with due time %s',async time=>{
+    const value=item({itemType:'assignment',timing:{mode:'deadline',date:'2026-09-18',time,zone:'UTC',anchorTime:'09:00'},recurrence:recurrence({count:3})});expect((await rawCommit(value)).status).toBe(200);expect((await cloud().get(value.id))?.value).toEqual(value);
+  });
+  it('denies raw recurrence without a date and class deadlines',async()=>{
+    for(const patch of [{itemType:'task',timing:{mode:'unscheduled',zone:'UTC'}},{itemType:'class',timing:{mode:'deadline',date:'2026-09-18',time:null,zone:'UTC',anchorTime:'09:00'}}]){expect((await rawCommit({...item(),...patch,recurrence:recurrence()} as any)).status).toBe(403);expect(await cloud().head()).toBe(0);}
+  });
   it('accepts the raw request control used for adversarial payload checks',async()=>{expect((await rawCommit(item())).status).toBe(200);});
   it.each([
     {timing:{mode:'timed',start:'not-a-time',end:'not-a-time',zone:'UTC'}},

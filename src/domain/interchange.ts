@@ -124,6 +124,12 @@ export function previewImport(parsed:ParsedCalendar,existing:DomainRecord[]):Imp
 }
 function property(name:string,value:any,type?:string):ICAL.Property{const p=new ICAL.Property(name);if(type)p.resetType(type);p.setValue(value);return p;}
 function timeProperty(name:string,iso:string,dateOnly=false,tz?:string):ICAL.Property{const p=new ICAL.Property(name);p.resetType(dateOnly?'date':'date-time');if(tz&&tz!=='UTC')p.setParameter('tzid',tz);p.setValue(ICAL.Time.fromString(dateOnly?iso:iso, null));return p;}
+function recurrenceDateProperty(name:string,t:Timing,date:string):ICAL.Property {
+  if(t.mode==='allDay'||t.mode==='deadline'&&!t.time)return timeProperty(name,date,true);
+  const clock=t.mode==='timed'?DateTime.fromISO(t.start).setZone(t.zone).toFormat('HH:mm:ss'):t.mode==='deadline'?`${t.time}:00`:null;
+  if(!clock)throw new Error('Repeating items need a date.');
+  return timeProperty(name,`${date}T${clock}${t.zone==='UTC'?'Z':''}`,false,t.zone);
+}
 function eventComponent(item:CalendarItem,uid:string):ICAL.Component {
   const c=new ICAL.Component(item.timing.mode==='unscheduled'?'vtodo':'vevent');c.addPropertyWithValue('uid',uid);c.addPropertyWithValue('dtstamp',ICAL.Time.fromJSDate(new Date(),true));c.addPropertyWithValue('summary',item.title);c.addPropertyWithValue('description',item.notes);c.addPropertyWithValue('location',item.location);c.addPropertyWithValue('x-cclime-type',item.itemType);c.addPropertyWithValue('x-cclime-status',item.status);
   const t=item.timing;
@@ -134,11 +140,11 @@ function eventComponent(item:CalendarItem,uid:string):ICAL.Component {
   }
   if(t.mode==='allDay'){c.addProperty(timeProperty('dtstart',t.startDate,true));c.addProperty(timeProperty('dtend',t.endDate,true));}
   if(t.mode==='deadline'){
-    if(t.time){const start=localInstant(t.date,t.time,t.zone).toUTC();c.addProperty(timeProperty('dtstart',start.toFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")));c.addProperty(timeProperty('dtend',start.plus({minutes:1}).toFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")));}
+    if(t.time){const tz=item.recurrence?t.zone:'UTC',start=localInstant(t.date,t.time,t.zone).setZone(tz);c.addProperty(timeProperty('dtstart',start.toFormat("yyyy-MM-dd'T'HH:mm:ss")+(tz==='UTC'?'Z':''),false,tz));c.addProperty(timeProperty('dtend',start.plus({minutes:1}).toFormat("yyyy-MM-dd'T'HH:mm:ss")+(tz==='UTC'?'Z':''),false,tz));}
     else {c.addProperty(timeProperty('dtstart',t.date,true));c.addProperty(timeProperty('dtend',addDays(t.date,1),true));}
     c.addPropertyWithValue('x-cclime-deadline',t.time??'DATE');c.addPropertyWithValue('x-cclime-zone',t.zone);c.addPropertyWithValue('x-cclime-anchor',t.anchorTime);
   }
-  if(item.recurrence){const first=sourceDate(t)!;let rule=recurrenceRule(item.recurrence,first);if(t.mode==='timed'&&item.recurrence.until){const time=DateTime.fromISO(t.start).setZone(t.zone).toFormat('HH:mm');const until=localInstant(item.recurrence.until,time,t.zone).toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'");rule=rule.replace(/UNTIL=\d{8}/,`UNTIL=${until}`);}c.addProperty(property('rrule',ICAL.Recur.fromString(rule)));for(const [field,dates]of [['exdate',item.recurrence.excludedDates],['rdate',item.recurrence.extraDates]]as const)for(const date of dates){if(t.mode==='allDay')c.addProperty(timeProperty(field,date,true));else if(t.mode==='timed')c.addProperty(timeProperty(field,`${date}T${DateTime.fromISO(t.start).setZone(t.zone).toFormat('HH:mm:ss')}`,false,t.zone));}}
+  if(item.recurrence){const first=sourceDate(t)!;let rule=recurrenceRule(item.recurrence,first);if((t.mode==='timed'||t.mode==='deadline'&&t.time)&&item.recurrence.until){const time=t.mode==='timed'?DateTime.fromISO(t.start).setZone(t.zone).toFormat('HH:mm'):t.time!;const until=localInstant(item.recurrence.until,time,t.zone).toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'");rule=rule.replace(/UNTIL=\d{8}/,`UNTIL=${until}`);}c.addProperty(property('rrule',ICAL.Recur.fromString(rule)));for(const [field,dates]of [['exdate',item.recurrence.excludedDates],['rdate',item.recurrence.extraDates]]as const)for(const date of dates)c.addProperty(recurrenceDateProperty(field,t,date));}
   for(const reminder of item.reminders){const alarm=new ICAL.Component('valarm');alarm.addPropertyWithValue('action','DISPLAY');alarm.addPropertyWithValue('description',item.title);alarm.addPropertyWithValue('trigger',ICAL.Duration.fromSeconds(-reminder.minutesBefore*60));c.addSubcomponent(alarm);}
   return c;
 }
@@ -150,8 +156,7 @@ export function exportCalendar(records:DomainRecord[],options:{courses?:string[]
     const uid=r.sourceUid??`${r.id}@cc-lime.app`;calendar.addSubcomponent(eventComponent(r,uid));
     for(const exception of chosen.filter(e=>e.kind==='exception'&&e.seriesId===r.id))if(exception.kind==='exception'){
       const c=eventComponent({...r,...exception.override,timing:exception.override.timing??atDate(r.timing,exception.originalDate),recurrence:null},uid);
-      if(r.timing.mode==='allDay')c.addProperty(timeProperty('recurrence-id',exception.originalDate,true));
-      else if(r.timing.mode==='timed')c.addProperty(timeProperty('recurrence-id',`${exception.originalDate}T${DateTime.fromISO(r.timing.start).setZone(r.timing.zone).toFormat('HH:mm:ss')}`,false,r.timing.zone));
+      c.addProperty(recurrenceDateProperty('recurrence-id',r.timing,exception.originalDate));
       if(exception.cancelled)c.addPropertyWithValue('status','CANCELLED');calendar.addSubcomponent(c);
     }
   }

@@ -68,8 +68,8 @@ service cloud.firestore {
           data.payload.title is string && data.payload.title.size() > 0 && data.payload.title.size() <= 200 && data.payload.notes is string && data.payload.notes.size() <= 10000 && data.payload.location is string && data.payload.location.size() <= 300 &&
           data.payload.itemType in ['class','event','assignment','exam','study','task'] && data.payload.status in ['open','in_progress','completed'] && data.payload.priority in ['high','normal','low'] &&
           reminders(data.payload.reminders) && timing(data.payload.timing) && recurrence(data.payload.recurrence) &&
-          (!(data.payload.itemType in ['class','study']) || data.payload.timing.mode == 'timed') && (!(data.payload.itemType in ['task','assignment']) || data.payload.recurrence == null) &&
-          (data.payload.recurrence == null || data.payload.timing.mode in ['timed','allDay']) &&
+          (!(data.payload.itemType in ['class','study']) || data.payload.timing.mode == 'timed') &&
+          (data.payload.recurrence == null || data.payload.timing.mode in ['timed','allDay','deadline']) &&
           (data.payload.completedAt == null || instant(data.payload.completedAt)) && (data.payload.sourceUid == null || (data.payload.sourceUid is string && data.payload.sourceUid.size() <= 1000)) &&
           (data.payload.estimatedMinutes == null || (data.payload.estimatedMinutes is int && data.payload.estimatedMinutes >= 5 && data.payload.estimatedMinutes <= 6000)) &&
           (data.payload.courseId == null || validId(data.payload.courseId)) && (data.payload.assignmentId == null || validId(data.payload.assignmentId))) ||

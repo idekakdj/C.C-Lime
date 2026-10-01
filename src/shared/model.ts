@@ -34,9 +34,8 @@ const itemFields = {
   completedAt: instant.nullable().default(null), sourceUid: z.string().max(1000).nullable().default(null),
 };
 export const itemSchema = z.object({ id: uid, kind: z.literal('item'), ...itemFields }).strict().superRefine((item, ctx) => {
-  if (['assignment', 'task'].includes(item.itemType) && item.recurrence) ctx.addIssue({ code: 'custom', message: 'Assignments and personal tasks do not repeat. Use recurring study sessions.', path: ['recurrence'] });
   if (['class', 'study'].includes(item.itemType) && item.timing.mode !== 'timed') ctx.addIssue({ code: 'custom', message: 'Classes and study sessions need a start and end time.', path: ['timing'] });
-  if (item.recurrence && !['timed', 'allDay'].includes(item.timing.mode)) ctx.addIssue({ code: 'custom', message: 'Repeating items need a timed or all-day schedule.', path: ['recurrence'] });
+  if (item.recurrence && item.timing.mode === 'unscheduled') ctx.addIssue({ code: 'custom', message: 'Repeating items need a date.', path: ['recurrence'] });
   if (new Set(item.reminders.map(r => r.id)).size !== item.reminders.length) ctx.addIssue({ code: 'custom', message: 'Reminder identities must be unique.', path: ['reminders'] });
 });
 export const courseSchema = z.object({ id: uid, kind: z.literal('course'), name: title, code: z.string().max(30).default(''), semesterId: uid.nullable().default(null), instructor: z.string().max(200).default(''), location: z.string().max(300).default(''), color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#A78BFA'), archived: z.boolean().default(false) }).strict();

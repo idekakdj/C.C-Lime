@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
 import { extractFile } from '@electron/asar';
@@ -30,8 +30,10 @@ export async function acceptanceCopy(disableInspection = true) {
     assert.deepEqual(readElectronFuses(bytes).values, { ...before.values, nodeCliInspect: false });
     await fs.writeFile(executable, bytes);
   }
-  const manifest = JSON.parse(extractFile(path.join(bundle, 'resources/app.asar'), 'package.json').toString('utf8'));
-  return { root, executable, version: manifest.version };
+  const archive = path.join(bundle, 'resources/app.asar');
+  const manifest = JSON.parse(extractFile(archive, 'package.json').toString('utf8'));
+  const packageSha256 = createHash('sha256').update(await fs.readFile(archive)).digest('hex');
+  return { root, executable, version: manifest.version, packageSha256 };
 }
 
 export async function startDesktop(copy, profile, inspectPort) {
