@@ -9,6 +9,15 @@ import { expand } from '../../src/domain/calendar';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('requires confirmation before signup/link/change network effects and limits password changes',async()=>{
+ const {service}=await setup(),signup=vi.spyOn(service.auth,'signUp'),link=vi.spyOn(service.auth,'linkPassword'),change=vi.spyOn(service.auth,'changePassword').mockRejectedValue(new Error('synthetic auth failure'));
+ const password='Synthetic violet river 47';
+ await expect(service.command('auth.signUp',{email:'student@example.test',name:'Student',password,confirmation:'mismatch'})).rejects.toThrow('match');
+ await expect(service.command('auth.linkPassword',{password,confirmation:'mismatch'})).rejects.toThrow('match');expect(signup).not.toHaveBeenCalled();expect(link).not.toHaveBeenCalled();
+ await expect(service.command('auth.changePassword',{currentPassword:'old',password,confirmation:'mismatch'})).rejects.toThrow('match');expect(change).not.toHaveBeenCalled();
+ for(let i=0;i<4;i++)await expect(service.command('auth.changePassword',{currentPassword:'old',password,confirmation:password})).rejects.toThrow('synthetic');
+ await expect(service.command('auth.changePassword',{currentPassword:'old',password,confirmation:password})).rejects.toThrow('Please wait');expect(change).toHaveBeenCalledTimes(4);
+});
 it('reports all unsynced queue states without decoding their contents during a snapshot',async()=>{
   const {service}=await setup(),store=service.store!;
   for(let i=0;i<3;i++)await service.command('save',item({title:`Queue sample ${i}`}));

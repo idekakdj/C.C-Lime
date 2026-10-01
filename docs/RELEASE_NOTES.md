@@ -1,4 +1,10 @@
-# C.C. Lime 0.1.10 — development preview
+# C.C. Lime 0.1.11 — development preview
+
+## 0.1.11 profile editing and password controls
+
+Centers the profile heading/cards with consistent gutters, wraps long profile labels, and removes the trailing Personal workspace chevron. Uploaded photos open a user-controlled square crop with dragging, keyboard sliders, zoom, reset and explicit Save/Cancel. Username edits use the existing synced profile name; email remains the login identifier.
+
+New-account and added-password forms include strength feedback and matching confirmation. Settings lets password-enabled accounts change passwords after verifying the current password, with the same new-password controls. Existing-password sign-in remains compatible. Crop originals and passwords are not persisted. No calendar schema or cloud-rule change is required. See the [implementation plan](PROFILE_CROP_LAYOUT_PLAN.md); owner installation and final acceptance are pending. This remains an unsigned owner-only preview without compliance certification.
 
 ## September 30: 0.1.10 profile and appearance update
 

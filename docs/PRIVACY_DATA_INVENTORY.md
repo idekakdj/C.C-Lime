@@ -1,5 +1,13 @@
 # C.C. Lime data and retention inventory
 
+## 0.1.11 crop and password changes
+
+Photo editing retains one bounded decoded source image temporarily in main-process memory and sends a metadata-free preview plus opaque token to the renderer. Cancel, account transition, navigation away or a ten-minute timeout clears the draft. Only the explicitly saved 128×128 icon enters the existing profile/outbox/cloud/snapshot lifecycle. Source file paths and original photos are not persisted. Username uses the existing private profile-name field and is not a new login identifier.
+
+Current/new/confirmation passwords exist transiently in form state and the IPC/auth operation. Current and new passwords go directly to Firebase's authentication API over HTTPS; confirmation stays within the app's validation. Password strength feedback runs locally; passwords are not submitted to a scoring service, stored in SQLite/backups/diagnostics or logged. The rotated refresh token uses the existing OS-encrypted session file. Password fields clear after success or leaving the form; current-password fields also clear after failed update attempts. Comprehensive breach screening and provider policy enforcement remain follow-ups.
+
+Previous profile-preservation checks below concerned the tool-launched redirected profile; the normal desktop profile is separate, as corrected in [implementation evidence](IMPLEMENTATION_STATUS.md). A future upgrade must freshly back up and compare the normal profile through Explorer's actual filesystem context.
+
 ## September 30 profile and appearance extension
 
 Current source and owner installation 0.1.10; private profile/settings preservation passed. This supersedes the older version summary below. The user explicitly chose account sync for photo, display name and themes.

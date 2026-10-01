@@ -5,7 +5,7 @@ import { ZodError } from 'zod';
 import { ApplicationService } from './service';
 import { loadCloudConfiguration } from './config';
 import { appProtocol, isAppDocument } from './app-protocol';
-import { readAvatar } from './avatar';
+import { prepareAvatar } from './avatar';
 import { WINDOWS_IDENTITIES, squirrelInstallation, isRegularFile, shortcutIO, repairInstalledShortcuts, removeInstalledRootShortcut, squirrelEvent, handleSquirrelEvent, runUpdater } from './windows-integration';
 
 app.setName('C.C. Lime');
@@ -51,7 +51,7 @@ else{
     const config=loadCloudConfiguration(root,app.isPackaged?undefined:app.getAppPath());
     service=new ApplicationService(root,config,{
       secure:safeStorage,version:app.getVersion(),changed,
-      chooseAvatar:async()=>{const result=await dialog.showOpenDialog(window!,{title:'Choose a profile photo',properties:['openFile'],filters:[{name:'PNG or JPEG photo',extensions:['png','jpg','jpeg']}]});return result.canceled||!result.filePaths[0]?null:readAvatar(result.filePaths[0],bytes=>nativeImage.createFromBuffer(bytes));},
+      chooseAvatar:async()=>{const result=await dialog.showOpenDialog(window!,{title:'Choose a profile photo',properties:['openFile'],filters:[{name:'PNG or JPEG photo',extensions:['png','jpg','jpeg']}]});return result.canceled||!result.filePaths[0]?null:prepareAvatar(result.filePaths[0],bytes=>nativeImage.createFromBuffer(bytes));},
       openBrowser:async url=>{const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!=='accounts.google.com')throw new Error('Unsupported sign-in address.');await shell.openExternal(url);},
       notify:notice=>{if(notificationSetupFailed||!Notification.isSupported()){notice.onFailure();return;}const notification=new Notification({title:notice.title,body:notice.body,icon:iconPath,silent:false});notices.add(notification);notification.on('click',()=>show(notice.inbox?{action:'inbox'}:{itemId:notice.itemId,occurrenceKey:notice.occurrenceKey}));notification.on('failed',()=>{notice.onFailure();notices.delete(notification);});notification.on('close',()=>notices.delete(notification));notification.show();},
       openFile:async kind=>{const result=await dialog.showOpenDialog(window!,{title:kind==='ics'?'Import calendar':'Restore calendar backup',properties:['openFile'],filters:[{name:kind==='ics'?'Calendar file':'C.C. Lime backup',extensions:kind==='ics'?['ics']:['json']} ]});return result.canceled?null:result.filePaths[0];},

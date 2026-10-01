@@ -10,6 +10,9 @@ import { AuthService, type SecureStorage } from './auth';
 import { FirestoreCloud } from './cloud';
 import { SyncEngine } from './sync';
 import { CommandRateLimits } from './rate-limit';
+import type { PreparedAvatar } from './avatar';
+import { avatarCropSchema } from '../shared/avatar-crop';
+import { validateNewPassword } from '../shared/password';
 import { PROFILE_ID, profileSchema, avatarSchema, type UserProfile } from '../shared/model';
 import { appearanceSchema, defaultAppearance } from '../shared/appearance';
 import { ReminderScheduler, type ReminderNotice } from './scheduler';
@@ -20,7 +23,7 @@ import { defaultDeviceSettings, parseRecord, preferencesSchema, itemSchema, seme
 
 const deviceSchema=z.object({notifications:z.boolean(),startAtLogin:z.boolean(),closeToTray:z.boolean(),quietStart:localTime.nullable(),quietEnd:localTime.nullable(),privacy:z.boolean(),followZone:z.boolean(),onboardingDone:z.boolean(),view:z.enum(['month','week','agenda']),month:z.string().regex(/^\d{4}-\d{2}$/).nullable(),hideCompleted:z.boolean()}).strict();
 export interface HostServices {
-  chooseAvatar?():Promise<string|null>;
+  chooseAvatar?():Promise<PreparedAvatar|null>;
   secure:SecureStorage; openBrowser(url:string):Promise<void>; changed():void; notify(notice:ReminderNotice):void;
   openFile(kind:'ics'|'backup'):Promise<string|null>; saveFile(kind:'ics'|'backup'|'diagnostics'):Promise<string|null>;
   setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string; timeZone?():string;
@@ -41,6 +44,10 @@ export class ApplicationService {
   private restorePreview:{token:string;records:DomainRecord[];account:string;foreign:boolean;count:number}|null=null;
   private schedulePreview:{token:string;account:string;revision:string;expires:number;semester:Semester|null;pairs:Array<{before:CalendarItem|null;after:CalendarItem}>}|null=null;
   private notificationTest:NotificationTest|null=null;
+  private avatarIntent = 0;
+  private avatarTimer: ReturnType<typeof setTimeout> | null = null;
+  private avatarDraft: { store: LocalStore; token: string; expires: number; previous: string|null; photo: PreparedAvatar } | null = null;
+  private clearAvatar() { this.avatarIntent++; this.avatarDraft = null; if(this.avatarTimer)clearTimeout(this.avatarTimer);this.avatarTimer=null; }
   private readonly settingsPath:string;
   constructor(readonly root:string,readonly config:CloudConfiguration|null,private host:HostServices){
     fs.mkdirSync(root,{recursive:true});this.settingsPath=path.join(root,'device.json');
@@ -51,6 +58,7 @@ export class ApplicationService {
     // Revocation can arrive inside a sync request. Hide data and stop reminders
     // immediately; close SQLite only after that request has unwound.
     if(!this.auth.session&&!this.localMode&&this.store){
+      this.clearAvatar();
       const previous=this.store;this.scheduler?.stop();this.switching=true;
       void this.stopServices().then(()=>{if(this.store===previous&&!this.auth.session){previous.close();this.store=null;this.imports.clear();this.restorePreview=null;}this.switching=false;this.host.changed();});
     }
@@ -66,6 +74,7 @@ export class ApplicationService {
     const zone=zoneSchema.safeParse(this.host.timeZone?.()??new Intl.DateTimeFormat().resolvedOptions().timeZone);return zone.success?zone.data:fixed;
   }
   private async activate(accountId:string,local=false):Promise<void>{
+    this.clearAvatar();
     this.schedulePreview=null;
     this.switching=true;this.host.changed();await this.stopServices();this.store?.close();this.store=null;this.localMode=local;this.imports.clear();this.restorePreview=null;
     try{
@@ -80,12 +89,13 @@ export class ApplicationService {
   }
   private async stopServices(){this.scheduler?.stop();this.scheduler=null;await this.sync?.stop();this.sync=null;this.cloud=null;}
   private async removeLocal():Promise<void>{
+    this.clearAvatar();
     const store=this.active(),directory=path.resolve(store.directory),expected=path.resolve(this.root,'accounts',createHash('sha256').update(store.accountId).digest('hex').slice(0,32));
     if(directory!==expected||path.dirname(directory)!==path.resolve(this.root,'accounts'))throw new Error('Local data path could not be verified.');
     this.switching=true;await this.stopServices();await this.worker?.terminate();store.close();this.store=null;this.localMode=false;this.imports.clear();this.restorePreview=null;
     this.auth.signOut();fs.rmSync(directory,{recursive:true,force:true});this.switching=false;this.host.changed();
   }
-  async close(){this.schedulePreview=null;this.auth.cancelGoogle();await this.stopServices();this.worker?.terminate();this.store?.close();this.store=null;}
+  async close(){this.clearAvatar();this.schedulePreview=null;this.auth.cancelGoogle();await this.stopServices();this.worker?.terminate();this.store?.close();this.store=null;}
   setVisible(visible:boolean){this.sync?.setVisible(visible);}
   resume(){this.scheduler?.reconcile();this.sync?.schedule(100);}
   private active():LocalStore{if(this.switching||!this.store||(!this.localMode&&this.store.accountId!==this.auth.session?.uid))throw new Error('Open a calendar account first.');return this.store;}
@@ -111,8 +121,23 @@ export class ApplicationService {
     if(this.store?.metadata('deleting',false)&&!['snapshot','auth.reauthenticate','auth.cancel','auth.signOut','account.delete','backup','dataFolder','diagnostics'].includes(command))throw new Error('Account deletion has started. Resume it in Settings; editing and reminders are paused.');
     switch(command){
       case 'profile.save':{const p=z.object({name:z.string().trim().min(1).max(100)}).strict().parse(payload),store=this.active();store.save({...this.profile(store),name:p.name,joinedAt:this.auth.session?.createdAt??this.profile(store).joinedAt});this.changed();return true;}
-      case 'profile.photo':{const store=this.active();if(!this.host.chooseAvatar)throw new Error('Photo selection is unavailable.');const photo=await this.host.chooseAvatar();if(this.active()!==store)throw new Error('The account changed while choosing the photo. Please try again.');if(photo===null)return null;store.save({...this.profile(store),avatar:avatarSchema.parse(photo)});this.changed();return true;}
-      case 'profile.removePhoto':{const store=this.active();store.save({...this.profile(store),avatar:null});this.changed();return true;}
+      case 'profile.photo':{
+        const store=this.active();if(!this.host.chooseAvatar)throw new Error('Photo selection is unavailable.');
+        this.clearAvatar();const intent=this.avatarIntent,previous=this.profile(store).avatar;
+        const photo=await this.host.chooseAvatar();
+        if(this.active()!==store||intent!==this.avatarIntent)throw new Error('The account or photo selection changed. Please try again.');
+        if(photo===null)return null;
+        const token=randomUUID();this.avatarDraft={store,token,expires:performance.now()+600000,previous,photo};
+        this.avatarTimer=setTimeout(()=>this.clearAvatar(),600000);this.avatarTimer.unref();
+        return {token,preview:photo.preview,width:photo.width,height:photo.height};
+      }
+      case 'profile.photo.save':{
+        const p=z.object({token:z.string().uuid(),adjustment:avatarCropSchema}).strict().parse(payload),store=this.active(),draft=this.avatarDraft;
+        if(!draft||draft.token!==p.token||draft.store!==store||performance.now()>draft.expires||this.profile(store).avatar!==draft.previous){this.clearAvatar();throw new Error('This photo preview expired or changed. Please choose the photo again.');}
+        const avatar=avatarSchema.parse(draft.photo.render(p.adjustment));store.save({...this.profile(store),avatar});this.clearAvatar();this.changed();return true;
+      }
+      case 'profile.photo.cancel':{const p=z.object({token:z.string().uuid()}).strict().parse(payload);if(this.avatarDraft?.token===p.token)this.clearAvatar();return true;}
+      case 'profile.removePhoto':{const store=this.active();this.clearAvatar();store.save({...this.profile(store),avatar:null});this.changed();return true;}
       case 'appearance':{const appearance=appearanceSchema.parse(payload),store=this.active();store.save({...this.profile(store),appearance});this.changed();return true;}
       case 'snapshot':{
         const p=z.object({recordsRevision:z.string().max(200).optional()}).strict().parse(payload??{}),snapshot=this.snapshot();
@@ -124,13 +149,14 @@ export class ApplicationService {
       case 'recovery.list':{const account=this.localMode?'local-preview':this.auth.session?.uid;if(!account||!this.recoveryError)throw new Error('No calendar is waiting for recovery.');return recoverySnapshots(this.root,account);}
       case 'recovery.restore':{const p=z.object({name:z.string().max(250),confirmation:z.literal('RESTORE')}).strict().parse(payload);const account=this.localMode?'local-preview':this.auth.session?.uid;if(!account||!this.recoveryError)throw new Error('No calendar is waiting for recovery.');recoverSnapshot(this.root,account,p.name);await this.activate(account,this.localMode);return true;}
       case 'auth.signIn':{const p=z.object({email:z.string(),password:z.string()}).strict().parse(payload);const session=await this.auth.signIn(p.email,p.password);await this.activate(session.uid);return true;}
-      case 'auth.signUp':{const p=z.object({email:z.string(),password:z.string(),name:z.string()}).strict().parse(payload);const session=await this.auth.signUp(p.email,p.password,p.name);await this.activate(session.uid);await this.auth.sendVerification();return true;}
+      case 'auth.signUp':{const p=z.object({email:z.string(),password:z.string(),confirmation:z.string(),name:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);const session=await this.auth.signUp(p.email,p.password,p.name);await this.activate(session.uid);await this.auth.sendVerification();return true;}
       case 'auth.google':{const p=z.object({link:z.boolean().default(false)}).strict().parse(payload??{});const old=this.auth.session?.uid;const session=await this.auth.google(p.link);if(session.uid!==old||!this.store)await this.activate(session.uid);return true;}
       case 'auth.cancel':this.auth.cancelGoogle();return true;
       case 'auth.verify':await this.auth.sendVerification();return true;
       case 'auth.refresh':await this.auth.refreshProfile();this.sync?.schedule(0);this.host.changed();return true;
       case 'auth.reset':await this.auth.resetPassword(z.object({email:z.string()}).strict().parse(payload).email);return true;
-      case 'auth.linkPassword':await this.auth.linkPassword(z.object({password:z.string()}).strict().parse(payload).password);return true;
+      case 'auth.linkPassword':{const p=z.object({password:z.string(),confirmation:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);await this.auth.linkPassword(p.password);return true;}
+      case 'auth.changePassword':{const p=z.object({currentPassword:z.string(),password:z.string(),confirmation:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);await this.auth.changePassword(p.currentPassword,p.password);return true;}
       case 'auth.reauthenticate':{const p=z.object({method:z.enum(['password','google']),password:z.string().optional()}).strict().parse(payload);const account=this.auth.session?.uid;if(!account)throw new Error('Sign in first.');if(p.method==='password')await this.auth.reauthenticate(p.password??'');else await this.auth.google(false,account);return true;}
       case 'local.remove':{z.object({confirmation:z.literal('REMOVE')}).strict().parse(payload);await this.removeLocal();return true;}
       case 'account.delete':{
@@ -145,7 +171,7 @@ export class ApplicationService {
         if(directory!==expected)throw new Error('Local account path could not be verified.');
         store.close();this.store=null;fs.rmSync(directory,{recursive:true,force:true});this.switching=false;this.host.changed();return true;
       }
-      case 'auth.signOut':this.schedulePreview=null;await this.stopServices();this.store?.close();this.store=null;this.localMode=false;this.auth.signOut();this.imports.clear();this.host.changed();return true;
+      case 'auth.signOut':this.clearAvatar();this.schedulePreview=null;await this.stopServices();this.store?.close();this.store=null;this.localMode=false;this.auth.signOut();this.imports.clear();this.host.changed();return true;
       case 'localPreview':if(this.auth.session)throw new Error('Sign out before opening a local preview.');await this.activate('local-preview',true);return true;
       case 'schedule.preview':{
         const p=z.object({value:z.union([itemSchema,semesterSchema]),from:localDate.optional(),to:localDate.optional(),restoreOldBreaks:z.boolean().default(false)}).strict().parse(payload);

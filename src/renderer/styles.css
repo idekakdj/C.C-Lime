@@ -24,3 +24,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .schedule-changes{list-style:none;display:flex;flex-direction:column;gap:9px;padding:0;max-height:300px;overflow:auto}
 .schedule-changes li{background:var(--theme-130c1b,#130c1b);border:1px solid var(--theme-453050,#453050);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere}
 .schedule-changes span{color:var(--theme-c9b5d8,#c9b5d8)}
+.profile-page{width:100%;max-width:1166px;margin:0 auto;padding:0 33px 40px}
+.profile-workspace .page-heading{max-width:1166px;margin-inline:auto;width:100%}
+.profile-hero>div{min-width:0}.profile-hero p{overflow-wrap:anywhere}
+.crop-preview{position:relative;overflow:hidden;aspect-ratio:1;width:min(280px,100%);margin:0 auto;border:2px solid var(--border);border-radius:18px;touch-action:none;cursor:grab;background:var(--panel)}
+.crop-preview img{position:absolute;max-width:none;pointer-events:none;user-select:none}
+.crop-editor input[type=range]{width:100%;accent-color:var(--accent)}
+.password-settings{display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--border);padding-top:18px}
+@media(max-width:820px){.profile-page{padding-inline:22px}}
+@media(max-width:600px){.profile-page{padding:0 15px 25px}.profile-hero{flex-wrap:wrap}}

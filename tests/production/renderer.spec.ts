@@ -29,7 +29,7 @@ test('calendar edits and local profile appearance survive an independently launc
     await editor.getByRole('button', { name: 'Save changes' }).click();
     await expect(editor).not.toBeVisible();
     await page.getByRole('button', { name: 'Open profile', exact: true }).click();
-    await page.getByLabel('Display name', { exact: true }).fill('Independent student');
+    await page.getByLabel('Username', { exact: true }).fill('Independent student');
     await page.getByRole('button', { name: 'Save profile', exact: true }).click();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByRole('button', { name: 'Navy & gold', exact: true }).click();
@@ -40,7 +40,7 @@ test('calendar edits and local profile appearance survive an independently launc
     await expect(page.locator(`#day-panel-${date}`).getByRole('button', { name: /Independent accepted edit/ })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-appearance', 'navy');
     await page.getByRole('button', { name: 'Open profile', exact: true }).click();
-    await expect(page.getByLabel('Display name', { exact: true })).toHaveValue('Independent student');
+    await expect(page.getByLabel('Username', { exact: true })).toHaveValue('Independent student');
   } finally { await desktop.close(); }
   await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, calendarCreatedAndEdited: true,
     dayExpansionPreserved: true, nameAndThemePreserved: true, restart: true, normalExit: true, nodeCliInspect: false,

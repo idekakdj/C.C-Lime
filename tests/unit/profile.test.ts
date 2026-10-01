@@ -6,6 +6,8 @@ import { randomUUID } from 'node:crypto';
 import { LocalStore } from '../../src/main/store';
 import { ApplicationService, type HostServices } from '../../src/main/service';
 import { avatarDimensions, readAvatar, MAX_AVATAR_BYTES } from '../../src/main/avatar';
+import type { PreparedAvatar } from '../../src/main/avatar';
+import { centeredCrop } from '../../src/shared/avatar-crop';
 import { profileSchema, PROFILE_ID, type DomainRecord } from '../../src/shared/model';
 import { activePalette, defaultAppearance, appearanceSchema, contrast, foreground, paletteSchema, presets } from '../../src/shared/appearance';
 import { createBackup, readBackup, remapBackup } from '../../src/domain/interchange';
@@ -16,7 +18,8 @@ function root(){const folder=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-profi
 function store(account='alice',folder=root()){const db=new LocalStore(folder,account);stores.push(db);return db;}
 const photo='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jYykAAAAASUVORK5CYII=';
 const profile=()=>profileSchema.parse({id:PROFILE_ID,kind:'profile',name:'Student',avatar:photo,joinedAt:'2024-09-01T00:00:00.000Z',appearance:{active:'purple',custom:[]}});
-async function service(chooseAvatar:HostServices['chooseAvatar']=async()=>photo){const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test',chooseAvatar};const result=new ApplicationService(root(),null,host);services.push(result);await result.command('localPreview',null);return result;}
+const selection=():PreparedAvatar=>({preview:photo,width:1,height:1,render:()=>photo});
+async function service(chooseAvatar:HostServices['chooseAvatar']=async()=>selection()){const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test',chooseAvatar};const result=new ApplicationService(root(),null,host);services.push(result);await result.command('localPreview',null);return result;}
 afterEach(async()=>{for(const s of services.splice(0))await s.close();for(const s of stores.splice(0))s.close();for(const folder of roots.splice(0)){expect(path.dirname(folder)).toBe(os.tmpdir());expect(path.basename(folder)).toMatch(/^cc-lime-profile-/);fs.rmSync(folder,{recursive:true,force:true});}});
 it('retains profile photo, name, join date and three themes across restart and isolates accounts',()=>{
  const folder=root(),a=store('alice',folder),b=store('bob',folder),value=profile();value.appearance.custom=Array.from({length:3},(_,i)=>({id:randomUUID(),name:`Theme ${i}`,colors:{background:'#111111',surface:'#222222',accent:'#abcdef'}}));value.appearance.active=value.appearance.custom[2].id;a.save(value);a.close();expect(store('alice',folder).get(PROFILE_ID)).toEqual(value);expect(b.get(PROFILE_ID)).toBeNull();
@@ -58,10 +61,10 @@ it('profile cannot be duplicated by keep-both conflict handling or removed as a 
  const s=store(),value=profile();s.save(value);s.conflict(s.queue()[0],{id:value.id,value:{...value,name:'Remote'},version:'v1',sequence:1});expect(()=>s.resolve(s.conflicts()[0].id,'both',{id:value.id,value:{...value,name:'Remote'},version:'v1',sequence:1})).toThrow('Choose one');expect(()=>s.remove(value.id)).toThrow('profile controls');
 });
 it('photo upload and removal persist while cancellation preserves the current icon',async()=>{
- const chooser=vi.fn().mockResolvedValueOnce(photo).mockResolvedValueOnce(null),s=await service(chooser);await s.command('profile.photo',null);expect(s.snapshot().profile?.avatar).toBe(photo);await s.command('profile.photo',null);expect(s.snapshot().profile?.avatar).toBe(photo);await s.command('profile.removePhoto',null);expect(s.snapshot().profile?.avatar).toBeNull();
+ const chooser=vi.fn().mockResolvedValueOnce(selection()).mockResolvedValueOnce(null),s=await service(chooser);const draft=await s.command('profile.photo',null);expect(s.snapshot().profile?.avatar).toBeNull();await s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop});expect(s.snapshot().profile?.avatar).toBe(photo);await s.command('profile.photo',null);expect(s.snapshot().profile?.avatar).toBe(photo);await s.command('profile.removePhoto',null);expect(s.snapshot().profile?.avatar).toBeNull();
 });
 it('a photo selected for a previous account cannot be written after sign-out',async()=>{
- let resolve!:(value:string)=>void;const s=await service(()=>new Promise(r=>{resolve=r;}));const operation=s.command('profile.photo',null);await s.command('auth.signOut',null);resolve(photo);await expect(operation).rejects.toThrow('Open a calendar');
+ let resolve!:(value:PreparedAvatar)=>void;const s=await service(()=>new Promise(r=>{resolve=r;}));const operation=s.command('profile.photo',null);await s.command('auth.signOut',null);resolve(selection());await expect(operation).rejects.toThrow('Open a calendar');
 });
 it('limits repeated photo selection before opening another picker',async()=>{
  const chooser=vi.fn().mockResolvedValue(null),s=await service(chooser);for(let i=0;i<6;i++)await s.command('profile.photo',null);await expect(s.command('profile.photo',null)).rejects.toThrow('Please wait');expect(chooser).toHaveBeenCalledTimes(6);
@@ -72,4 +75,24 @@ it('rejects invalid source images and excessive dimensions or bytes before decod
 });
 it('bounds JPEG segment parsing and recognizes supported frame dimensions',()=>{
  const jpeg=Buffer.from([255,216,255,192,0,11,8,0,20,0,30,1,1,0x11,0]);expect(avatarDimensions(jpeg)).toEqual({width:30,height:20});jpeg[4]=255;expect(()=>avatarDimensions(jpeg)).toThrow();
+});
+it('cancel and stale/replayed previews cannot change the icon',async()=>{
+ const s=await service();s.store!.save(profile());const first=await s.command('profile.photo',null);await s.command('profile.photo.cancel',{token:first.token});await expect(s.command('profile.photo.save',{token:first.token,adjustment:centeredCrop})).rejects.toThrow('expired or changed');expect(s.snapshot().profile?.avatar).toBe(photo);
+ const next=await s.command('profile.photo',null);await s.command('profile.photo.save',{token:next.token,adjustment:centeredCrop});await expect(s.command('profile.photo.save',{token:next.token,adjustment:centeredCrop})).rejects.toThrow('expired or changed');
+});
+it('crop saves preserve newer name/theme edits and remain retryable after SQLite failure',async()=>{
+ const s=await service(),draft=await s.command('profile.photo',null);await s.command('profile.save',{name:'New username'});await s.command('appearance',{active:'navy',custom:[]});
+ s.store!.db.exec("CREATE TRIGGER reject_photo BEFORE INSERT ON records WHEN NEW.kind='profile' BEGIN SELECT RAISE(ABORT, 'synthetic crop write failure'); END");
+ await expect(s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop})).rejects.toThrow('synthetic crop write failure');expect(s.snapshot().profile?.avatar).toBeNull();
+ s.store!.db.exec('DROP TRIGGER reject_photo');await s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop});expect(s.snapshot().profile).toMatchObject({name:'New username',avatar:photo,appearance:{active:'navy'}});
+});
+it('expiry, remote-photo replacement and removal invalidate crop commits',async()=>{
+ const s=await service();let draft=await s.command('profile.photo',null);const clock=vi.spyOn(performance,'now').mockReturnValue(performance.now()+600001);
+ try{await expect(s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop})).rejects.toThrow('expired or changed');}finally{clock.mockRestore();}
+ draft=await s.command('profile.photo',null);s.store!.save(profile());await expect(s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop})).rejects.toThrow('expired or changed');
+ draft=await s.command('profile.photo',null);await s.command('profile.removePhoto',null);await expect(s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop})).rejects.toThrow('expired or changed');expect(s.snapshot().profile?.avatar).toBeNull();
+});
+it('only the newest picker may produce a commit draft',async()=>{
+ const callbacks:Array<(value:PreparedAvatar)=>void>=[];const s=await service(()=>new Promise(resolve=>callbacks.push(resolve)));const first=s.command('profile.photo',null),second=s.command('profile.photo',null);
+ callbacks[1](selection());const draft=await second;callbacks[0](selection());await expect(first).rejects.toThrow('selection changed');await s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop});expect(s.snapshot().profile?.avatar).toBe(photo);
 });

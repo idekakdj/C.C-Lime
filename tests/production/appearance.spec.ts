@@ -100,7 +100,7 @@ test('profile and preset controls remain accessible at measured narrow renderer 
     await page.setViewportSize({ width: 1000, height: 900 });
     expect(await page.evaluate(() => ({ width: innerWidth, height: innerHeight }))).toEqual({ width: 1000, height: 900 });
     await page.getByRole('button', { name: 'View your profile', exact: true }).click();
-    await expect(page.getByLabel('Display name', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Username', { exact: true })).toBeVisible();
     await accessible(page); await page.screenshot({ path: testInfo.outputPath('profile.png') });
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     for (const [name, file] of [['Black & white', 'mono'], ['Navy & gold', 'navy']]) {

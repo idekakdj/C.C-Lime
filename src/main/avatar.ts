@@ -1,5 +1,8 @@
 import fs from 'node:fs';
 import type { NativeImage } from 'electron';
+import { avatarCropRectangle, centeredCrop, type AvatarCrop } from '../shared/avatar-crop';
+
+export interface PreparedAvatar { preview: string; width: number; height: number; render(crop: AvatarCrop): string; }
 
 export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 export function avatarDimensions(bytes: Buffer): { width: number; height: number } {
@@ -24,7 +27,7 @@ export function avatarDimensions(bytes: Buffer): { width: number; height: number
   if (!width || !height || width > 4096 || height > 4096) throw new Error('Choose a valid PNG or JPEG up to 4,096 pixels wide and high.');
   return { width, height };
 }
-export function readAvatar(filename: string, decode: (bytes: Buffer) => NativeImage): string {
+export function prepareAvatar(filename: string, decode: (bytes: Buffer) => NativeImage): PreparedAvatar {
   const stat = fs.lstatSync(filename);
   if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_AVATAR_BYTES) throw new Error('Choose a regular PNG or JPEG file no larger than 5 MiB.');
   const descriptor=fs.openSync(filename,'r');let bytes:Buffer;
@@ -37,9 +40,14 @@ export function readAvatar(filename: string, decode: (bytes: Buffer) => NativeIm
   if (image.isEmpty()) throw new Error('This photo could not be opened. Choose another PNG or JPEG.');
   const actual = image.getSize();
   if (actual.width !== dimensions.width || actual.height !== dimensions.height) throw new Error('This photo has inconsistent image dimensions.');
-  const side = Math.min(actual.width, actual.height);
-  const png = image.crop({ x: Math.floor((actual.width - side) / 2), y: Math.floor((actual.height - side) / 2), width: side, height: side }).resize({ width: 128, height: 128, quality: 'best' }).toPNG();
+  const scale = Math.min(1, 512 / Math.max(actual.width, actual.height));
+  const previewBytes = image.resize({ width: Math.max(1, Math.round(actual.width * scale)), height: Math.max(1, Math.round(actual.height * scale)), quality: 'best' }).toPNG();
+  if (!previewBytes.length || previewBytes.length > 1500000) throw new Error('This photo could not be previewed.');
+  return { ...actual, preview: `data:image/png;base64,${previewBytes.toString('base64')}`, render(crop) {
+  const png = image.crop(avatarCropRectangle(actual.width, actual.height, crop)).resize({ width: 128, height: 128, quality: 'best' }).toPNG();
   const result = `data:image/png;base64,${png.toString('base64')}`;
   if (!png.length || result.length > 100000) throw new Error('This photo could not be reduced to a profile icon.');
   return result;
+  } };
 }
+export function readAvatar(filename: string, decode: (bytes: Buffer) => NativeImage): string { return prepareAvatar(filename, decode).render(centeredCrop); }

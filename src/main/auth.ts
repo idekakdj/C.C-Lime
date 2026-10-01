@@ -6,6 +6,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { z } from 'zod';
 import type { CloudConfiguration, Session } from '../shared/model';
 import { ProviderCooldown, retryAfterMs } from './rate-limit';
+import { newPasswordSchema } from '../shared/password';
 
 export interface SecureStorage { isEncryptionAvailable(): boolean; encryptString(value: string): Buffer; decryptString(value: Buffer): string; }
 export class AuthError extends Error { constructor(message: string, readonly code: string) { super(message); } }
@@ -68,10 +69,11 @@ export class AuthService {
     if (this.busy) throw new Error('A sign-in operation is already in progress.');
     this.busy = true; try { return await operation(); } finally { this.busy = false; }
   }
-  private async accept(result: any, expectedUid?: string): Promise<Session> {
+  private async accept(result: any, expectedUid?: string, generation = this.generation): Promise<Session> {
     if (typeof result.idToken !== 'string' || typeof result.refreshToken !== 'string' || typeof result.localId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(result.localId)) throw new Error('The identity service returned an invalid session.');
     if (expectedUid && expectedUid !== result.localId) throw new Error('The identity does not match the signed-in account.');
     const profile = await this.request('lookup', { idToken: result.idToken }); const user = profile.users?.[0];
+    if (generation !== this.generation) throw new AuthError('Account changed. Please sign in again.', 'SIGNED_OUT');
     if (!user || user.localId !== result.localId) throw new Error('Unable to verify this account.');
     this.idToken = result.idToken; this.refreshToken = result.refreshToken; this.expires = Date.now() + Math.min(3600, Number(result.expiresIn) || 3600) * 1000;
     this.session = { uid: user.localId, email: user.email ?? '', displayName: user.displayName ?? '', verified: user.emailVerified === true, providers: (user.providerUserInfo ?? []).map((p: any) => p.providerId), createdAt:accountCreatedAt(user.createdAt) };
@@ -79,18 +81,19 @@ export class AuthService {
   }
   async signIn(email: string, password: string): Promise<Session> {
     z.string().email().max(254).parse(email); z.string().min(1).max(4096).parse(password);
-    return this.exclusive(async () => this.accept(await this.request('signInWithPassword', { email, password, returnSecureToken: true })));
+    return this.exclusive(async () => {const generation=this.generation;return this.accept(await this.request('signInWithPassword', { email, password, returnSecureToken: true }),undefined,generation);});
   }
   async reauthenticate(password:string):Promise<void>{
     const expected=this.session;if(!expected)throw new Error('Sign in first.');z.string().min(1).max(4096).parse(password);
-    await this.exclusive(async()=>this.accept(await this.request('signInWithPassword',{email:expected.email,password,returnSecureToken:true}),expected.uid));
+    await this.exclusive(async()=>{const generation=this.generation;return this.accept(await this.request('signInWithPassword',{email:expected.email,password,returnSecureToken:true}),expected.uid,generation);});
   }
   async signUp(email: string, password: string, displayName: string): Promise<Session> {
-    z.string().email().max(254).parse(email); z.string().min(6).max(4096).parse(password); z.string().max(100).parse(displayName);
+    z.string().email().max(254).parse(email); newPasswordSchema.parse(password); z.string().max(100).parse(displayName);
     return this.exclusive(async () => {
+      const generation=this.generation;
       const result = await this.request('signUp', { email, password, returnSecureToken: true });
       if (displayName.trim()) await this.request('update', { idToken: result.idToken, displayName: displayName.trim() });
-      return this.accept(result);
+      return this.accept(result,undefined,generation);
     });
   }
   async sendVerification(): Promise<void> { await this.request('sendOobCode', { requestType: 'VERIFY_EMAIL', idToken: await this.token() }); }
@@ -134,6 +137,7 @@ export class AuthService {
     if (!this.config?.googleClientId) throw new AuthError('Google sign-in is awaiting the owner’s desktop OAuth configuration.', 'GOOGLE_NOT_CONFIGURED');
     this.providerCooldown.check();
     return this.exclusive(async () => {
+      const generation=this.generation;
       const existingToken = link ? await this.token() : undefined; const existingUid = link ? this.session!.uid : expectedAccount;
       const verifier = randomBytes(48).toString('base64url'), nonce = randomBytes(24).toString('base64url'), state = randomBytes(24).toString('base64url');
       const code = await new Promise<{ code: string; redirect: string }>((resolve, reject) => {
@@ -166,9 +170,31 @@ export class AuthService {
       const result = await response.json(); if (!response.ok || typeof result.id_token !== 'string') throw new Error('Google could not complete sign-in. Please try again.');
       const { payload } = await jwtVerify(result.id_token, createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs')), { issuer: ['https://accounts.google.com','accounts.google.com'], audience: this.config!.googleClientId });
       if (payload.nonce !== nonce || payload.email_verified !== true) throw new Error('The Google identity could not be verified.');
-      return this.accept(await this.request('signInWithIdp', { postBody: new URLSearchParams({ id_token: result.id_token, providerId: 'google.com' }).toString(), requestUri: 'http://localhost', returnSecureToken: true, returnIdpCredential: true, ...(existingToken ? { idToken: existingToken } : {}) }), existingUid);
+      if(generation!==this.generation)throw new AuthError('Account changed. Please sign in again.','SIGNED_OUT');
+      return this.accept(await this.request('signInWithIdp', { postBody: new URLSearchParams({ id_token: result.id_token, providerId: 'google.com' }).toString(), requestUri: 'http://localhost', returnSecureToken: true, returnIdpCredential: true, ...(existingToken ? { idToken: existingToken } : {}) }), existingUid,generation);
     });
   }
-  async linkPassword(password: string): Promise<void> { z.string().min(6).max(4096).parse(password); const result = await this.request('update', { idToken: await this.token(), password, returnSecureToken: true }); await this.accept({ ...result, localId: this.session!.uid }, this.session!.uid); }
+  async linkPassword(password: string): Promise<void> {
+    newPasswordSchema.parse(password);
+    await this.exclusive(async () => {
+      const account=this.session,generation=this.generation;if(!account)throw new Error('Sign in first.');
+      if(account.providers.includes('password'))throw new Error('Use Change password to update an existing password.');
+      const token=await this.token();if(generation!==this.generation||this.session?.uid!==account.uid)throw new Error('Account changed. Please sign in again.');
+      const result=await this.request('update',{idToken:token,password,returnSecureToken:true});await this.accept({...result,localId:account.uid},account.uid,generation);
+    });
+  }
+  async changePassword(currentPassword: string, password: string): Promise<void> {
+    z.string().min(1).max(4096).parse(currentPassword);newPasswordSchema.parse(password);
+    if(currentPassword===password)throw new Error('Choose a different new password.');
+    await this.exclusive(async () => {
+      const account=this.session,generation=this.generation;
+      if(!account?.providers.includes('password'))throw new Error('This account does not have email/password sign-in.');
+      const verified=await this.request('signInWithPassword',{email:account.email,password:currentPassword,returnSecureToken:true});
+      if(generation!==this.generation||this.session?.uid!==account.uid)throw new Error('Account changed. Please sign in again.');
+      if(verified.localId!==account.uid||typeof verified.idToken!=='string')throw new Error('The identity does not match the signed-in account.');
+      const result=await this.request('update',{idToken:verified.idToken,password,returnSecureToken:true});
+      await this.accept(result,account.uid,generation);
+    });
+  }
   async deleteIdentity(): Promise<void> { await this.request('delete', { idToken: await this.token() }); this.signOut(); }
 }

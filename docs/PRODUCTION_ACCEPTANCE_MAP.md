@@ -1,5 +1,9 @@
 # Production acceptance coverage migration
 
+## 0.1.11 added coverage
+
+The existing 31 desktop cases remain, with two additional crop/layout cases (33 total). Upload now explicitly saves the crop. Crop coverage checks real native decoding/re-encoding through an adapted chooser, selected region pixels and 128×128 output, keyboard adjustment, pointer dragging, reset, Cancel/Escape and restart preservation. Profile layout checks centered gutters at 1,600/1,000/800 widths and absence of the bottom chevron. Both are inspector-assisted desktop cases; native picker/dialog observation still needs migration. Six independent external-launch renderer cases continue to pass with the renamed Username field and centered profile layout. Password forms have isolated DOM tests and emulator-backed service rotation tests; real signed-in interactive desktop acceptance remains open and must not modify the owner's credentials as a test.
+
 September 30, 2026. Follow-up to the [fuse plan](PRODUCTION_FUSE_PLAN.md), after the requested 0.1.10 installation. No existing desktop coverage is removed by this document. The installed app retains its seven recorded fuse gaps.
 
 ## Proven transport boundary
