@@ -2,7 +2,7 @@
 
 ## September 30: 0.1.14 course correction artifact
 
-Unsigned retained installer: 168,030,208 bytes; SHA-256 `0c6beb664db6fec8093c034ca7144d7d7605a21f9acd17914e670c7cafc6db20`. ASAR `bcacee12885f6265dda092eccd0c47cc858340a55202c6be03866ee22be435f2`; lockfile `88cfcd2bbeef44b96c9a1b1a8f9d8b9f0b6171d1b75ec42a5cac1d7c6000749b`. Audit: 1,126 components, zero affected-package findings. Source/package scans, 205 archive entries, 83 files/15 native entries, nine exact dist files, exact 20,472,830-byte installer notices/version and installer-payload/archive equality pass. Seven production fuse gaps remain. Native provenance/signing and formal assurance remain open; installation/CI have separate gates.
+Unsigned retained installer: 168,030,208 bytes; SHA-256 `0c6beb664db6fec8093c034ca7144d7d7605a21f9acd17914e670c7cafc6db20`. ASAR `bcacee12885f6265dda092eccd0c47cc858340a55202c6be03866ee22be435f2`; lockfile `88cfcd2bbeef44b96c9a1b1a8f9d8b9f0b6171d1b75ec42a5cac1d7c6000749b`. Audit: 1,126 components, zero affected-package findings. Source/package scans, 205 archive entries, 83 files/15 native entries, nine exact dist files, exact 20,472,830-byte installer notices/version and installer-payload/archive equality pass. Seven production fuse gaps remain. Normal installation identity/profile/startup preservation passes. Both fresh Windows CI runs pass for final code `cb64c80`; installed executable/archive/notices, private profile and startup preservation pass. Later documentation changes do not alter retained application bytes. Native provenance/signing and formal assurance remain open.
 
 ## September 30: 0.1.13 artifact checkpoint
 
