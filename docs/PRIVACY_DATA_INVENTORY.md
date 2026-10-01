@@ -1,5 +1,9 @@
 # C.C. Lime data and retention inventory
 
+## September 30: 0.1.13 presentation and scope update
+
+Circular crop and avatar presentation introduce no new personal-data field and do not rewrite saved photo bytes. The bounded 128×128 PNG and existing draft, sync and backup lifecycle remain unchanged. The owner withdrew PHIPA from the current requirements on September 30, 2026; PIPEDA and the documented retention work remain active.
+
 ## 0.1.11 crop and password changes
 
 Photo editing retains one bounded decoded source image temporarily in main-process memory and sends a metadata-free preview plus opaque token to the renderer. Cancel, account transition, navigation away or a ten-minute timeout clears the draft. Only the explicitly saved 128×128 icon enters the existing profile/outbox/cloud/snapshot lifecycle. Source file paths and original photos are not persisted. Username uses the existing private profile-name field and is not a new login identifier.
@@ -28,7 +32,7 @@ Engineering draft, updated September 29, 2026, source version 0.1.9 and installe
 
 The operator is based in **Ontario, Canada**. The next release is **only for the owner**, not an invited pilot or public launch. The intended purpose is a personal university calendar; patient records and healthcare organization workflows are outside the confirmed product scope. The future legal operator, privacy contact, deputies and business model remain undecided. Owner-only distribution does not make existing internet-facing authentication/database endpoints private or demonstrate that signup is restricted to the owner.
 
-Free-text titles, notes, locations and imported calendars can still contain information about other people or sensitive appointments. Treat that content as potentially sensitive. Do not infer PHIPA applicability from the app's name or audience. Counsel must assess the actual roles, purposes and contracts before healthcare use. [IPC guidance](https://www.ipc.on.ca/en/health-organizations/collection-use-and-disclosure-of-personal-health-information).
+Free-text titles, notes, locations and imported calendars can still contain information about other people or sensitive appointments. Treat that content as potentially sensitive. The owner excluded PHIPA from the current student-calendar scope on September 30, 2026. Patient-record and healthcare organization workflows remain outside this product.
 
 The inventory records purposes and safeguards for the PIPEDA review; its scope decision remains open. Named accountability, notices/consent, access/correction and complaints procedures still need an operator and approval. [OPC PIPEDA resources](https://www.priv.gc.ca/en/privacy-topics/privacy-laws-in-canada/the-personal-information-protection-and-electronic-documents-act-pipeda/).
 

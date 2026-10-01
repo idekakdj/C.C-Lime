@@ -6,7 +6,7 @@ export function AvatarCropEditor({ draft, onSave, onCancel }: { draft: AvatarDra
   const [crop,setCrop]=useState<AvatarCrop>({...centeredCrop}),[busy,setBusy]=useState(false);
   const drag=useRef<{x:number;y:number;crop:AvatarCrop}|null>(null),rect=avatarCropRectangle(draft.width,draft.height,crop);
   const clamp=(n:number)=>Math.min(1,Math.max(0,n));
-  return <Modal title="Crop your profile photo" subtitle="Drag to position your photo, or use the sliders. Only the saved square icon is stored." onClose={()=>{if(!busy)onCancel();}}>
+  return <Modal title="Crop your profile photo" subtitle="Position your photo inside the circle. The same crop appears on every profile icon." onClose={()=>{if(!busy)onCancel();}}>
     <form className="editor crop-editor" onSubmit={async e=>{e.preventDefault();setBusy(true);try{await onSave(crop);}finally{setBusy(false);}}}>
       <div className="crop-preview" aria-label="Profile photo crop preview" onPointerDown={e=>{if(busy)return;e.currentTarget.setPointerCapture(e.pointerId);drag.current={x:e.clientX,y:e.clientY,crop};}} onPointerUp={()=>{drag.current=null;}} onPointerCancel={()=>{drag.current=null;}} onPointerMove={e=>{
         const start=drag.current;if(!start||busy)return;const size=e.currentTarget.getBoundingClientRect().width,source=avatarCropRectangle(draft.width,draft.height,start.crop);

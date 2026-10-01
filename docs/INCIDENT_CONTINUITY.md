@@ -32,7 +32,7 @@ The operator's qualified privacy/legal reviewer must determine applicable law an
 
 For an organization subject to PIPEDA, the OPC describes reporting to the regulator and notifying affected people when a breach creates a real risk of significant harm, assessed using sensitivity and likelihood of misuse. Its guidance requires records of all breaches, including those below the reporting threshold, retained for two years (other duties may require longer), and notification as soon as feasible after determining the breach occurred. Record the assessment, rationale, reviewer, recipients, delivery evidence and follow-up; do not treat owner-only distribution as a legal exemption. [OPC reporting and record-keeping guidance](https://www.priv.gc.ca/en/privacy-topics/privacy-for-businesses/privacy-breaches-at-your-business/gd_pb_201810/).
 
-PHIPA remains a separate applicability review. The current scope has no patient-record purpose; healthcare expansion requires analysis of custodian/agent roles and the resulting notification duties before use. The [IPC breach protocol](https://www.ipc.on.ca/en/health-organizations/responding-to-a-privacy-breach/privacy-breach-protocol) is a review input, not evidence that this product is a custodian or PHIPA-compliant. No notification or external message is sent by this document.
+PHIPA was removed from the current student-calendar scope by the owner on September 30, 2026. Incident/privacy work continues for the actual personal-calendar purpose and applicable PIPEDA review. No notification or external message is sent by this document.
 
 ## Continuity and backup design
 

@@ -14,7 +14,7 @@ Version 0.1.11 adds confirmation and local strength feedback when creating a new
 
 Password-enabled accounts can use **Settings → Account & sync → Change password**, including accounts that also linked Google. Enter the current password and the new password twice. C.C. Lime verifies the current password with Firebase before updating and remembers the rotated session using Windows encryption when available. Google-only accounts can add a separate email/password login here; change the Google account's own password with Google. If the provider accepted a change but the response/session refresh failed, try signing in with the new password or use the email reset link. Email reset completion uses the provider's hosted page.
 
-In **Profile**, edit **Username** and choose **Save profile**. This is the private synced profile label; email remains your sign-in identifier. Uploading a photo opens a square crop preview with dragging, horizontal/vertical sliders and zoom. **Save photo** stores only a 128×128 PNG icon; **Cancel** or Escape preserves the previous icon. Leaving Profile cancels the draft. Previews expire after ten minutes and are never included in cloud sync, databases or backups.
+In **Profile**, edit **Username** and choose **Save profile**. This is the private synced profile label; email remains your sign-in identifier. Uploading a photo opens a circular crop preview with the same framing in all three profile locations with dragging, horizontal/vertical sliders and zoom. **Save photo** stores only a 128×128 PNG icon; **Cancel** or Escape preserves the previous icon. Leaving Profile cancels the draft. Previews expire after ten minutes and are never included in cloud sync, databases or backups.
 
 Changes are saved in a local SQLite database before synchronization. Check the sync status to distinguish saved local work from uploaded work. Offline changes remain queued and retry when a connection returns. A remembered sign-in uses Windows encryption for its refresh token. If encryption is unavailable, the session is not remembered. Ordinary calendar databases and exported backups are not encrypted.
 
@@ -26,7 +26,7 @@ If an app address is unavailable, C.C. Lime shows **404 — Page not found** wit
 
 ## Your profile and colors
 
-Select your avatar or the account card at the bottom of the sidebar to open **Profile**. Change your display name or upload a PNG/JPEG from your computer (up to 5 MiB and 4,096 pixels per side). The app crops it to a square icon and removes original image metadata. You can replace or remove the icon later. The joined date comes from your account provider when available; local preview shows when profile tracking began.
+Select your avatar or the account card at the bottom of the sidebar to open **Profile**. Change your display name or upload a PNG/JPEG from your computer (up to 5 MiB and 4,096 pixels per side). The app saves the selected crop, displays it consistently as a circular icon and removes original image metadata. You can replace or remove the icon later. The joined date comes from your account provider when available; local preview shows when profile tracking began.
 
 Lifetime progress counts each completed task, assignment, exam or study occurrence once, including items you later reopen or delete. Previously deleted tasks from before this feature cannot be reconstructed.
 

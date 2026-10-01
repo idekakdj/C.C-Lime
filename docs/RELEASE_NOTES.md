@@ -1,4 +1,10 @@
-# C.C. Lime 0.1.12 — development preview
+# C.C. Lime 0.1.13 — development preview
+
+## 0.1.13 consistent circular profile photos
+
+The crop preview, large profile photo and both profile buttons now use the same centered circular framing. Removing browser-default button padding fixes the narrow image in the top-right button. Existing saved photos and bounded 128×128 PNG storage remain unchanged; dragging, zoom, cancellation and account sync retain their behavior.
+
+PHIPA was withdrawn from the current scope by the owner on September 30, 2026. SOC 2, ISO 27001, CAN/DGSI 118 and PIPEDA work continues without a certification claim. Independent task completion, undo and lifetime-history acceptance now runs without main-process inspection. See the [ordered plan](CIRCULAR_AVATAR_SCOPE_PLAN.md) and [verification evidence](IMPLEMENTATION_STATUS.md).
 
 ## 0.1.12 Windows startup correction
 

@@ -28,6 +28,7 @@ test('crop preview saves the chosen region only on confirmation and cancel prese
  await page.getByRole('button',{name:'Upload photo',exact:true}).click();await expect(page.getByRole('dialog',{name:'Crop your profile photo'})).toBeVisible();expect((await page.evaluate(()=>window.lime.call<Snapshot>('snapshot'))).profile?.avatar).toBeNull();
  const horizontal=page.getByLabel('Horizontal position',{exact:true});await horizontal.focus();await page.keyboard.press('ArrowRight');await expect(horizontal).toHaveValue('0.51');
  const box=(await page.locator('.crop-preview').boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2-50,box.y+box.height/2);await page.mouse.up();expect(Number(await horizontal.inputValue())).toBeGreaterThan(0.51);
+ expect(await page.locator('.crop-preview').evaluate(node=>getComputedStyle(node).borderTopLeftRadius)).toBe('50%');expect(Math.abs(box.width-box.height)).toBeLessThan(1);
  await page.getByRole('button',{name:'Reset crop',exact:true}).click();await expect(horizontal).toHaveValue('0.5');await expect(page.getByLabel('Photo zoom',{exact:true})).toHaveValue('1');
  await page.getByLabel('Photo zoom',{exact:true}).fill('2');await page.getByLabel('Horizontal position',{exact:true}).fill('1');await page.getByLabel('Vertical position',{exact:true}).fill('1');
  expect((await new AxeBuilder({page}).setLegacyMode().withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);await page.screenshot({path:testInfo.outputPath('crop-preview.png')});await page.getByRole('button',{name:'Save photo',exact:true}).click();
@@ -35,6 +36,22 @@ test('crop preview saves the chosen region only on confirmation and cancel prese
  await page.getByRole('button',{name:'Upload photo',exact:true}).click();await page.getByLabel('Horizontal position',{exact:true}).fill('0');await page.getByRole('button',{name:'Cancel',exact:true}).click();expect((await page.evaluate(()=>window.lime.call<Snapshot>('snapshot'))).profile!.avatar).toBe(saved);
  await page.getByRole('button',{name:'Upload photo',exact:true}).click();await page.keyboard.press('Escape');expect((await page.evaluate(()=>window.lime.call<Snapshot>('snapshot'))).profile!.avatar).toBe(saved);
  await app.close();await launch();expect((await page.evaluate(()=>window.lime.call<Snapshot>('snapshot'))).profile!.avatar).toBe(saved);
+});
+test('shows identical circular photo framing in the header, navigation and profile after restart',async({},testInfo)=>{
+ const filename=path.join(profile,'avatar-quadrants.png');
+ const tiles=await Promise.all(['#ed476f','#f7c85a','#5acaac','#7ba5ff'].map(background=>sharp({create:{width:128,height:128,channels:3,background}}).png().toBuffer()));
+ await sharp({create:{width:256,height:256,channels:3,background:'#000000'}}).composite(tiles.map((input,i)=>({input,left:(i%2)*128,top:Math.floor(i/2)*128}))).png().toFile(filename);
+ await page.getByRole('button',{name:'View your profile',exact:true}).click();
+ await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=(async()=>({canceled:false,filePaths:[file]}))as any;},filename);
+ await page.getByRole('button',{name:'Upload photo',exact:true}).click();await page.getByRole('button',{name:'Save photo',exact:true}).click();
+ async function geometry(){return page.locator('.avatar:has(img)').evaluateAll(nodes=>nodes.map(node=>{
+   const image=node.querySelector('img')!,style=getComputedStyle(node),imageStyle=getComputedStyle(image),box=node.getBoundingClientRect(),photo=image.getBoundingClientRect();
+   return{source:image.getAttribute('src'),radius:style.borderTopLeftRadius,padding:[style.paddingTop,style.paddingRight,style.paddingBottom,style.paddingLeft],width:box.width,height:box.height,imageWidth:photo.width,imageHeight:photo.height,contentWidth:box.width-parseFloat(style.borderLeftWidth)-parseFloat(style.borderRightWidth),contentHeight:box.height-parseFloat(style.borderTopWidth)-parseFloat(style.borderBottomWidth),fit:imageStyle.objectFit,position:imageStyle.objectPosition};
+ }));}
+ async function verify(){const photos=await geometry();expect(photos).toHaveLength(3);expect(new Set(photos.map(p=>p.source)).size).toBe(1);
+  for(const photo of photos){expect(photo.radius).toBe('50%');expect(photo.padding).toEqual(Array(4).fill('0px'));expect(Math.abs(photo.width-photo.height)).toBeLessThan(1);expect(Math.abs(photo.imageWidth-photo.contentWidth)).toBeLessThan(1);expect(Math.abs(photo.imageHeight-photo.contentHeight)).toBeLessThan(1);expect(photo.fit).toBe('cover');expect(photo.position).toBe('50% 50%');}
+ }
+ await verify();await page.screenshot({path:testInfo.outputPath('circular-avatar-locations.png')});await app.close();await launch();await page.getByRole('button',{name:'Open profile',exact:true}).click();await verify();
 });
 test('centers profile gutters with no overflow at wide and narrow widths and removes the personal-workspace chevron',async({},testInfo)=>{
  await page.getByRole('button',{name:'Open profile',exact:true}).click();expect(await page.locator('.profile-button > svg').count()).toBe(0);

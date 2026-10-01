@@ -1,5 +1,15 @@
 # Implementation and verification evidence
 
+## September 30: 0.1.13 circular avatars and independent task acceptance
+
+The [ordered plan](CIRCULAR_AVATAR_SCOPE_PLAN.md) precedes implementation. Crop preview, profile photo and both profile buttons now share circular, centered framing. Zero button padding fixes the narrow header image; saved photo bytes, crop math, schema and account sync remain unchanged. Synthetic screenshots were visually reviewed and geometry/source equality passes after restart.
+
+Local checks pass: **217 unit/UI**, **54 tooling passes with two explicit symlink-permission skips**, **49 cloud**, **35 packaged desktop** and **eight independent renderer tests**. The new independent task case exercises sidebar completion, undo, re-completion, deletion through the ordinary renderer bridge, lifetime-count stability and normal restart without main-process inspection. Native photo-picker coverage still uses a dialog adapter and does not establish independent native-dialog acceptance.
+
+All nine application files match the tested archive. Source/package credential scans, 205-entry package inspection, exact 20,472,830-byte Chromium installer notices/version and 83-file/15-native inventory pass. The npm gate covers 1,126 components with zero affected-package findings. Seven production fuse gaps remain. PHIPA was withdrawn from current scope by the owner; SOC 2, ISO 27001, CAN/DGSI 118 and PIPEDA work continues without a certification claim.
+
+Retained unsigned installer: 168,030,720 bytes; SHA-256 `5034f210d1e4c01f5e469374d0e99653142fb437f2c21c606d9b66a20c760ab7`. ASAR SHA-256 `dc3212ae05085293feffc6d0821564c9aebd9d13f2051999e6c4115ba61274d4`. Normal-profile backup is verified; installation/preservation and fresh Windows CI are separate gates recorded below when observed. No public release asset or certification is implied.
+
 ## September 30: installed 0.1.12 Windows startup correction
 
 Source/package and normal owner installation are **0.1.12**, a separately retained unsigned owner-only preview. The [ordered startup plan](WINDOWS_STARTUP_FIX_PLAN.md) precedes implementation. Normal-context read-only diagnosis found the named user Run entry enabled while Electron's legacy AppUserModelID-based flag returned false. It also found that entry targeted the previous redirected installation. The adapter now reads the named matching launcher entry and actual Windows approval; Settings distinguishes missing/disabled states, refreshes on focus and supports explicit preference reapplication. Preview/test profiles cannot enable or disable the installed entry.

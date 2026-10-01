@@ -431,9 +431,10 @@ The [detailed extension](SECURITY_PRIVACY_PLAN.md) is authoritative for T-49 sco
 | R-16 ISO 27001 | T-54–T-62 | A-58–A-64 |
 | R-17 CAN/DGSI 118 | T-54/T-55/T-59–T-62 | A-58/A-61–A-64 |
 | R-18 PIPEDA | T-54–T-60/T-62 | A-58–A-62/A-64 |
-| R-19 PHIPA scope and applicable duties | T-54–T-56/T-59/T-62 | A-58/A-59/A-61/A-64 |
 | R-20 Rate limiting | T-50/T-51/T-53 | A-53–A-55/A-57 |
 | R-21 Missing-page recovery | T-52 | A-56 |
+
+R-19 was withdrawn by the owner on September 30, 2026; PHIPA is outside the current student-calendar scope. The other security/privacy requirements remain active.
 
 ## Profile and appearance extension: T-63–T-65
 
