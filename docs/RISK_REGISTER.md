@@ -1,5 +1,9 @@
 # C.C. Lime initial security and privacy risk register
 
+## October 1 dependency treatment follow-up
+
+Fresh CI blocked a newly reported basic-ftp parser advisory propagated through five Firebase-tooling packages. The [repair plan](FTP_DEPENDENCY_REPAIR_PLAN.md) retains that failed gate and scopes a patched dependency with six actual runtime compatibility checks and a clean local complete-tree audit. Full new Windows acceptance is required before source verification; the installed app/version remain unchanged. This adds RK-01 supply-chain treatment evidence without waiving the gate, accepting residual risk or claiming organizational assurance. The provider password-policy schema is prepared separately; project-wide enforcement remains unmodified pending its specific approval.
+
 ## October 1 hardened-account treatment evidence
 
 The [hardened-account continuation](HARDENED_ACCOUNT_ACCEPTANCE_PLAN.md) adds eight real synthetic password-account checks, including Windows encrypted-session migration, cloud task/history/profile/theme preservation/writes, restart, sign-out and fresh-profile convergence on all-seven copies. Four launches exit normally and all three attempts have verified identity/data cleanup. A stale synced-state/pending-count defect is reproduced and repaired in source with acknowledgment regression coverage; it is not installed. This advances RK-01/RK-12/T-58, with exact identities and scope in [implementation evidence](IMPLEMENTATION_STATUS.md). The installed release remains unchanged with seven fuse gaps; native dialogs, Google/OS/second-PC/final artifact acceptance, remote abuse/provider controls, signing and organizational assurance remain open. Risk owners/scoring/acceptance are still unapproved; no residual risk is accepted.
