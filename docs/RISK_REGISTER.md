@@ -1,5 +1,11 @@
 # C.C. Lime initial security and privacy risk register
 
+## October 1 current evidence checkpoint
+
+Source metadata and the installed/retained owner release are **0.1.14**. New am/pm, all-type repeat and task-history/range changes are source-only at `a6b017055fb762b2c97eeec0bc8f439dd330e090`; the owner's app has not received them. Earlier dated versions below are historical. The [implementation register](IMPLEMENTATION_STATUS.md) distinguishes local source-work archive identity from the unchanged installed release. Local verification now has 408 passes plus two explicit tooling skips; both fresh Windows runs pass all 410 tests without skips, with the downloaded independent evidence verified separately from local and installed artifacts.
+
+RK-01's Electron patch and installed notice repair passed with the retained release; production fuse policy, native provenance and build access remain open. RK-12 gains independent paging/keyboard/narrow-layout/repetition/task-history assertions and normal-restart evidence. This does not establish wider performance, manual native/second-PC acceptance or risk closure. All risk scores, proposed owners and treatment approval remain pending; **no residual risk is accepted** and no formal assurance is claimed.
+
 ## September 30 update
 
 Source and owner installation 0.1.10; dated statements below are historical. Installed Electron patch and exact notice repair have now passed acceptance. Seven production-fuse gaps and broader provenance/signing controls remain open.

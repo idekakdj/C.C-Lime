@@ -1,5 +1,9 @@
 # C.C. Lime data and retention inventory
 
+## October 1 source-only task display update
+
+Installed/retained version remains 0.1.14. Unreleased task-history/range/weekly-progress changes read existing item, exception, occurrence-state and completion-timestamp records; they introduce no new personal-data field, external endpoint or purge. Older completions are now displayed independently of calendar hiding and the former task window. Infinite repeating schedules retain a disclosed six-month forward display horizon. Account change resets the task range/course selection; account data boundaries and the existing completion ledger remain in force. No owner database or backup was inspected or modified by synthetic acceptance tests. Retention, old backups/tombstones, local calendar encryption and operator-approved notices remain open; improved visibility is not recovery of previously deleted records. See [task plan](TASK_COMPLETION_RANGE_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md).
+
 ## September 30: 0.1.13 presentation and scope update
 
 Circular crop and avatar presentation introduce no new personal-data field and do not rewrite saved photo bytes. The bounded 128×128 PNG and existing draft, sync and backup lifecycle remain unchanged. The owner withdrew PHIPA from the current requirements on September 30, 2026; PIPEDA and the documented retention work remain active.
