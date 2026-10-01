@@ -54,6 +54,8 @@ From source version 0.1.6, quick-undo cleanup removes only rows with `expires_ms
 
 ## Release procedure
 
+Every installed update also requires the [sign-in update gate](SIGNIN_UPDATE_GATE.md). Run `pwsh -NoProfile -File scripts/verify-installed-signin.ps1 -ExpectedVersion <version> -NodeExecutable <pinned-node-path>` from the ordinary Windows desktop context. The gate rejects redirected physical AppData/executable paths, checks the actual installed renderer's email/Google/reset availability on a new isolated profile and normal restart, verifies configuration preservation and removes the private fixture environment. It never opens the owner's calendar or submits authentication. Record live email/password and interactive Google results separately; controls alone do not prove successful authentication. Do not report the upgrade complete or leave an unconfigured test copy for the owner if this gate fails.
+
 1. Reconcile every task and acceptance scenario with the evidence document. A partial test is not a pass. Resolve outstanding functional and mandatory verification gaps before labeling a production release complete.
 2. Run source/secret/type/unit/build checks, cloud emulator checks when cloud code changes, packaged desktop tests and the packaged credential scan. Record exact counts and build version.
 3. Measure the specified large fixture and five-minute foreground/tray resource use. Record actual hardware, median and slowest response, and client cloud-operation counters. Rules-dependent reads are additional usage.

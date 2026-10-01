@@ -34,3 +34,7 @@ test('runtime review, unsafe fork checkout and artifact format changes fail poli
  assert.throws(()=>inspectWorkflow(workflow.replace('allow-unsafe-pr-checkout: false','allow-unsafe-pr-checkout: true'),pins),/Unsafe/);
  assert.throws(()=>inspectWorkflow(workflow.replace('archive: true','archive: false'),pins),/ZIP/);
 });
+
+test('combined-hardening CI cannot omit the sign-in readiness regression',()=>{
+ assert.throws(()=>inspectWorkflow(workflow.replace('signin-readiness.spec.ts ',''),pins),/sign-in coverage/);
+});

@@ -18,6 +18,8 @@ On September 30, the owner's normal 0.1.10 profile was missing `.local/.env`, wh
 
 Configuration is read at application startup. Quit from the tray and reopen through the usual Windows shortcut after repairing it. Verify both email/password and Google controls are enabled before separately checking actual authentication; an isolated test supplied with its own configuration is not sufficient evidence of normal-launch readiness.
 
+The [mandatory update gate](SIGNIN_UPDATE_GATE.md) combines physical normal-context configuration verification with fresh/restarted controls on the actual installed executable. Use [the Windows verifier](../scripts/verify-installed-signin.ps1) after every update. An isolated security fixture without `.local/.env` deliberately disables sign-in and must not be mistaken for the installed personal app or left as its replacement. Close the owned fixture and reopen the ordinary stable launcher. Valid configured and absent-config controls also run in baseline and combined-hardening CI without production keys; live authentication remains separately verified.
+
 The previously hardcoded Firebase client key reached repository history in commit `45333f7`. Removing a file does not erase Git history. The remediation rotates the key and disables the old key; the ignored local rotation record records confirmation. Do not copy the historical key back into any configuration.
 
 Firebase database authorization is still enforced by the committed per-account security rules. A client API key is not an administrator credential and must never replace those rules.

@@ -74,7 +74,7 @@ jobs:
       - name: Renderer compatibility with all seven fuses on disposable copies
         env:
           CC_LIME_ACCEPTANCE_FUSES: all-seven
-        run: node node_modules/@playwright/test/cli.js test --config playwright.production.config.ts appearance.spec.ts calendar.spec.ts courses.spec.ts password-form.spec.ts recurrence.spec.ts renderer.spec.ts task-ranges.spec.ts tasks.spec.ts --output test-results/hardened-renderer-artifacts
+        run: node node_modules/@playwright/test/cli.js test --config playwright.production.config.ts appearance.spec.ts calendar.spec.ts courses.spec.ts password-form.spec.ts recurrence.spec.ts renderer.spec.ts signin-readiness.spec.ts task-ranges.spec.ts tasks.spec.ts --output test-results/hardened-renderer-artifacts
       - name: Retain combined fuse renderer evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
