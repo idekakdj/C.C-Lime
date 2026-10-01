@@ -26,7 +26,7 @@ export interface HostServices {
   chooseAvatar?():Promise<PreparedAvatar|null>;
   secure:SecureStorage; openBrowser(url:string):Promise<void>; changed():void; notify(notice:ReminderNotice):void;
   openFile(kind:'ics'|'backup'):Promise<string|null>; saveFile(kind:'ics'|'backup'|'diagnostics'):Promise<string|null>;
-  setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string; timeZone?():string;
+  setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;registered?:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string; timeZone?():string;
 }
 export class ApplicationService {
   private readonly rateLimits = new CommandRateLimits();
@@ -104,7 +104,7 @@ export class ApplicationService {
     const saved=store.get(PROFILE_ID);if(saved?.kind==='profile')return saved;
     return profileSchema.parse({id:PROFILE_ID,kind:'profile',name:this.auth.session?.displayName?.trim()||'Student',avatar:null,joinedAt:this.auth.session?.createdAt??null,appearance:defaultAppearance});
   }
-  snapshot():Snapshot&{recoveryError:string|null;remembered:boolean;dataPath:string;startup:{enabled:boolean;wasOpenedAtLogin:boolean}}{
+  snapshot():Snapshot&{recoveryError:string|null;remembered:boolean;dataPath:string;startup:{enabled:boolean;registered?:boolean;wasOpenedAtLogin:boolean}}{
     const visible=!this.switching&&(this.localMode||this.store?.accountId===this.auth.session?.uid)?this.store:null;
     return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),profile:visible?this.profile(visible):undefined,localCreatedAt:visible?.metadata('profileFirstUsed',undefined),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,device:this.device,sync:this.sync?.status??{state:'local',pending:visible?.queueCount()??0,lastSynced:null,message:visible?.metadata('deleting',false)?'Account deletion is paused. Resume it in Settings.':this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'},conflicts:visible?.conflicts()??[],reminders:visible?.reminders().slice(0,500)??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
   }
@@ -248,7 +248,7 @@ export class ApplicationService {
         const p=z.object({id:uid,completed:z.boolean()}).strict().parse(payload),store=this.active(),item=store.get(p.id);if(item?.kind!=='item')throw new Error('Item not found.');if(item.recurrence)throw new Error('Choose a specific occurrence to complete.');const result=store.save({...item,status:p.completed?'completed':'open',completedAt:p.completed?new Date().toISOString():null});this.changed();return result;
       }
       case 'device':{
-        const next=deviceSchema.parse({...this.device,...payload});if(next.startAtLogin!==this.device.startAtLogin)this.host.setStartup(next.startAtLogin);
+        const next=deviceSchema.parse({...this.device,...payload});if(Object.hasOwn(payload??{},'startAtLogin'))this.host.setStartup(next.startAtLogin);
         fs.writeFileSync(`${this.settingsPath}.new`,JSON.stringify(next));fs.renameSync(`${this.settingsPath}.new`,this.settingsPath);this.device=next;this.changed();return true;
       }
       case 'sync':await this.sync?.retry();return true;

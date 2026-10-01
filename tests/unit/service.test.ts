@@ -9,6 +9,15 @@ import { expand } from '../../src/domain/calendar';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('reapplies an explicit startup preference and validates before native effects',async()=>{
+ const {service}=await setup(),apply=vi.fn();(service as any).host.setStartup=apply;
+ await service.command('device',{startAtLogin:true});await service.command('device',{startAtLogin:true});
+ expect(apply.mock.calls).toEqual([[true],[true]]);
+ await service.command('device',{view:'week'});expect(apply).toHaveBeenCalledTimes(2);
+ await expect(service.command('device',{startAtLogin:false,view:'invalid'})).rejects.toThrow();expect(apply).toHaveBeenCalledTimes(2);
+ apply.mockImplementation(()=>{throw new Error('Native registration refused');});
+ await expect(service.command('device',{startAtLogin:false})).rejects.toThrow('refused');expect(service.device.startAtLogin).toBe(true);
+});
 it('requires confirmation before signup/link/change network effects and limits password changes',async()=>{
  const {service}=await setup(),signup=vi.spyOn(service.auth,'signUp'),link=vi.spyOn(service.auth,'linkPassword'),change=vi.spyOn(service.auth,'changePassword').mockRejectedValue(new Error('synthetic auth failure'));
  const password='Synthetic violet river 47';

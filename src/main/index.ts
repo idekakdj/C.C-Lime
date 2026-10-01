@@ -6,6 +6,7 @@ import { ApplicationService } from './service';
 import { loadCloudConfiguration } from './config';
 import { appProtocol, isAppDocument } from './app-protocol';
 import { prepareAvatar } from './avatar';
+import { STARTUP_NAME, STARTUP_ARGS, startupQuery, startupState } from './startup';
 import { WINDOWS_IDENTITIES, squirrelInstallation, isRegularFile, shortcutIO, repairInstalledShortcuts, removeInstalledRootShortcut, squirrelEvent, handleSquirrelEvent, runUpdater } from './windows-integration';
 
 app.setName('C.C. Lime');
@@ -30,7 +31,7 @@ const installerEvent=squirrelEvent(process.platform,process.argv);
 const primary=!installerEvent&&app.requestSingleInstanceLock();
 if(installerEvent){
   void handleSquirrelEvent(installerEvent,installation,{ready:()=>app.whenReady(),run:runUpdater,repair:repairShortcuts,cleanup:()=>{
-    if(installation){removeInstalledRootShortcut(installation,shortcutPaths(),shortcutIO(shell));app.setLoginItemSettings({openAtLogin:false,path:installation.launcher,args:['--background'],name:'C.C. Lime'});}
+    if(installation){removeInstalledRootShortcut(installation,shortcutPaths(),shortcutIO(shell));app.setLoginItemSettings({openAtLogin:false,path:installation.launcher,args:STARTUP_ARGS,name:STARTUP_NAME});}
   }}).then(()=>app.quit(),()=>app.exit(1));
 }else if(!primary)app.quit();
 else{
@@ -56,8 +57,15 @@ else{
       notify:notice=>{if(notificationSetupFailed||!Notification.isSupported()){notice.onFailure();return;}const notification=new Notification({title:notice.title,body:notice.body,icon:iconPath,silent:false});notices.add(notification);notification.on('click',()=>show(notice.inbox?{action:'inbox'}:{itemId:notice.itemId,occurrenceKey:notice.occurrenceKey}));notification.on('failed',()=>{notice.onFailure();notices.delete(notification);});notification.on('close',()=>notices.delete(notification));notification.show();},
       openFile:async kind=>{const result=await dialog.showOpenDialog(window!,{title:kind==='ics'?'Import calendar':'Restore calendar backup',properties:['openFile'],filters:[{name:kind==='ics'?'Calendar file':'C.C. Lime backup',extensions:kind==='ics'?['ics']:['json']} ]});return result.canceled?null:result.filePaths[0];},
       saveFile:async kind=>{const result=await dialog.showSaveDialog(window!,{title:kind==='ics'?'Export calendar':kind==='backup'?'Save full backup':'Save diagnostics',defaultPath:`CC-Lime-${kind}-${new Date().toISOString().slice(0,10)}.${kind==='ics'?'ics':'json'}`,filters:[{name:kind==='ics'?'Calendar file':'JSON file',extensions:[kind==='ics'?'ics':'json']} ]});return result.canceled?null:result.filePath??null;},
-      setStartup:enabled=>{if(enabled&&!app.isPackaged)throw new Error('Startup is available after installing the app.');const launcher=process.platform==='win32'?path.resolve(path.dirname(process.execPath),'..','cc-lime.exe'):process.execPath;app.setLoginItemSettings({openAtLogin:enabled,path:launcher,args:['--background'],name:'C.C. Lime'});},
-      startupStatus:()=>{const launcher=process.platform==='win32'&&app.isPackaged?path.resolve(path.dirname(process.execPath),'..','cc-lime.exe'):process.execPath;const status=app.getLoginItemSettings({path:launcher,args:['--background']});return{enabled:status.openAtLogin,wasOpenedAtLogin:status.wasOpenedAtLogin};},
+      setStartup:enabled=>{
+        if(!app.isPackaged||process.platform==='win32'&&(!installation||testProfile)){
+          if(enabled)throw new Error('Startup can only be changed in the installed app.');
+          return; // Choosing preview defaults must not alter the installed app's entry.
+        }
+        const launcher=installation?.launcher??process.execPath;
+        app.setLoginItemSettings({openAtLogin:enabled,enabled,path:launcher,args:STARTUP_ARGS,name:STARTUP_NAME});
+      },
+      startupStatus:()=>{if(process.platform==='win32'&&(!installation||testProfile))return{enabled:false,registered:false,wasOpenedAtLogin:false};const launcher=installation?.launcher??process.execPath;return startupState(process.platform,launcher,app.getLoginItemSettings(startupQuery(process.platform,launcher)));},
       dataFolder:()=>{void shell.openPath(service?.store?.directory??root);},
     });
     window=new BrowserWindow({width:1480,height:960,minWidth:760,minHeight:600,show:!process.argv.includes('--background'),backgroundColor:'#0c0b10',title:'C.C. Lime',icon:iconPath,autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false,webSecurity:true,devTools:!app.isPackaged}});

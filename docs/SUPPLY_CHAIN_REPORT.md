@@ -1,5 +1,11 @@
 # Dependency treatment and release evidence
 
+## September 30: retained and installed 0.1.12
+
+Startup application changes and the version bump do not change dependencies or cloud rules. The full npm gate passes with 1,126 components and zero findings. Lockfile SHA-256 `c01f56632273190dfa5bf7c70d5ac73aec38bda06674d0fe145d95316d7e4634`. All nine rebuilt application files match the tested archive; inspection covers 205 archive entries without private configuration/credentials, 83 physical files/15 native files, Electron 44.4.5 and SQLite 3.53.4. Exact Chromium notices are present in both installer and normal installed copy. Seven fuse gaps and the native review/signing limits remain open.
+
+The retained unsigned installer is 168,030,720 bytes, SHA-256 `4acf25bbd8ef63b82dabf242193a44ee6e7f73237abc314dd16f19c17595282b`. Packaged/normal-installed ASAR SHA-256 `2b65cd1996c89254c58951fdb3974c0eb477a6ed46120299e2a52c67b7429f4a`. Retained installers, detailed reports, profile backups and startup diagnostics stay ignored and local. Physical normal-profile preservation and the bounded startup migration are documented in [implementation evidence](IMPLEMENTATION_STATUS.md). This inventory does not approve production release or certify compliance.
+
 ## September 30 evening: repaired Firebase test dependency
 
 Fresh CI for the independent security-test tooling was blocked by five propagated high findings rooted in gRPC 1.9.16. The [ordered repair and exact evidence](GRPC_DEPENDENCY_PLAN.md) replaces only Firebase Firestore's gRPC dependency with maintainer-patched 1.13.6. Existing 1.14.5 branches remain unchanged. The refreshed full gate has 1,126 components and zero findings; registry signatures/attestations and the 48-test cloud suite pass. Source dependency tooling is updated; the installed 0.1.10 artifact and retained installer remain the previously verified bytes. Fresh CI for this repair is recorded separately when complete. Historical earlier lockfile/audit identities below remain retained.

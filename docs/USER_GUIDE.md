@@ -64,6 +64,8 @@ Windows popup reminders require the installed app opened from the Start menu. Un
 
 Closing the window normally leaves C.C. Lime in the Windows system tray. Use the tray menu to reopen it or quit completely. **Start with Windows** is optional and off initially. Reminders require the app to be running and the laptop to be awake. Windows Do Not Disturb and notification permissions may suppress banners. The app cannot promise to wake a sleeping laptop or notify while fully quit.
 
+Settings shows Windows' current startup status separately from your saved checkbox preference. Returning to the app refreshes changes made in Windows Settings. If an entry is missing, use **Apply startup preference** in the installed app. If Windows has disabled it, enable it in Windows Settings → Apps → Startup or explicitly apply your preference in C.C. Lime. Preview/test copies cannot change the installed startup entry.
+
 Quiet hours delay notifications, and privacy mode hides calendar titles in popups. The reminder inbox provides dismissal and snooze controls. Use **Send a test reminder** to check your Windows setup. Settings shows whether the test was submitted or Windows reported a failure; submission is not proof that Windows displayed a banner.
 
 In Calendar settings, **Follow this computer's time zone** changes this device's display and quiet-hours zone as the operating-system zone changes. The seven-day sidebar follows the effective display zone. Updates are picked up on resume and during the scheduler's reconciliation, within approximately one minute while running. Stored event instants, class zones, reminder anchors and your saved fixed calendar zone are preserved. Turning this setting off returns to that saved zone; other computers are unaffected.

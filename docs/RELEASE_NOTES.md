@@ -1,10 +1,14 @@
-# C.C. Lime 0.1.11 — development preview
+# C.C. Lime 0.1.12 — development preview
+
+## 0.1.12 Windows startup correction
+
+Settings reads the actual enabled state of C.C. Lime's named Windows startup entry, even when Electron's older status flag is false. It distinguishes missing registration from Windows disablement, refreshes on window focus and lets the owner reapply a saved startup preference. Only the installed app can register startup; previews and test profiles preserve the installed entry. The bounded owner upgrade also corrects the older launcher target while preserving Windows' enablement choice. Actual Windows login execution remains a manual acceptance check. See the [ordered plan and evidence](WINDOWS_STARTUP_FIX_PLAN.md).
 
 ## 0.1.11 profile editing and password controls
 
 Centers the profile heading/cards with consistent gutters, wraps long profile labels, and removes the trailing Personal workspace chevron. Uploaded photos open a user-controlled square crop with dragging, keyboard sliders, zoom, reset and explicit Save/Cancel. Username edits use the existing synced profile name; email remains the login identifier.
 
-New-account and added-password forms include strength feedback and matching confirmation. Settings lets password-enabled accounts change passwords after verifying the current password, with the same new-password controls. Existing-password sign-in remains compatible. Crop originals and passwords are not persisted. No calendar schema or cloud-rule change is required. See the [implementation plan](PROFILE_CROP_LAYOUT_PLAN.md); owner installation and final acceptance are pending. This remains an unsigned owner-only preview without compliance certification.
+New-account and added-password forms include strength feedback and matching confirmation. Settings lets password-enabled accounts change passwords after verifying the current password, with the same new-password controls. Existing-password sign-in remains compatible. Crop originals and passwords are not persisted. No calendar schema or cloud-rule change is required. See the [implementation plan](PROFILE_CROP_LAYOUT_PLAN.md). The normal-context 0.1.11 installation and account/data preservation passed; broader manual acceptance remains open. This remains an unsigned owner-only preview without compliance certification.
 
 ## September 30: 0.1.10 profile and appearance update
 

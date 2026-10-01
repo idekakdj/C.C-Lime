@@ -7,14 +7,60 @@ import { WINDOWS_IDENTITIES } from '../../src/main/windows-integration';
 
 const executable = process.env.CC_LIME_TEST_EXECUTABLE ?? path.resolve('out/C.C. Lime-win32-x64/cc-lime.exe');
 const bundle = path.resolve('test-results/windows-integration.cjs');
+const startupBundle = path.resolve('test-results/startup-integration.cjs');
 let app: ElectronApplication;
 test.skip(process.platform !== 'win32', 'Native Windows shortcut checks');
-test.beforeAll(async () => { await build({ entryPoints: ['src/main/windows-integration.ts'], outfile: bundle, bundle: true, platform: 'node', format: 'cjs' }); });
+test.beforeAll(async () => { await Promise.all([
+  build({ entryPoints: ['src/main/windows-integration.ts'], outfile: bundle, bundle: true, platform: 'node', format: 'cjs' }),
+  build({ entryPoints: ['src/main/startup.ts'], outfile: startupBundle, bundle: true, platform: 'node', format: 'cjs' })
+]); });
 test.afterEach(async () => { await app?.close(); });
 async function launch(profile: string) {
   app = await electron.launch({ executablePath: executable, args: [`--cc-lime-test-profile=${profile}`], timeout: 60000 });
   await (await app.firstWindow()).waitForFunction(() => !!window.lime);
 }
+test('reads native Windows startup enablement by name and refuses test-profile registration', async () => {
+  const base = path.resolve('test-results/startup fixtures', randomUUID());
+  await launch(path.join(base,'profile'));
+  const result = await app.evaluate(({ app }, { base, startupBundle }) => {
+    const fs = process.getBuiltinModule('fs'), path = process.getBuiltinModule('path');
+    const nativeRequire = process.getBuiltinModule('module').createRequire(process.execPath);
+    const { startupQuery, startupState } = nativeRequire(startupBundle);
+    const launcher = path.join(base,'cc-lime.exe'), name = `CC-Lime-Startup-Test-${path.basename(base)}`;
+    fs.mkdirSync(base,{recursive:true});fs.writeFileSync(launcher,'synthetic fixture; never executed');
+    const query = startupQuery('win32',launcher);
+    const before = app.getLoginItemSettings(query);
+    if(before.launchItems.length)throw new Error('Fixture startup entry already exists');
+    const { execFileSync } = process.getBuiltinModule('child_process');
+    const owner = () => ['HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run','HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run'].map(key => {
+      try { return execFileSync('reg.exe',['query',key,'/v','C.C. Lime'],{windowsHide:true,stdio:['ignore','pipe','ignore']}).toString(); }
+      catch(error:any) { if(error.status===1)return null;throw error; }
+    });
+    const ownerBefore = owner();
+    try {
+      app.setLoginItemSettings({name,path:launcher,args:['--background'],openAtLogin:true,enabled:true});
+      const enabled = app.getLoginItemSettings(query);
+      app.setLoginItemSettings({name,path:launcher,args:['--background'],openAtLogin:true,enabled:false});
+      const disabled = app.getLoginItemSettings(query);
+      return { legacyEnabled:enabled.openAtLogin, enabled:startupState('win32',launcher,enabled,name),disabled:startupState('win32',launcher,disabled,name),ownerUnchanged:JSON.stringify(owner())===JSON.stringify(ownerBefore) };
+    } finally {
+      app.setLoginItemSettings({name,path:launcher,args:['--background'],openAtLogin:false});
+      if(app.getLoginItemSettings(query).launchItems.length)throw new Error('Fixture registration cleanup failed');
+      if(JSON.stringify(owner())!==JSON.stringify(ownerBefore))throw new Error('Owner startup entry changed');
+    }
+  }, {base,startupBundle});
+  expect(result).toEqual({legacyEnabled:false,enabled:{registered:true,enabled:true,wasOpenedAtLogin:false},disabled:{registered:true,enabled:false,wasOpenedAtLogin:false},ownerUnchanged:true});
+  const page = await app.firstWindow();
+  const denied = await page.evaluate(async()=>{
+    const before = await window.lime.call<any>('snapshot');
+    let error='';try{await window.lime.call('device',{startAtLogin:true});}catch(e){error=(e as Error).message;}
+    await window.lime.call('device',{startAtLogin:false});
+    const after = await window.lime.call<any>('snapshot');
+    return {error,before:before.device.startAtLogin,after:after.device.startAtLogin,startup:after.startup};
+  });
+  expect(denied.error).toContain('installed app');expect(denied.before).toBe(false);expect(denied.after).toBe(false);
+  expect(denied.startup).toEqual({enabled:false,registered:false,wasOpenedAtLogin:false});
+});
 test('keeps test notification identity stable without rewriting installed shortcuts', async () => {
   const profile = path.resolve('test-results/profiles', randomUUID());
   const programs = path.join(process.env.APPDATA!, 'Microsoft/Windows/Start Menu/Programs');
