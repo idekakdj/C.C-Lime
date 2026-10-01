@@ -4,6 +4,8 @@ Engineering review, updated September 27, 2026. T-53 is **not complete**. This d
 
 ## Boundaries and protected assets
 
+The read-only provider inventory was refreshed at **2026-10-01 02:39 UTC** for 0.1.13 into `test-results/security-configuration-inventory-0.1.13.json`, SHA-256 `649c094b35040fc014a422d818970e4e4758c28bf20fbe8179e766600f7adaa0`, preserving the earlier report. Both API reads succeeded. Identity Platform reports email/password and improved email privacy enabled, application-user MFA disabled, and no returned email/password reCAPTCHA enforcement field; absence does not establish enforcement or disablement. Firestore remains in `northamerica-northeast2` with point-in-time recovery and whole-database deletion protection disabled. No settings, IAM, billing or quotas were changed. These observations do not close remote read/auth abuse, administrator MFA, independent backup or alerting acceptance.
+
 Assets: private calendar content, account credentials/sessions, durable local changes, cloud availability/quota, usable reminders, installer integrity and operator administration. Trust boundaries: sandboxed renderer → allowlisted main process; operating-system user → local files; main process → Firebase/Google over TLS; verified UID → its Firestore documents; operator administrator → provider/repository configuration. Administrators can bypass user Firestore rules and need independent access governance. A modified desktop client is not trusted to enforce cloud policy.
 
 ## Abuse cases and controls

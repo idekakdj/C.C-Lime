@@ -1,4 +1,10 @@
-# C.C. Lime 0.1.13 — development preview
+# C.C. Lime 0.1.14 — development preview
+
+## 0.1.14 course filters, editing and selection safety
+
+Native dropdown options use black text on white, while the closed controls retain themed contrast. Active sidebar courses have an explicit edit button and course cards say Edit course. Both update the existing course and retain linked calendar items. Course-event text and time labels use the validated palette foreground/background while course colors remain in borders and navigation dots.
+
+A dialog backdrop click must begin and end outside the form. Selecting text and releasing outside preserves the draft; ordinary backdrop clicks, Cancel, close and Escape retain their behavior. See the [ordered plan](COURSE_USABILITY_PLAN.md) and [verification evidence](IMPLEMENTATION_STATUS.md) for release and installation gates. This remains an unsigned owner-only preview; formal security/compliance assurance remains open.
 
 ## 0.1.13 consistent circular profile photos
 

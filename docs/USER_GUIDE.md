@@ -36,6 +36,8 @@ Profile name, photo and saved themes sync with your signed-in account. Local pre
 
 ## Plan your semester
 
+Use the pencil button beside a course under **My courses**, or open **Courses & semesters** and choose its **Edit course** card. Change its name, code, instructor, usual location, semester or color, then choose **Save course**. Existing calendar items keep their course link. Archived courses are available with **Include archived**. **Cancel** keeps the previous course. Selecting text and releasing outside the form leaves it open; a deliberate backdrop click or Escape closes it.
+
 Open **Courses & Semesters**, add semester dates and breaks, then add courses with their names, colors, instructor and usual room. A new class inherits its selected course's semester dates and time zone, proposes weekly meetings, and skips semester breaks by default. Review the selected weekdays and meeting times; lectures and labs should be separate items. Saving a repeating class opens a meeting-date preview before anything is written.
 
 Changing semester dates, time zone or breaks opens a preview for its linked repeating classes. Choose **Apply timetable changes** to update them, or **Save semester only** to keep the current classes. Timetable application preserves each pattern's interval phase and local start time, adopts the semester zone, and replaces count endings with the new semester end date. Previous excluded dates remain excluded by default; the optional replacement of previous break exclusions also replaces manual exclusions inside those old break ranges. Archiving keeps calendar records and reminders. Assignments, exams and independent events keep their dates.

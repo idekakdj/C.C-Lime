@@ -57,9 +57,9 @@ These 31 cases remain in the original suite. “Partial” means the new indepen
 | Event create/day/edit/restart, [desktop:57](../tests/e2e/desktop.spec.ts) | UI create/edit, normal owned restart, visible day detail | Migrated locally and in CI: visible day detail before edit and after restart; original retained |
 | Crash durability, [desktop:63](../tests/e2e/desktop.spec.ts) | Kill only external launcher's owned child after save acknowledgment; read-only closed SQLite and restart | Pending |
 | Tray/second launch, [desktop:70](../tests/e2e/desktop.spec.ts) | External child/window state and second executable launch; normal tray quit | Pending; OS automation |
-| Seven-day completion/undo, [desktop:81](../tests/e2e/desktop.spec.ts) | Sidebar UI, undo and persisted status | Migrated locally in 0.1.13: sidebar completion/undo, lifetime count and normal restart; CI pending; original retained |
+| Seven-day completion/undo, [desktop:81](../tests/e2e/desktop.spec.ts) | Sidebar UI, undo and persisted status | Migrated locally and in Windows CI in 0.1.13: sidebar completion/undo, lifetime count and normal restart; original retained |
 | One recurring occurrence, [desktop:85](../tests/e2e/desktop.spec.ts) | UI scope/edit, visible override and unchanged remaining series | Pending |
-| Course/semester management, [desktop:89](../tests/e2e/desktop.spec.ts) | Management-screen controls and saved linked records | Pending |
+| Course/semester management, [desktop:89](../tests/e2e/desktop.spec.ts) | Management-screen controls and saved linked records | Partial in 0.1.14: course creation/edit/cancel/archive/linkage/restart independently covered locally; semester creation/linking remains; CI pending; original retained |
 | Keyboard/views/search/narrow, [desktop:92](../tests/e2e/desktop.spec.ts) | Renderer keyboard and DOM; external window sizing or verified viewport | Pending |
 | Renderer security, [desktop:96](../tests/e2e/desktop.spec.ts) | Renderer Node/credential absence, unknown-command denial; policy tests and untrusted-frame boundary | Partial: Node absence, empty local/session storage in local profile, unknown command covered; policy/untrusted frame remain |
 | New task progress, [desktop:99](../tests/e2e/desktop.spec.ts) | Actual new/edit UI controls, selected progress and stored state | Pending |
@@ -106,3 +106,7 @@ The downloaded [six-summary artifact](https://github.com/idekakdj/C.C-Lime/actio
 ## 0.1.13 task and progress acceptance
 
 The [independent task case](../tests/production/tasks.spec.ts) adds seven-day completion/undo, re-completion, deletion and lifetime-count persistence after normal restart. Fixtures and deletion use the ordinary renderer bridge; completion/undo and count assertions use visible controls. It runs in a synthetic local profile with Node CLI inspection disabled, closes normally and does not mutate the owner account. All eight independent cases pass locally. Native dialogs, live desktop account authentication and the remaining migration register stay open.
+
+## 0.1.14 independent course acceptance
+
+Three [course cases](../tests/production/courses.spec.ts) add real course forms and sidebar/card editing, archive/unarchive and normal-restart linkage, selection-drag/backdrop/Escape/close behavior, and native option computed colors with preset/custom-light calendar/hover accessibility. All 11 independent cases pass locally without main-process inspection. Native popup painting, native file dialogs and interactive cloud account acceptance are separate gaps; the original desktop management test stays.

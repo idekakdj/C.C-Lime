@@ -1,5 +1,13 @@
 @import url('./theme.css');
 
+select{color-scheme:light}select option,select optgroup{color:#000;background:#fff}
+.course-nav-row{display:flex;align-items:center;gap:3px;min-width:0}
+.course-navigation .course-filter-button{display:flex;align-items:center;gap:11px;flex:1;min-width:0;padding:9px 14px;text-align:left;font-size:12px;color:var(--theme-ada5b9,#ada5b9);border-radius:6px}
+.course-filter-button>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.course-filter-button .course-dot{flex-shrink:0}
+.course-navigation .course-filter-button:hover,.course-navigation .course-filter-button.selected{background:var(--theme-1f192b,#1f192b);color:var(--theme-e1d5f5,#e1d5f5)}
+.course-edit-button{flex-shrink:0}.course-card .course-edit-label{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.calendar-event{background:var(--profile-surface,#17121f);color:var(--profile-text,#fff)}.calendar-event:hover{background:var(--profile-bg,#0c0b10)}.calendar-event small{opacity:1}
+
 .primary{background:var(--profile-accent,#b39ae8);color:var(--profile-on-accent,#1b102e);border-color:var(--profile-focus,#c4aff0)}
 .primary:hover:not(:disabled){background:var(--profile-accent,#c4acf6);filter:brightness(1.08)}
 .danger-fill{background:#723c4a;color:#ffffff}.form-error{color:var(--danger)}.toast.error{color:var(--danger);background:var(--panel)}
