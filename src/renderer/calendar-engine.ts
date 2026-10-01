@@ -1,6 +1,7 @@
 import { addDays, expand, upcoming } from '../domain/calendar';
 import { isTask, type DomainRecord, type Occurrence } from '../shared/model';
 import { searchCalendar } from './calendar-search';
+import { scheduledTaskInventory } from '../domain/task-list';
 
 export interface CalendarResult {
   occurrences:Occurrence[]; upcoming:ReturnType<typeof upcoming>; nearTasks:Occurrence[]; noDate:Occurrence[]; search:Occurrence[];
@@ -36,9 +37,9 @@ export class CalendarEngine {
     part('occurrences',[...base,from,to],()=>this.expand(from,to,zone));
     part('upcoming',[...base,Math.floor(now/30000)],()=>upcoming(this.records,now,zone));
     part('noDate',[this.revision],()=>this.records.filter(r=>r.kind==='item'&&isTask(r)&&r.timing.mode==='unscheduled').map(r=>({...r,occurrenceKey:r.id,originalDate:'',seriesId:null,startMs:null,endMs:null,date:'',endDate:''}))as Occurrence[]);
-    // A six-month task list must not expand unrelated daily classes or events.
-    // Keep occurrence overrides and completion records for the selected masters.
-    part('nearTasks',[...base,today],()=>expand(this.records.filter(r=>r.kind!=='item'||isTask(r)),addDays(today,-30),addDays(today,181),zone,50000));
+    // Preserve every standalone date and saved repeat history, independently of
+    // calendar visibility; infinite future schedules keep a disclosed horizon.
+    part('nearTasks',[...base,today],()=>scheduledTaskInventory(this.records,today,zone,this.values.upcoming!.overdue));
     part('search',[...base,today,search],()=>searchCalendar(this.records,addDays(today,-365),addDays(today,366),zone,search,this.values.noDate!));
     return reply;
   }
