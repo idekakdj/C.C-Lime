@@ -1,5 +1,9 @@
 # Dependency treatment and release evidence
 
+## October 1: Node 24-native action follow-up
+
+The first immutable-v4-action checkpoint passes 449 tests with downloaded 34/24-case artifact identities verified in the [implementation register](IMPLEMENTATION_STATUS.md). Its Node-20 deprecation warning prompted a separate [reviewed migration](SECURITY_CONTINUATION_0115.md): official stable releases checkout v7.0.1, setup-node v7.0.0, setup-java v6.0.1 and upload-artifact v7.0.1 are pinned by exact commit in the [manifest](../.github/action-pins.json). Official action.yml files declare Node 24; current inputs and hosted runner 2.337.0 were reviewed for compatibility. Explicit ZIP archiving preserves evidence format, unsafe fork checkout is refused and persisted checkout credentials remain disabled. Runtime/input policy checks supplement immutable references. Fresh Windows CI remains required for these new revisions; no application dependency, version, installed artifact, repository protection or administrator MFA changed. This scoped review does not audit all bundled upstream source or confer release/compliance approval.
+
 ## October 1 continued CI identity and compatibility checkpoint
 
 The [security continuation](SECURITY_CONTINUATION_0115.md) pins all four existing v4 action repositories to verified official commit IDs in the [manifest](../.github/action-pins.json), disables persisted checkout credentials and adds six workflow policy controls. Dependency/major/runner versions are unchanged; the existing YAML 2.9.1 lock entry supplies the parser. Commit pinning freezes the resolved action identity; full upstream review, repository-protection enforcement and administrator MFA remain separate.

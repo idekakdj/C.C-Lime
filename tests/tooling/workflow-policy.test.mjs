@@ -27,3 +27,10 @@ test('runner and parser structure changes require review',()=>{
  assert.throws(()=>inspectWorkflow(workflow.replace('runs-on: windows-2022','runs-on: self-hosted'),pins),/compatibility/);
  assert.throws(()=>inspectWorkflow('name: missing steps',pins));
 });
+
+test('runtime review, unsafe fork checkout and artifact format changes fail policy',()=>{
+ assert.throws(()=>inspectWorkflow(workflow,pins.map((p,i)=>i===0?{...p,runtime:'node20'}:p)),/Node 24/);
+ assert.throws(()=>inspectWorkflow(workflow,pins.map((p,i)=>i===0?{...p,tag:'v7'}:p)),/stable release/);
+ assert.throws(()=>inspectWorkflow(workflow.replace('allow-unsafe-pr-checkout: false','allow-unsafe-pr-checkout: true'),pins),/Unsafe/);
+ assert.throws(()=>inspectWorkflow(workflow.replace('archive: true','archive: false'),pins),/ZIP/);
+});

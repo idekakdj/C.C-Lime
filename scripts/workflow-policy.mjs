@@ -10,6 +10,8 @@ export function inspectWorkflow(text,pins){
  const allowed=new Map();
  for(const pin of pins){
   assert.match(pin.repository,/^actions\/[a-z-]+$/);assert.match(pin.commit,/^[a-f0-9]{40}$/);
+  assert.equal(pin.runtime,'node24','Action runtime review must target Node 24');
+  assert.match(pin.tag,/^v\d+\.\d+\.\d+$/,'Action review must identify a stable release');
   assert.ok(!allowed.has(pin.repository),'Duplicate action pin');allowed.set(pin.repository,pin.commit);
  }
  const document=parseDocument(text,{version:'1.2',uniqueKeys:true});assert.equal(document.errors.length,0,'Malformed or duplicate workflow keys');
@@ -27,7 +29,11 @@ export function inspectWorkflow(text,pins){
    if(step.uses!==undefined){
     assert.equal(typeof step.uses,'string');const match=/^(actions\/[a-z-]+)@([a-f0-9]{40})$/.exec(step.uses);
     assert.ok(match,'Action must use an approved full commit SHA');assert.equal(match[2],allowed.get(match[1]),'Unreviewed action or commit');
-    if(match[1]==='actions/checkout')assert.equal(step.with?.['persist-credentials'],false,'Checkout credentials must not persist');
+    if(match[1]==='actions/checkout'){
+     assert.equal(step.with?.['persist-credentials'],false,'Checkout credentials must not persist');
+     assert.equal(step.with?.['allow-unsafe-pr-checkout'],false,'Unsafe fork checkout denied');
+    }
+    if(match[1]==='actions/upload-artifact')assert.equal(step.with?.archive,true,'Evidence must retain ZIP archiving');
     assert.equal(step.run,undefined,'Mixed action/run step denied');references++;
    }
    if(step.run!==undefined){assert.equal(typeof step.run,'string');assert.ok(!step.run.includes('${{'),'Direct expression interpolation in run commands denied');}
