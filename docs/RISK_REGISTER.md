@@ -2,7 +2,9 @@
 
 ## October 1 dependency treatment follow-up
 
-Fresh CI blocked a newly reported basic-ftp parser advisory propagated through five Firebase-tooling packages. The [repair plan](FTP_DEPENDENCY_REPAIR_PLAN.md) retains that failed gate and scopes a patched dependency with six actual runtime compatibility checks and a clean local complete-tree audit. Full new Windows acceptance is required before source verification; the installed app/version remain unchanged. This adds RK-01 supply-chain treatment evidence without waiving the gate, accepting residual risk or claiming organizational assurance. The provider password-policy schema is prepared separately; project-wide enforcement remains unmodified pending its specific approval.
+Fresh CI blocked a newly reported basic-ftp parser advisory propagated through five Firebase-tooling packages. The [repair plan](FTP_DEPENDENCY_REPAIR_PLAN.md) retains that failed gate and scopes a patched dependency with six actual runtime compatibility checks and a clean complete-tree audit. Both final Windows runs for source 57a4214 pass 462 tests without skips; dependency/renderer artifact digests and policies verify independently. The installed app/version remain unchanged. This adds RK-01 supply-chain treatment evidence without waiving the gate, accepting residual risk or claiming organizational assurance. The provider password-policy schema is prepared separately; project-wide enforcement remains unmodified pending its specific approval.
+
+RK-06 gains refreshed [repository/project-local access observations](ACCESS_GOVERNANCE.md): unprotected main/no rulesets, one human cloud owner, one enabled project-owned service account and no returned user-managed keys in its complete metadata read. Audit configuration is unknown; administrator MFA, effective access, recovery custody, protected releases, revocation controls and operating reviews remain open. No permission, key or provider configuration changes are made and no residual score/acceptance is approved.
 
 ## October 1 hardened-account treatment evidence
 

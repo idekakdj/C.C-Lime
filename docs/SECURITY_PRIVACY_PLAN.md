@@ -1,5 +1,11 @@
 # Security, privacy and assurance work plan
 
+## October 1 latest measured continuation
+
+The [hardened-account plan](HARDENED_ACCOUNT_ACCEPTANCE_PLAN.md) now observes eight real synthetic password-account migration/cloud/restart/sign-out checks on retained-byte all-seven copies, with complete cleanup. Google/browser, inbox, native-dialog/OS/second-PC and exact final hardened artifact acceptance remain distinct gates. The discovered queued-status defect is repaired in source only. A newly reported Firebase-tooling FTP parser finding is treated under the [dependency repair plan](FTP_DEPENDENCY_REPAIR_PLAN.md), with six bounded runtime cases and a clean full-tree local audit; full new Windows verification is recorded in the [implementation register](IMPLEMENTATION_STATUS.md).
+
+[Access governance](ACCESS_GOVERNANCE.md) now has fresh sanitized repository and project-local IAM/service-account/key metadata observations. Default-branch protection is still absent; sole-owner recovery, administrator MFA, effective logging/alerts, credential custody and operational access reviews remain unverified. The [provider password-policy plan](PROVIDER_PASSWORD_POLICY_PLAN.md) has a reviewed exact administrative schema but remains unapplied pending its specific rollout decision. No organization policy approval, provider mutation, installed update, risk acceptance or formal assurance is inferred. PHIPA remains excluded; prior dated engineering checkpoints below retain their original scope.
+
 ## October 1 current continued engineering checkpoint
 
 The [continued security plan](SECURITY_CONTINUATION_0115.md) advances T-45/T-58 with scoped controls for all seven fuse areas, 34 local independent passes and 24 renderer passes with all targets combined on disposable copies. T-57/T-58 also gains verified immutable action refs, disabled checkout token persistence and six fail-closed workflow policy tests. Exact scopes/identities and remaining manual gates are in [implementation evidence](IMPLEMENTATION_STATUS.md). Installed/retained 0.1.15 bytes and live cloud rules remain unchanged by this batch.

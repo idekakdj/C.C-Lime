@@ -1,6 +1,6 @@
 # Incident response and continuity preparation
 
-Engineering draft, September 28, 2026. Advances T-59/T-60; **not an approved operating policy or completed human tabletop**. Scope: owner-operated student calendar in Ontario, no patient-record workflow. The owner's installed build remains 0.1.5; current engineering work targets 0.1.8. Actual contact details, evidence and recovery material belong in restricted private storage, never this public repository.
+Engineering draft initiated September 28, 2026. Advances T-59/T-60; **not an approved operating policy or completed human tabletop**. Scope: owner-operated student calendar in Ontario, no patient-record workflow. The October 1 installed release is 0.1.15; earlier version-specific drill evidence below remains historical. Current source-only security work is recorded in [implementation evidence](IMPLEMENTATION_STATUS.md). Actual contact details, evidence and recovery material belong in restricted private storage, never this public repository.
 
 ## Responsibilities and activation
 
