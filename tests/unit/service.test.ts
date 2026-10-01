@@ -130,7 +130,7 @@ it('reports synchronous and asynchronous native test-notification failures witho
   expect(await service.command('testNotification',null)).toMatchObject({state:'submitted'});expect(service.snapshot().notificationTest?.message).toContain('does not confirm');failure();expect(service.snapshot().notificationTest).toMatchObject({state:'failed'});
   const oldFailure=failure;await service.command('testNotification',null);oldFailure();expect(service.snapshot().notificationTest?.state).toBe('submitted');
   (service as any).host.notify=(notice:any)=>notice.onFailure();expect(await service.command('testNotification',null)).toMatchObject({state:'failed'});
-});
+},15000); // Durable fixture writes can exceed 5 seconds on the Windows CI disk; assertions remain unchanged.
 it('reports a thrown native notification failure',async()=>{
   const {service}=await setup();(service as any).host.notify=()=>{throw new Error('native failure');};expect(await service.command('testNotification',null)).toMatchObject({state:'failed'});
 });

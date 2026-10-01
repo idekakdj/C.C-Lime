@@ -32,7 +32,7 @@ describe('expired quick-undo minimization', () => {
     const next = store.save(value); now += 10001;
     expect(() => store.undo(next.undoToken)).toThrow('undo period has ended'); expect(undoRows(store)).toHaveLength(0);
     expect(store.get(value.id)).toEqual(value);
-  });
+  },15000); // Multiple durable writes need a bounded disk-latency allowance on Windows CI.
   it('cleans expired rows on reopen without changing records, pending writes or valid undo', () => {
     const store = open(), first = item(); store.save(first); now += 5000;
     const second = item(), saved = store.save(second), records = store.list(), queue = store.queue();

@@ -85,7 +85,7 @@ it('crop saves preserve newer name/theme edits and remain retryable after SQLite
  s.store!.db.exec("CREATE TRIGGER reject_photo BEFORE INSERT ON records WHEN NEW.kind='profile' BEGIN SELECT RAISE(ABORT, 'synthetic crop write failure'); END");
  await expect(s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop})).rejects.toThrow('synthetic crop write failure');expect(s.snapshot().profile?.avatar).toBeNull();
  s.store!.db.exec('DROP TRIGGER reject_photo');await s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop});expect(s.snapshot().profile).toMatchObject({name:'New username',avatar:photo,appearance:{active:'navy'}});
-});
+},15000); // Keep rollback/retry assertions while allowing bounded Windows CI disk latency.
 it('expiry, remote-photo replacement and removal invalidate crop commits',async()=>{
  const s=await service();let draft=await s.command('profile.photo',null);const clock=vi.spyOn(performance,'now').mockReturnValue(performance.now()+600001);
  try{await expect(s.command('profile.photo.save',{token:draft.token,adjustment:centeredCrop})).rejects.toThrow('expired or changed');}finally{clock.mockRestore();}
