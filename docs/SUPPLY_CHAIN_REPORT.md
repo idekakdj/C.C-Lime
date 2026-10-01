@@ -2,7 +2,7 @@
 
 ## September 30: 0.1.13 artifact checkpoint
 
-Unsigned owner-only installer: 168,030,720 bytes, SHA-256 `5034f210d1e4c01f5e469374d0e99653142fb437f2c21c606d9b66a20c760ab7`. ASAR `dc3212ae05085293feffc6d0821564c9aebd9d13f2051999e6c4115ba61274d4`; lockfile `c7f7544af0bb93ec664026089a488446b8119d5f5971add0bb4f80732b7bbd0f`. Full npm audit: 1,126 components, zero affected-package findings. Package inspection: 205 entries; native inventory: 83 files/15 native entries and seven open production fuse gaps. Exact 20,472,830-byte Chromium notice content and installer version metadata pass. All nine dist files match the archive. These checks do not establish signing, native provenance or formal compliance.
+Unsigned owner-only installer: 168,030,720 bytes, SHA-256 `5034f210d1e4c01f5e469374d0e99653142fb437f2c21c606d9b66a20c760ab7`. ASAR `dc3212ae05085293feffc6d0821564c9aebd9d13f2051999e6c4115ba61274d4`; lockfile `c7f7544af0bb93ec664026089a488446b8119d5f5971add0bb4f80732b7bbd0f`. Full npm audit: 1,126 components, zero affected-package findings. Package inspection: 205 entries; native inventory: 83 files/15 native entries and seven open production fuse gaps. Exact 20,472,830-byte Chromium notice content and installer version metadata pass. All nine dist files match the archive. Normal installed executable/archive/notices equality and profile preservation pass. Installed native inventory covers 84 files/16 native entries, including the additional Squirrel executable. These checks do not establish signing, native provenance or formal compliance.
 
 
 ## September 30: retained and installed 0.1.12

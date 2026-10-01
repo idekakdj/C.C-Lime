@@ -87,7 +87,7 @@ Each package requires: named accountable owner, approved version/date, evidence 
 - **A-61 (T-59):** Incident tabletop verifies escalation, preservation, recovery and legally reviewed notification/record decisions with times and corrective actions.
 - **A-62 (T-60):** Timed independent restore/outage drill validates actual RPO/RTO and calendar/queue integrity; failed drills remain release blockers.
 - **A-63 (T-61):** Independent audit/certification/conformance deliverables inspected for correct operator, scope, edition, period and validity. SOC report is not called a certification; no unsupported certification language.
-- **A-64 (T-62):** All R-01–R-21 reconciled against evidence, unresolved blockers explicit, final claim wording/ongoing review ownership approved. Original A-01–A-52 still required.
+- **A-64 (T-62):** All active R-01–R-21 reconciled against evidence, with R-19 recorded as withdrawn; unresolved blockers explicit, final claim wording/ongoing review ownership approved. Original A-01–A-52 still required.
 
 ## Execution order and present status
 

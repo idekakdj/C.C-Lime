@@ -16,3 +16,11 @@ Signing purchase/identity verification, legal operator/contact, legal review and
 ## Local checkpoint
 
 All 217 unit/UI, 54 tooling passes (two explicit host symlink skips), 49 cloud, 35 packaged desktop and eight independent renderer cases pass. Source/package scans, nine-file exact archive comparison, installer notices/version, native inventory and the 1,126-component zero-finding audit pass. Circular synthetic screenshots were reviewed. Retained 0.1.13 installer SHA-256 `5034f210d1e4c01f5e469374d0e99653142fb437f2c21c606d9b66a20c760ab7`; ASAR `dc3212ae05085293feffc6d0821564c9aebd9d13f2051999e6c4115ba61274d4`. Installation and CI require their own observations.
+
+## Installed checkpoint
+
+Normal-context installation passed after a fresh closed-profile backup captured the owner's latest changes. The exact executable/version, ASAR and notices match the tested artifact. Both account databases/all 11 stored records and every non-cache profile file are preserved; the complete startup approval value and Run command remain unchanged. Read-only Windows startup reports registered/enabled, and the normal private configuration contains all four required sign-in fields without printing their values. The earlier safe installation attempt refused an open app; no process was terminated or profile restored. Installed native inventory covers 84 files/16 native entries (including Squirrel's additional executable) with the same seven fuse gaps. Fresh Windows CI and installed desktop regression remain separate observations.
+
+## Installed regression and fixture correction
+
+All 35 desktop cases also pass against the verified normal-installed acceptance copy. The stable launcher forwards the background argument and stays quiet; a subsequent ordinary launch is observed with the C.C. Lime window present. Actual Windows logon remains untested. Initial Windows CI passed source/cloud/package/all 35 desktop checks but the new independent task case assumed a visible sidebar on a smaller desktop. The test now opens/closes the drawer through normal controls and asserts a measured 1,100-pixel viewport; application/installer bytes are unchanged. Final Windows CI remains pending.
