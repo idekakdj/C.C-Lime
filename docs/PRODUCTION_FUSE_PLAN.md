@@ -1,5 +1,11 @@
 # Production executable hardening and acceptance plan
 
+## October 1 current prerequisite checkpoint
+
+The verified owner installation is now 0.1.15; retained/installed bytes stay unchanged during security experiments. The [NODE_OPTIONS test](../tests/production/node-options.spec.ts) uses the pinned schema and fresh owned copies, changes only nodeOptions and checks unchanged other fuse values/control bytes. Its enabled Node-mode control executes a preload and sets the HTTP header limit to 32,768; the disabled copy omits the preload and reports the default 16,384. Both ordinary harnesses exit zero and both calendar copies start/close normally through the independent renderer transport. The paired probe passes locally and in both 411-test Windows CI runs; exact evidence is in the [implementation register](IMPLEMENTATION_STATUS.md).
+
+This refines the nodeOptions table prerequisite: packaged GUI apps already restrict preload options, so absent GUI execution alone is insufficient. runAsNode deliberately remains enabled in this pair; its refusal needs a separate control. Complete NODE_EXTRA_CA_CERTS coverage is also outstanding. With earlier Node CLI inspection coverage, two scoped paired prerequisites are observed; five other fuse areas, remaining environment surfaces, full native/manual migration and final integration remain. **All seven production target values remain unapplied**; do not mark T-58 or production hardening complete.
+
 September 29, 2026. Follow-up to [native inspection](NATIVE_SECURITY_REVIEW.md), T-45/T-58. The tested 0.1.9 installer remains unchanged while this work establishes verification prerequisites. Seven fuse targets are still open. None of the steps below is satisfied by a successful inventory alone.
 
 ## Scope and invariants

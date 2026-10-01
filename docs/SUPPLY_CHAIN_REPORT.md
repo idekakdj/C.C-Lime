@@ -1,5 +1,11 @@
 # Dependency treatment and release evidence
 
+## October 1 installed 0.1.15 checkpoint
+
+The authorized owner-only upgrade is installed. Application source `1260ad6`; subsequent test-only hardening evidence `05c1df9`. Unsigned private installer: 168,030,208 bytes, SHA-256 `9bae5faa8c07faab2edc96558e18daaffda22bc8598bf900726c027af8f5b97a`; local/installed ASAR `32a6bb564035fea52c235d36bd269eeb390241b80e6eb70d0e18feb9559440d0`. Exact executable, installer-payload/archive equality, nine rebuilt files, archive credentials and complete Chromium notice/version checks pass. Electron 44.4.5, SQLite 3.53.4 and dependency versions are unchanged; the 1,126-component gate reports zero affected packages. Native inventories cover source 83/15 and installed 84/16 files/native entries. Source credential scan covers 185 publishable files; package scan covers 205 entries.
+
+Both security-source Windows runs pass 411 tests without skips. Downloaded 26-case evidence has 15 fingerprints matching CI ASAR `4bf867fd3e20b20a3a459fa599187270e4cfa78e2907b197e248bf7abaf9fa37`; artifact ZIP `10c8413f5e2667dee483f3ba3924158333760c957f2443c7b893c73ae8422eb9`. These CI bytes are distinct from the retained installed artifact. Full identities and links are in [implementation evidence](IMPLEMENTATION_STATUS.md). The NODE_OPTIONS probe modifies disposable copies only; all seven production fuse gaps remain. No public release asset, signing purchase, full native provenance approval or formal assurance is implied. Earlier source-only checkpoints below are historical.
+
 ## October 1 source-work verification; installed release unchanged
 
 Calendar/repetition/task changes do not change dependency versions. Final local source-work verification at `a6b017055fb762b2c97eeec0bc8f439dd330e090` passes the 1,126-component npm gate with zero affected-package findings, 182-file source/205-entry archive credential scans, nine exact rebuilt-file comparisons and the 83-file/15-native inventory. Electron 44.4.5, SQLite 3.53.4, Chromium notices and seven open production fuse gaps are recorded by the collector. These are bounded inventory/check results, not complete native advisory coverage or provenance approval.

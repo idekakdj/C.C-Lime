@@ -1,5 +1,13 @@
 # Security, privacy and assurance work plan
 
+## October 1 current engineering checkpoint
+
+The authorized owner-only 0.1.15 upgrade and subsequent security work are recorded in the [release plan](RELEASE_0115_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md). Exact profile/startup preservation passes. The owner explicitly approved the additive recurrence rule deployment; verified-account/ownership checks and atomic quotas remain. Five live recurrence and seven real-window quota checks pass on disposable accounts, with complete identity/data cleanup. This establishes bounded live write enforcement, not comprehensive authentication/read-abuse control or provider-wide rate limiting.
+
+T-58 gains a paired NODE_OPTIONS preload/header-limit probe on fresh owned copies. Enabled and disabled controls and both calendars exit normally; all other fuse bytes remain unchanged. The full independent suite now has 26 cases; both fresh Windows runs pass 411 tests without skips. No production hardening was applied, runAsNode refusal or complete NODE_EXTRA_CA_CERTS coverage inferred, or installed artifact changed by the probe.
+
+Seven production fuse gaps, native/manual/second-PC acceptance, signing/native provenance, reviewed protected releases, remote authentication/read abuse and alerting, comprehensive provider password controls, administrator MFA/IAM evidence and approved privacy/retention/access/incident/recovery operations remain required. Legal entity/contact, qualified applicability review, normative CAN/DGSI 118 assessment and independent SOC 2/ISO assurance remain unresolved. PHIPA stays withdrawn. Pass counts and owner-only distribution do not establish compliance; no residual-risk approval or formal assurance is claimed. Earlier dated checkpoints below retain their original scope.
+
 Version 1, September 26, 2026. Extends PROJECT_PLAN.md; original functionality and release tests remain mandatory. This is a work specification and evidence register, not a certification, audit opinion or legal compliance statement.
 
 ## Confirmed scope and decision gates

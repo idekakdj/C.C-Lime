@@ -1,5 +1,11 @@
 # C.C. Lime data and retention inventory
 
+## October 1 installed 0.1.15 update
+
+The task visibility/range/repetition changes are now installed under the [release plan](RELEASE_0115_PLAN.md). They add no new personal-data field or external service. A fresh ignored private normal-profile backup preceded installation; both account databases, 34 calendar records, 106 non-cache profile files and private sign-in configuration were preserved. Synthetic acceptance profiles and cloud identities were separate from the owner profile; all live test identities/data were deleted. The approved additive rules retain account ownership, verified-email and write-quota requirements. Exact observations and artifact identities are in [implementation evidence](IMPLEMENTATION_STATUS.md).
+
+The private upgrade backup is another retained copy requiring an operator-approved retention/disposal decision; preservation does not establish encrypted independent backup or recovery objectives. Existing photos, completion ledger, deleted records/tombstones and old backups retain their documented lifecycle. No purge, recovery of deleted history or legal compliance claim is made. Ontario operator details, approved notices/rights procedures, retention and local-calendar encryption remain outstanding; PHIPA remains withdrawn. Earlier source-only statements below describe their dated checkpoints.
+
 ## October 1 source-only task display update
 
 Installed/retained version remains 0.1.14. Unreleased task-history/range/weekly-progress changes read existing item, exception, occurrence-state and completion-timestamp records; they introduce no new personal-data field, external endpoint or purge. Older completions are now displayed independently of calendar hiding and the former task window. Infinite repeating schedules retain a disclosed six-month forward display horizon. Account change resets the task range/course selection; account data boundaries and the existing completion ledger remain in force. No owner database or backup was inspected or modified by synthetic acceptance tests. Retention, old backups/tombstones, local calendar encryption and operator-approved notices remain open; improved visibility is not recovery of previously deleted records. See [task plan](TASK_COMPLETION_RANGE_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md).

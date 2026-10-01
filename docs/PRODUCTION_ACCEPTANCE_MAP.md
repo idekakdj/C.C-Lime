@@ -1,5 +1,13 @@
 # Production acceptance coverage migration
 
+## Current 0.1.15 security checkpoint
+
+The owner upgrade is installed; earlier version-specific entries below remain historical. The full independent suite now has **26 passing cases**, retains the original 35-case desktop suite, and requires normal exits with Node CLI inspection disabled. Fifteen independent summaries fingerprint their exact package. Both [PR Windows CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36831909235) and [push Windows CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36831902974) pass all 411 tests without skips at `05c1df9`. Artifact identity and local/installed separation are in [implementation evidence](IMPLEMENTATION_STATUS.md).
+
+The [NODE_OPTIONS pair](../tests/production/node-options.spec.ts) is an external Node-mode/renderer probe on fresh owned package copies. The positive control executes a preload and changes the HTTP header limit to 32,768; flipping only nodeOptions prevents the preload and retains 16,384 while the ordinary harness still exits zero. Both calendars render and exit normally. Other fuse values and the original control bytes remain unchanged. Missing controls, crashes, timeouts and forced cleanup cannot pass. This does not assert packaged-GUI preload execution, runAsNode refusal or complete NODE_EXTRA_CA_CERTS coverage.
+
+Node CLI inspection and this scoped nodeOptions prerequisite now have paired evidence; five other fuse areas and complete remaining nodeOptions surfaces remain. All seven production fuse targets are still unapplied. Native dialogs/OS behavior, interactive cloud authentication, early second-instance timing, actual logon and second-PC acceptance retain separate gates. No earlier inspection-assisted case is removed, and T-58 is not complete.
+
 ## 0.1.12 startup coverage
 
 The additional native Windows case brings packaged desktop coverage to 34. It uses a unique named disposable Run entry under a path with spaces, reads actual enabled/disabled state, removes the entry in `finally` and verifies the installed owner's entry remains unchanged. Ordinary test-profile startup enabling is denied and choosing default disabled state does not touch the owner. A DOM case verifies missing/disabled/enabled Settings messages and explicit preference reapplication. A separate normal-context read-only probe confirms the owner entry is registered/enabled after bounded target migration. These checks do not establish actual OS logon execution. All seven independent renderer cases still pass; the native registration case has not acquired independent renderer-only coverage and remains an inspection-assisted test.

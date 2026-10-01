@@ -1,6 +1,12 @@
 # C.C. Lime initial security and privacy risk register
 
-## October 1 current evidence checkpoint
+## October 1 current installed-release checkpoint
+
+Owner installation and retained private release are **0.1.15**. The [release plan](RELEASE_0115_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md) record exact artifact identity, profile/startup preservation, 409 local passes plus two explicit tooling skips and 411 fresh Windows CI passes without skips. The approved additive recurrence rules are deployed; disposable-account recurrence, ownership and actual quota-window checks pass with complete cleanup.
+
+RK-01/T-58 gains a paired NODE_OPTIONS prerequisite on disposable copies with positive preload/header-limit controls, negative observations and normal calendar exits. Seven production fuse gaps remain unapplied; this is not a risk closure. Five other fuse areas, complete NODE_EXTRA_CA_CERTS coverage, native/manual/second-PC acceptance, signing/provenance, remote abuse and alerting, approved privacy/governance operations and qualified independent assurance remain open. Early second-instance startup timing and actual logon are explicit acceptance follow-ups. Risk scoring, accountable owners and treatment approval remain pending; **no residual risk is accepted**. PHIPA remains withdrawn. Earlier checkpoints below are historical.
+
+## October 1 earlier source-only evidence checkpoint
 
 Source metadata and the installed/retained owner release are **0.1.14**. New am/pm, all-type repeat and task-history/range changes are source-only at `a6b017055fb762b2c97eeec0bc8f439dd330e090`; the owner's app has not received them. Earlier dated versions below are historical. The [implementation register](IMPLEMENTATION_STATUS.md) distinguishes local source-work archive identity from the unchanged installed release. Local verification now has 408 passes plus two explicit tooling skips; both fresh Windows runs pass all 410 tests without skips, with the downloaded independent evidence verified separately from local and installed artifacts.
 
