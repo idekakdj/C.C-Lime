@@ -1,5 +1,26 @@
 # Implementation and verification evidence
 
+## October 1: continued fuse compatibility and immutable CI action references
+
+The [ordered security continuation](SECURITY_CONTINUATION_0115.md) adds eight independent cases without application, dependency, installer or installed-profile changes. Final local suites pass **34 baseline cases and 24 existing renderer cases with all seven fuse targets enabled together on disposable copies**. Every final summary requires normal calendar/control exit, disabled Node CLI inspection, version 0.1.15 and exact archive identity. Combined cases additionally record the exact executable/fuse/header policy, checked at every startup/restart. Source/type/unit/build verification passes: 198 publishable files, 236 unit/UI tests and 60 tooling passes plus two explicit local symlink-permission skips. All nine rebuilt application files still match the retained release archive. Fresh Windows CI is tracked separately from these local results.
+
+| Prerequisite | Observed bounded result |
+| --- | --- |
+| runAsNode | Enabled control executes owned script; disabled copy ignores it, renders the actual calendar and preserves a save after normal restart. |
+| Node environment | Existing preload/header pair retained; new loopback TLS test rejects the generated certificate without extra trust, trusts it with nodeOptions enabled, and rejects it with nodeOptions disabled. No TLS-verification bypass or OS trust changes. |
+| Archive-only loading | Directory and default_app.asar controls execute a fallback and parse/export through the actual packaged worker with runAsNode disabled; restricted copies exit 1 without fallback execution after intact positive calendar starts. |
+| Embedded integrity | Unchanged protected calendars and harmlessly mutated controls start normally. Protected raw-header and loaded-file mutations terminate with specific integrity diagnostics, not generic failure or timeout. |
+| File privileges | File-fetch control succeeds, disabled copy rejects it; actual custom-protocol calendar, 404 return and invalid-sender denial still work. Service-worker/child-frame surfaces remain separate. |
+| Cookie encryption | Plaintext control, copied-profile migration, encrypted write/reload and synthetic Windows safeStorage marker preservation pass. This is not signed-in-account acceptance or rollback of the one-way transition. |
+
+Earlier fixture failures are retained: Windows device-file replacement errors during redundant teardown, suppressed missing-app GUI text and a distinct JavaScript file-integrity diagnostic. No failed control was counted as refusal. Fresh owned profiles now start with closeToTray disabled; restart preserves existing settings and teardown avoids an unnecessary settings write. Real onboarding still uses the normal control. Both complete suites pass after this refinement; no production file-lock defect/root cause is claimed.
+
+Private 58-summary evidence SHA-256 `f775bb79d8128b2c393d6c3bebae5f65196b8a09152d3286d90301c4b370d69e`. The combined owned executable is SHA-256 `66c8dedf36b5267ab6583f0ff7f8bc780c79ce64ccb39b32b059ac303f2f2b58`, distinct from the installed executable. Baseline/combined archive remains `32a6bb564035fea52c235d36bd269eeb390241b80e6eb70d0e18feb9559440d0`; retained installer remains `9bae5faa8c07faab2edc96558e18daaffda22bc8598bf900726c027af8f5b97a`. **The installed 0.1.15 still has its seven recorded fuse gaps.** Combined-copy compatibility does not ship hardening or complete T-58.
+
+The CI workflow now uses full official action commits from the [pin manifest](../.github/action-pins.json), resolved from existing v4 tags and verified through each repository's commit API. Checkout no longer persists its token. Read-only permissions, runner and major versions remain; six policy tests reject floating/unknown/changed refs, privilege/trigger escalation, token persistence, shell-expression injection, duplicate YAML keys/aliases and unreviewed runner changes. The already locked YAML 2.9.1 parser is required. This source guard does not enforce remote branch protection, administrator MFA or complete upstream source review.
+
+A separate isolated all-seven-fuse calendar and synthetic files are prepared for human native-dialog observation. That result is pending; native controls are unavailable in this session. Photo chooser/crop, actual worker import/export, backup/restore dialogs, signed-in session migration, notification/tray/logon/sleep, early second-instance timing and second-PC acceptance retain their specific gates. Production packaging integration, signing, remote abuse/alerting and organizational/independent assurance remain open; no compliance claim or risk acceptance is made.
+
 ## October 1: installed 0.1.15 and subsequent security verification
 
 The owner authorized a new release and installation under the [ordered release plan](RELEASE_0115_PLAN.md). Installed application source is `1260ad66322920af585132d4f307288920ba1288`; later security-test source is `05c1df99a65605924a551fa719ca8e5196fbd974`. The latter changes only tests, a type declaration and the plan, not shipped application bytes. Earlier source-only checkpoints below are historical.

@@ -1,6 +1,12 @@
 # Production acceptance coverage migration
 
-## Current 0.1.15 security checkpoint
+## Current combined-copy and scoped probe checkpoint
+
+The [continued batch](SECURITY_CONTINUATION_0115.md) passes 34 independent cases locally and the same 24 existing renderer workflows with all seven target fuses combined on disposable copies. Each combined summary records exact executable/archive fingerprints, nine fuse values and matching embedded header; launch/restart verifies that policy. New controls cover Node mode, extra certificate trust, both fallback paths, header/content integrity, file fetch and synthetic cookie/secure-storage migration. No original desktop case is removed. [Implementation evidence](IMPLEMENTATION_STATUS.md) distinguishes passing controls, intentional negative termination and unverified surfaces.
+
+The installed/retained release remains unchanged with seven fuse gaps. Worker parse/export is observed in a synthetic fallback harness, so native chooser/import/export/restore acceptance remains separate. Synthetic Windows encrypted-marker preservation does not prove signed-in-account migration. Native/OS/second-PC, early startup timing and remaining interaction gates stay open. A human native-dialog checklist and isolated candidate are ready; observation is pending. Fresh Windows CI for the continued batch is recorded separately after completion. Earlier 26-case/411-test results below are historical.
+
+## Earlier 0.1.15 security checkpoint
 
 The owner upgrade is installed; earlier version-specific entries below remain historical. The full independent suite now has **26 passing cases**, retains the original 35-case desktop suite, and requires normal exits with Node CLI inspection disabled. Fifteen independent summaries fingerprint their exact package. Both [PR Windows CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36831909235) and [push Windows CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36831902974) pass all 411 tests without skips at `05c1df9`. Artifact identity and local/installed separation are in [implementation evidence](IMPLEMENTATION_STATUS.md).
 

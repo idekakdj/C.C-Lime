@@ -3,10 +3,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { makeItem, type Snapshot } from '../../src/shared/model';
-import { acceptanceCopy, startDesktop } from './desktop.mjs';
+import { rendererCopy, startDesktop } from './desktop.mjs';
 
 test('sidebar completion and undo preserve a single lifetime completion after deletion and normal restart',async({},testInfo)=>{
- const copy=await acceptanceCopy(),profile=path.join(copy.root,'task-progress');let desktop=await startDesktop(copy,profile);
+ const copy=await rendererCopy(),profile=path.join(copy.root,'task-progress');let desktop=await startDesktop(copy,profile);
  try{
   let page=desktop.page;await page.setViewportSize({width:1100,height:850});await expect.poll(()=>page.evaluate(()=>window.innerWidth)).toBe(1100);
   async function openUpcoming(){const toggle=page.getByRole('button',{name:'Show upcoming tasks',exact:true});if(await toggle.isVisible())await toggle.click();await expect(page.getByRole('complementary',{name:'Upcoming tasks for the next 7 days'})).toBeVisible();}
@@ -24,5 +24,5 @@ test('sidebar completion and undo preserve a single lifetime completion after de
   await page.getByRole('button',{name:'Open profile',exact:true}).click();await expect(page.getByTestId('lifetime-completions')).toHaveText('1');
   const after=await page.evaluate(()=>window.lime.call<Snapshot>('snapshot'));expect(after.records.some(record=>record.id===value.id)).toBe(false);expect(after.records.filter(record=>record.kind==='completion')).toHaveLength(1);
  }finally{await desktop.close();}
- await fs.writeFile(testInfo.outputPath('summary.json'),JSON.stringify({version:copy.version,sidebarCompleted:true,undoRestoredTask:true,lifetimeCountStayedOne:true,deletionAndRestartPreservedHistory:true,normalExit:true,nodeCliInspect:false,scope:'Synthetic local profile; ordinary renderer bridge and UI only. No native dialog, owner account or main-process evaluation.'},null,2));
+ await fs.writeFile(testInfo.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,fixturePolicy:copy.policy,sidebarCompleted:true,undoRestoredTask:true,lifetimeCountStayedOne:true,deletionAndRestartPreservedHistory:true,normalExit:true,nodeCliInspect:false,scope:'Synthetic local profile; ordinary renderer bridge and UI only. No native dialog, owner account or main-process evaluation.'},null,2));
 });

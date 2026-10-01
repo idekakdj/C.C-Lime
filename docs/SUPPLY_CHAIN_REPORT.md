@@ -1,5 +1,11 @@
 # Dependency treatment and release evidence
 
+## October 1 continued CI identity and compatibility checkpoint
+
+The [security continuation](SECURITY_CONTINUATION_0115.md) pins all four existing v4 action repositories to verified official commit IDs in the [manifest](../.github/action-pins.json), disables persisted checkout credentials and adds six workflow policy controls. Dependency/major/runner versions are unchanged; the existing YAML 2.9.1 lock entry supplies the parser. Commit pinning freezes the resolved action identity; full upstream review, repository-protection enforcement and administrator MFA remain separate.
+
+Local source verification has 198 credential-scanned files, 236 unit/UI passes, 60 tooling passes and two explicit symlink-permission skips; type/build passes and all nine application files match the retained archive. Independent suites pass 34 baseline and 24 combined-fuse renderer cases. Private evidence SHA-256 `f775bb79d8128b2c393d6c3bebae5f65196b8a09152d3286d90301c4b370d69e`. Installed archive/installer identities below remain unchanged. No hardened release, signing/provenance approval or formal assurance is claimed; fresh CI and native/manual observations are separately tracked in the [implementation register](IMPLEMENTATION_STATUS.md).
+
 ## October 1 installed 0.1.15 checkpoint
 
 The authorized owner-only upgrade is installed. Application source `1260ad6`; subsequent test-only hardening evidence `05c1df9`. Unsigned private installer: 168,030,208 bytes, SHA-256 `9bae5faa8c07faab2edc96558e18daaffda22bc8598bf900726c027af8f5b97a`; local/installed ASAR `32a6bb564035fea52c235d36bd269eeb390241b80e6eb70d0e18feb9559440d0`. Exact executable, installer-payload/archive equality, nine rebuilt files, archive credentials and complete Chromium notice/version checks pass. Electron 44.4.5, SQLite 3.53.4 and dependency versions are unchanged; the 1,126-component gate reports zero affected packages. Native inventories cover source 83/15 and installed 84/16 files/native entries. Source credential scan covers 185 publishable files; package scan covers 205 entries.

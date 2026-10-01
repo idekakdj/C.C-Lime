@@ -4,10 +4,10 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DateTime } from 'luxon';
 import { makeItem, type Snapshot } from '../../src/shared/model';
-import { acceptanceCopy, startDesktop } from './desktop.mjs';
+import { rendererCopy, startDesktop } from './desktop.mjs';
 
-let copy: Awaited<ReturnType<typeof acceptanceCopy>>;
-test.beforeAll(async () => { copy = await acceptanceCopy(); });
+let copy: Awaited<ReturnType<typeof rendererCopy>>;
+test.beforeAll(async () => { copy = await rendererCopy(); });
 async function fixture(page: Page) {
   await page.setViewportSize({ width: 1600, height: 1000 });
   const date = await page.locator('.day-cell.today [data-day]').getAttribute('data-day');
@@ -16,9 +16,9 @@ async function fixture(page: Page) {
   return { date: date!, zone: state.displayZone! };
 }
 async function summary(info: TestInfo, observed: Record<string, unknown>) {
-  await fs.writeFile(info.outputPath('summary.json'), JSON.stringify({ version: copy.version, packageSha256: copy.packageSha256, ...observed,
+  await fs.writeFile(info.outputPath('summary.json'), JSON.stringify({ version: copy.version, packageSha256: copy.packageSha256, fixturePolicy: copy.policy, ...observed,
     normalExit: true, nodeCliInspect: false,
-    scope: 'Unreleased source-work package; synthetic local profile, ordinary bridge and actual renderer controls. No owner account, main-process evaluation, native dialogs or physical window sizing.' }, null, 2));
+    scope: 'Owned release-baseline copy; synthetic local profile, ordinary bridge and actual renderer controls. Exact fixture fuse policy recorded. No owner account, main-process evaluation, native dialogs or physical window sizing.' }, null, 2));
 }
 
 test('month labels spell out am and pm and retain selected time format after normal restart', async ({}, info) => {

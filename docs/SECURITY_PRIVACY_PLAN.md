@@ -1,6 +1,12 @@
 # Security, privacy and assurance work plan
 
-## October 1 current engineering checkpoint
+## October 1 current continued engineering checkpoint
+
+The [continued security plan](SECURITY_CONTINUATION_0115.md) advances T-45/T-58 with scoped controls for all seven fuse areas, 34 local independent passes and 24 renderer passes with all targets combined on disposable copies. T-57/T-58 also gains verified immutable action refs, disabled checkout token persistence and six fail-closed workflow policy tests. Exact scopes/identities and remaining manual gates are in [implementation evidence](IMPLEMENTATION_STATUS.md). Installed/retained 0.1.15 bytes and live cloud rules remain unchanged by this batch.
+
+Seven installed fuse gaps and production packaging integration remain open. Native-dialog and signed-in/OS/second-PC acceptance, upstream/native provenance, protected reviewed releases, remote authentication/read-abuse/alerting, approved security/privacy operations and independent assurance remain required. Human native-dialog observation is pending on an isolated synthetic candidate. These checks do not approve residual risk, complete T-58 or certify SOC 2/ISO/CAN-DGSI/PIPEDA conformance. Earlier engineering checkpoints below are historical; PHIPA remains withdrawn.
+
+## October 1 earlier engineering checkpoint
 
 The authorized owner-only 0.1.15 upgrade and subsequent security work are recorded in the [release plan](RELEASE_0115_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md). Exact profile/startup preservation passes. The owner explicitly approved the additive recurrence rule deployment; verified-account/ownership checks and atomic quotas remain. Five live recurrence and seven real-window quota checks pass on disposable accounts, with complete identity/data cleanup. This establishes bounded live write enforcement, not comprehensive authentication/read-abuse control or provider-wide rate limiting.
 

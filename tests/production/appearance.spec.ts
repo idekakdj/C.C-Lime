@@ -2,17 +2,17 @@ import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { acceptanceCopy, startDesktop } from './desktop.mjs';
+import { rendererCopy, startDesktop } from './desktop.mjs';
 
-let copy: Awaited<ReturnType<typeof acceptanceCopy>>;
-test.beforeAll(async () => { copy = await acceptanceCopy(); });
+let copy: Awaited<ReturnType<typeof rendererCopy>>;
+test.beforeAll(async () => { copy = await rendererCopy(); });
 
 async function accessible(page: Page) {
   const result = await new AxeBuilder({ page }).setLegacyMode(true).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(result.violations.map(violation => ({ id: violation.id, targets: violation.nodes.map(node => node.target) }))).toEqual([]);
 }
 async function retain(testInfo: TestInfo, assertions: Record<string, unknown>) {
-  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, ...assertions,
+  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, packageSha256: copy.packageSha256, fixturePolicy: copy.policy, ...assertions,
     normalExit: true, nodeCliInspect: false, scope: 'Local renderer UI and measured viewport; no native dialogs, physical window resizing or account sync.' }, null, 2));
 }
 

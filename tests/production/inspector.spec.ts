@@ -34,7 +34,7 @@ test('paired control proves disabled Node CLI inspection refuses the listening e
       expect(refused).toBe(true);
     }
   } finally { await second.close(); }
-  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: hardened.version, controlNodeTargetObserved: true,
+  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: hardened.version, packageSha256: hardened.packageSha256, fixturePolicy: hardened.policy, controlNodeTargetObserved: true,
     disabledInspectorAnnouncementAbsent: true, disabledInspectorPortRefused: true, normalExit: true, nodeCliInspect: false,
     scope: 'Paired disposable control; Node CLI inspection only. Other fuses remain unchanged.' }, null, 2));
 });

@@ -3,9 +3,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 // JavaScript fixture deliberately starts the executable without Electron's inspector launcher.
-import { acceptanceCopy, startDesktop } from './desktop.mjs';
-let copy: Awaited<ReturnType<typeof acceptanceCopy>>;
-test.beforeAll(async () => { copy = await acceptanceCopy(); });
+import { rendererCopy, startDesktop } from './desktop.mjs';
+let copy: Awaited<ReturnType<typeof rendererCopy>>;
+test.beforeAll(async () => { copy = await rendererCopy(); });
 
 test('calendar edits and local profile appearance survive an independently launched restart', async ({}, testInfo) => {
   const profile = path.join(copy.root, 'calendar-profile');
@@ -42,7 +42,7 @@ test('calendar edits and local profile appearance survive an independently launc
     await page.getByRole('button', { name: 'Open profile', exact: true }).click();
     await expect(page.getByLabel('Username', { exact: true })).toHaveValue('Independent student');
   } finally { await desktop.close(); }
-  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, calendarCreatedAndEdited: true,
+  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, packageSha256: copy.packageSha256, fixturePolicy: copy.policy, calendarCreatedAndEdited: true,
     dayExpansionPreserved: true, nameAndThemePreserved: true, restart: true, normalExit: true, nodeCliInspect: false,
     scope: 'Renderer/local durability only; no main-process stubs or real account.' }, null, 2));
 });
@@ -70,7 +70,7 @@ test('404 recovery retains saved calendar and exposes no renderer Node API', asy
     await page.keyboard.press('Enter');
     await expect(page.locator('.calendar-event').filter({ hasText: 'Before missing page' }).first()).toBeVisible();
   } finally { await desktop.close(); }
-  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, secure404Recovery: true,
+  await fs.writeFile(testInfo.outputPath('summary.json'), JSON.stringify({ version: copy.version, packageSha256: copy.packageSha256, fixturePolicy: copy.policy, secure404Recovery: true,
     keyboardReturn: true, automated404Accessibility: true, localProfileBrowserStorageEmpty: true, normalExit: true,
     rendererNodeUnavailable: true, unknownCommandDenied: true, nodeCliInspect: false,
     scope: 'Renderer observations in a synthetic local profile; no signed-in token or main-process sandbox-policy inspection.' }, null, 2));

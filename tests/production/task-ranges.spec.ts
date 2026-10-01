@@ -5,11 +5,11 @@ import { randomUUID } from 'node:crypto';
 import { DateTime } from 'luxon';
 import AxeBuilder from '@axe-core/playwright';
 import { makeItem, type Snapshot } from '../../src/shared/model';
-import { acceptanceCopy, startDesktop } from './desktop.mjs';
+import { rendererCopy, startDesktop } from './desktop.mjs';
 
-let copy:Awaited<ReturnType<typeof acceptanceCopy>>;
-test.beforeAll(async()=>{copy=await acceptanceCopy();});
-async function summary(info:TestInfo,observed:Record<string,unknown>){await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,...observed,normalExit:true,nodeCliInspect:false,scope:'Unreleased source-work package; synthetic local tasks, real completion/range controls and ordinary bridge. No owner data, native dialogs or main-process evaluation.'},null,2));}
+let copy:Awaited<ReturnType<typeof rendererCopy>>;
+test.beforeAll(async()=>{copy=await rendererCopy();});
+async function summary(info:TestInfo,observed:Record<string,unknown>){await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,fixturePolicy:copy.policy,...observed,normalExit:true,nodeCliInspect:false,scope:'Unreleased source-work package; synthetic local tasks, real completion/range controls and ordinary bridge. No owner data, native dialogs or main-process evaluation.'},null,2));}
 
 test('old and undated completions remain visible despite calendar hiding and contribute to durable weekly progress',async({},info)=>{
  const profile=path.join(copy.root,'completed-ranges');let desktop=await startDesktop(copy,profile);

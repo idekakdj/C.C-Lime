@@ -3,11 +3,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { DateTime } from 'luxon';
 import type { CalendarItem, Snapshot, ItemType } from '../../src/shared/model';
-import { acceptanceCopy, startDesktop } from './desktop.mjs';
+import { rendererCopy, startDesktop } from './desktop.mjs';
 
-let copy:Awaited<ReturnType<typeof acceptanceCopy>>;
-test.beforeAll(async()=>{copy=await acceptanceCopy();});
-async function retain(info:TestInfo,observed:Record<string,unknown>){await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,...observed,normalExit:true,nodeCliInspect:false,scope:'Unreleased source-work package; synthetic local account and real editor/review controls. No main-process evaluation, real account or native file dialogs.'},null,2));}
+let copy:Awaited<ReturnType<typeof rendererCopy>>;
+test.beforeAll(async()=>{copy=await rendererCopy();});
+async function retain(info:TestInfo,observed:Record<string,unknown>){await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,fixturePolicy:copy.policy,...observed,normalExit:true,nodeCliInspect:false,scope:'Owned release-baseline copy; synthetic local account and real editor/review controls. Exact fixture fuse policy recorded. No main-process evaluation, real account or native file dialogs.'},null,2));}
 async function viewport(page:Page){await page.setViewportSize({width:1600,height:1000});}
 async function createSeries(page:Page,type:ItemType,title:string,allDay=false){
  await page.getByRole('button',{name:'Add item',exact:true}).first().click();let dialog=page.getByRole('dialog');

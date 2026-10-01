@@ -4,6 +4,8 @@ Engineering draft, September 28, 2026, T-54/T-57/T-58. Ontario operator; owner-o
 
 ## Read-only repository observations
 
+October 1 source continuation pins the existing build actions to verified commits and disables persisted checkout credentials, with six policy tests enforcing the source workflow boundary. See the [pin manifest](../.github/action-pins.json) and [implementation evidence](IMPLEMENTATION_STATUS.md). No remote repository protection, collaborators, MFA, IAM, recovery factors or organization settings were changed. This advances pipeline identity control, not operation of the proposed access program.
+
 Refreshed at **2026-10-01 02:39 UTC** for 0.1.13, without changing settings. The separately retained `test-results/repository-access-inventory-0.1.13.json` has SHA-256 `1633dce140a9bce60e144e9cd6da0038abb7c764c97848a4bd0fe5e1475a8973`. Results remain: public repository/main, one admin, unprotected default branch/no rulesets, read-only workflow tokens with PR approval disabled, secret scanning/push protection enabled, automatic dependency security updates disabled and vulnerability-alert enablement unavailable (HTTP 404). The earlier inventory below is preserved. Administrator MFA/IAM/recovery and operating access-review evidence remain unverified.
 
 Observed at **2026-09-28 20:04 UTC** through authenticated GitHub repository APIs. No permissions, protections, accounts or settings were changed. The sanitized local evidence is `test-results/repository-access-inventory.json`, SHA-256 `6ed9a2a19f71c7b5ad6c926f6f009cf8a28cee18b8b1fd40699509399c11db6a`; generated evidence remains ignored.

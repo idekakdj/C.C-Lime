@@ -12,6 +12,9 @@ The October 1 owner upgrade installs explicit am/pm month labels and repetition 
 
 ## Project documents
 
+Subsequent security work adds scoped controls across all seven fuse areas, 34 local independent passes and 24 existing renderer passes with all seven targets combined on disposable copies. CI actions now use verified commit references with token/policy guards. The installed release remains unchanged with seven fuse gaps; native/manual acceptance and production integration remain open. The current continuation document records fresh CI and human-observation status.
+
+- [Current security continuation and acceptance gates](docs/SECURITY_CONTINUATION_0115.md)
 - [Product specification and project plan](PROJECT_PLAN.md)
 - [Implementation task register — 65 tasks](docs/IMPLEMENTATION_TASKS.md)
 - [Acceptance test specification — 67 scenarios](docs/ACCEPTANCE_TESTS.md)

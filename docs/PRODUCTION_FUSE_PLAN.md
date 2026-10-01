@@ -1,6 +1,12 @@
 # Production executable hardening and acceptance plan
 
-## October 1 current prerequisite checkpoint
+## October 1 current combined-copy checkpoint
+
+The [continued batch](SECURITY_CONTINUATION_0115.md) now has scoped positive/negative evidence for all seven areas, including both Node environment variables, two fallback paths, raw-header/loaded-file integrity, file fetch and synthetic cookie migration. Final local baseline has 34 passing cases. All 24 existing renderer workflows also pass with all seven target values enabled together on disposable copies, exact executable/archive/fuse/header policy checked at each restart. Detailed results and limitations are in [implementation evidence](IMPLEMENTATION_STATUS.md).
+
+This does not apply hardening to the installed or retained release. Seven installed gaps remain. Native dialog/OS/second-PC and interactive signed-in acceptance are still required before packaging integration; cookie rollback, Chromium trust, broader file service-worker/child-frame behavior and local administrator compromise are not established by the scoped probes. An isolated human native-dialog test is prepared and pending. Keep original desktop coverage and retained release bytes unchanged. Earlier prerequisite statements below are historical.
+
+## October 1 earlier NODE_OPTIONS checkpoint
 
 The verified owner installation is now 0.1.15; retained/installed bytes stay unchanged during security experiments. The [NODE_OPTIONS test](../tests/production/node-options.spec.ts) uses the pinned schema and fresh owned copies, changes only nodeOptions and checks unchanged other fuse values/control bytes. Its enabled Node-mode control executes a preload and sets the HTTP header limit to 32,768; the disabled copy omits the preload and reports the default 16,384. Both ordinary harnesses exit zero and both calendar copies start/close normally through the independent renderer transport. The paired probe passes locally and in both 411-test Windows CI runs; exact evidence is in the [implementation register](IMPLEMENTATION_STATUS.md).
 

@@ -4,10 +4,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { makeItem, type Course, type Snapshot } from '../../src/shared/model';
-import { acceptanceCopy, startDesktop } from './desktop.mjs';
+import { rendererCopy, startDesktop } from './desktop.mjs';
 
-let copy:Awaited<ReturnType<typeof acceptanceCopy>>;
-test.beforeAll(async()=>{copy=await acceptanceCopy();});
+let copy:Awaited<ReturnType<typeof rendererCopy>>;
+test.beforeAll(async()=>{copy=await rendererCopy();});
 async function createCourse(page:Page){
  await page.getByRole('button',{name:'Add course',exact:true}).click();
  await page.getByLabel('Course name',{exact:true}).fill('Independent course');await page.getByLabel('Course code',{exact:true}).fill('PP103');
@@ -15,7 +15,7 @@ async function createCourse(page:Page){
  const state=await page.evaluate(()=>window.lime.call<Snapshot>('snapshot'));
  return state.records.find((record):record is Course=>record.kind==='course'&&record.code==='PP103')!;
 }
-async function retain(info:TestInfo,assertions:Record<string,unknown>){await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,...assertions,normalExit:true,nodeCliInspect:false,scope:'Synthetic local profile; real renderer controls/mouse and ordinary bridge only. No native popup painting, file dialogs, cloud account or main-process inspection.'},null,2));}
+async function retain(info:TestInfo,assertions:Record<string,unknown>){await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,fixturePolicy:copy.policy,...assertions,normalExit:true,nodeCliInspect:false,scope:'Synthetic local profile; real renderer controls/mouse and ordinary bridge only. No native popup painting, file dialogs, cloud account or main-process inspection.'},null,2));}
 async function accessible(page:Page){expect((await new AxeBuilder({page}).setLegacyMode().withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations.map(value=>({id:value.id,nodes:value.nodes.map(node=>({target:node.target,summary:node.failureSummary}))})),`Appearance: ${await page.locator('html').getAttribute('data-appearance')}`).toEqual([]);}
 
 test('edits a course from calendar navigation and its card without duplicating or losing linked items after restart',async({},info)=>{

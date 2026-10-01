@@ -1,5 +1,9 @@
 # C.C. Lime initial security and privacy risk register
 
+## October 1 continued treatment evidence
+
+The [continued plan](SECURITY_CONTINUATION_0115.md) adds scoped fuse controls, 34 independent baseline passes and 24 combined-fuse renderer passes on disposable copies, plus immutable CI action references and checkout-token/policy guards. RK-01/T-58 and release/access controls gain engineering evidence; the installed release still has seven fuse gaps and native/manual/signed-in/OS/second-PC acceptance is incomplete. An isolated native-dialog check awaits human observation. Exact limitations are recorded in [implementation evidence](IMPLEMENTATION_STATUS.md). No production integration, remote repository enforcement or risk acceptance is inferred. Residual scoring/approval and organizational/independent assurance remain outstanding.
+
 ## October 1 current installed-release checkpoint
 
 Owner installation and retained private release are **0.1.15**. The [release plan](RELEASE_0115_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md) record exact artifact identity, profile/startup preservation, 409 local passes plus two explicit tooling skips and 411 fresh Windows CI passes without skips. The approved additive recurrence rules are deployed; disposable-account recurrence, ownership and actual quota-window checks pass with complete cleanup.

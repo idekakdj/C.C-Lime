@@ -1,4 +1,4 @@
-// Read-only schema from electron/electron v44.4.2 build/fuses/fuses.json5.
+// Read-only schema reviewed against electron/electron v44.4.5 build/fuses/fuses.json5.
 // A changed schema must be reviewed; do not silently reinterpret future bytes.
 export const fuseSentinel = Buffer.from('dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX');
 export const fuseNames = Object.freeze([
