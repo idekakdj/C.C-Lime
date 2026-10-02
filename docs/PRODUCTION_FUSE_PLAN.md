@@ -1,5 +1,9 @@
 # Production executable hardening and acceptance plan
 
+## October 2 owner-requested 0.1.16 update
+
+The owner requested installation of all accumulated features/security changes in a new release. The [0.1.16 plan](RELEASE_0116_PLAN.md) preserves shipping fuse settings: all seven selected gaps remain in the actual package, while 27 disposable-copy compatibility cases pass. Both 0.1.16 Windows CI runs pass 495 tests with zero skips; [implementation evidence](IMPLEMENTATION_STATUS.md) separately records actual owner installation and configured sign-in gates. Session/OAuth/frame/worker and notice changes ship without implying completion of all-seven production integration, native/Google/OS/second-PC acceptance or formal compliance. Dated 0.1.15 statements below remain historical.
+
 ## October 2 current-source boundary checkpoint
 
 Current source passes renderer frame/service-worker refusal, 38 independent and 27 combined renderer cases locally, plus the eight-check live disposable password-account matrix with four normal exits. All seven switches remain limited to owned copies; installed 0.1.15 is unchanged. Actual native dialogs, Google browser/inbox, physical OS/second-PC acceptance and release approval remain required. See [acceptance coverage](PRODUCTION_ACCEPTANCE_MAP.md), [implementation evidence](IMPLEMENTATION_STATUS.md) and [remaining checklist](COMPLIANCE_CHECKLIST.md). Partial observations do not constitute a production rollout.

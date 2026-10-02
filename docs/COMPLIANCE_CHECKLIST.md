@@ -1,6 +1,6 @@
 # Current compliance and release checklist
 
-October 2, 2026, Ontario owner-only pilot. Installed release is **0.1.15**. This is an evidence and dependency register, not a claim of SOC 2, ISO 27001, DGSI or PIPEDA compliance. PHIPA was withdrawn by the owner. [Ordered continuation](COMPLIANCE_EXHAUSTION_PLAN.md) defines the work and stop criterion.
+October 2, 2026, Ontario owner-only pilot. Installed release is **0.1.16** under the [new release plan](RELEASE_0116_PLAN.md); final installed sign-in/profile gates are recorded in [implementation evidence](IMPLEMENTATION_STATUS.md). The [capabilities and assurance inventory](APP_CAPABILITIES_0116.md) lists shipped functions, measured security controls and the exact status of each requested framework. This is an evidence and dependency register, not a claim of SOC 2, ISO 27001, DGSI or PIPEDA compliance. PHIPA was withdrawn by the owner. [Ordered continuation](COMPLIANCE_EXHAUSTION_PLAN.md) defines the work and stop criterion.
 
 **Status rule:** “verified engineering” closes only the measured technical subtask; “partial” means preparation exists but the broader task remains open. An explicit provider deployment decision, organizational approval, actual native/human observation or independent deliverable cannot be manufactured by another code test. Final current-source CI and live acceptance are recorded in the implementation checkpoint, separately from installed bytes.
 

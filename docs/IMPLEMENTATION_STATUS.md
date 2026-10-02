@@ -1,5 +1,39 @@
 # Implementation and verification evidence
 
+## October 2 installed 0.1.16 release and comprehensive inventory
+
+The owner explicitly requested the next version with all accumulated changes and a comprehensive feature/security/compliance inventory, then confirmed tray closure. The [precise release plan](RELEASE_0116_PLAN.md) preceded the version change; only the application and two root-lock versions changed, preserving dependency resolutions. [The inventory](APP_CAPABILITIES_0116.md) lists all product functions and measured controls, separating experimental fuse compatibility from shipped protections and all requested formal assurance statuses. No framework compliance level, certificate or legal conclusion is invented.
+
+Version **0.1.16 is installed** in the physically verified normal Windows context. The fresh private closed-profile backup has 108 files, two account databases and 35 records; all account records/non-cache files and private configuration match after installation. Existing startup command/approval bytes remain unchanged, and the read-only named-entry check reports registered/enabled true. A populated 12-record synthetic 0.1.15-to-0.1.16 upgrade preserves exact records, recurrence exceptions/completions, links, preferences, device state and outbox. Prior retained 0.1.15 installer bytes remain unchanged.
+
+All 106 original distributed application files match the tested package; the 107 app-root files including Squirrel plus its relocated stable launcher match the nupkg's exact 108-file hash vector in the normal physical context. Ten dependency notices, 23 unchanged covered MPL source files and Chromium notices match inside/beside ASAR and distribution. Source/package scans find no credential values or private configuration. The normal-context installed sign-in gate verifies email/Google/reset controls at fresh startup and ordinary restart, correct physical executable/environment, no owner data in the isolated fixture, normal exits, removed fixture environment and unchanged private configuration.
+
+The actual installed executable passes **five live disposable password-account checks with three normal exits**: email/password renderer sign-in, Windows-encrypted remembered session, same account after ordinary restart, sign-out restoring enabled controls and a fresh signed-out restart. One generated identity/data set is created/deleted, its disappearance independently checked and private fixture environment/recovery material removed. Administrative email verification does not prove inbox delivery, and configured Google controls do not assert a new browser consent exchange. Owner credentials/calendar are not copied into live fixtures.
+
+Initial supplementary file-verifier assumptions failed: the packager's `version` marker is omitted by Squirrel, and `cc-lime_ExecutionStub.exe` is relocated/renamed to the stable launcher. A normal-context ZIP comparison also stalled and only its exact owned verifier was stopped. Redirected tool-context AppData observations are rejected as ordinary-installation evidence. Both failed helper reports remain retained. Corrected checks derive the nupkg's exact vector on the ordinary installed copy and independently compare the physical normal files, including the new launcher against the exact package stub. No shipped code/data is changed to make these checks pass.
+
+Quiet background startup succeeds with the physical 0.1.16 process. The first reopen observation did not see a window within its bound; a separate ordinary second-launch check succeeds with the actual installed window. The normal owner app is left running, without test-profile or debug arguments. Actual Windows logon, sleep/unlock, banner click and native file/Google/inbox/second-PC observations are not inferred from these process/renderer checks.
+
+| Retained/installed release artifact | SHA-256 |
+| --- | --- |
+| Local 168,202,240-byte 0.1.16 installer | `cbd163ac535824b824f711ef19e4ac14cc2938042b2a6e8536678c39e6f94db9` |
+| Tested and installed ASAR | `804cd45d52a896240d90d82c86f292007631eba7e543b757988c9d8b4d55e2d7` |
+| Actual installed main executable | `cdba2a166c7e0973a52ce5e9337b2423592359f9af7d709d5b43d8d33b70de8a` |
+| Nupkg used by distribution vector | `033324a9f0478bf8d948f13e3448b52fe243444a851c411f78abd4201f0649b5` |
+| Stable launcher / exact package stub | `1aee72754d10fb176c6a510a5716885ea9bf9b5e38c5fde640b9edfcff41afc8` |
+| Final private engineering evidence | `b8272cbaff7c0dc50a79d6cc6b41b66927b74a7d225a7b9fb15ac2a53c0a67c3` |
+
+Versioned source **3fbd11a089b549f1765578701da950c1a6789e43** passes both [Windows PR CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36969392247) and [Windows push CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36969387868): **254 unit/UI + 83 tooling + 58 cloud + 35 original desktop + 38 independent renderer + 27 combined renderer = 495 passes with zero skips** per run. Local counterparts pass 493 with two explicitly disclosed symlink-privilege skips; CI closes those two cases. Type/build, source/package boundaries, installer notices/source and native inventory pass. Full npm audit/SBOM inventories 1,126 components with zero findings against root lock SHA-256 `beddeee6b18d50a1c209d77fe1beae4d3a6cfd8864583592ee7ccf3079ee6a8b`. Later evidence-only documentation preserves executable/source/workflow/dependency identity.
+
+All twelve downloaded CI archives match published digests. Each run's 38/27 renderer summaries verifies version, ordinary exit, disabled Node CLI inspection and exact per-run ASAR; all-seven copies require matching fuse/header policy. Four renderer artifacts include configured and absent-config readiness through two cycles with environment removal. Dependency inner audit/SBOM hashes, exact notices/source, recovery and native/renderer identities verify separately. Local 65 renderer summaries match the actual retained/installed ASAR; CI builds have their own explicitly separate archive fingerprints.
+
+| CI run | ASAR SHA-256 | All-seven executable SHA-256 |
+| --- | --- | --- |
+| 36969392247 | `9068285ead3c48a79d24f1dd6c86b5c65fb45f33bf0a5efe9ddd3bbe2baef385` | `0f03c91356684a442e5fae0fc41711686fc649a79c1c6844184a7126b42983e4` |
+| 36969387868 | `6d892bc32ba87ea73c61ec97152870c882072c67e66a375173c0e594bcd3f28d` | `330e823a661c10ef84cabf9683bb4b65431f29c9e796390ce7b83621856f2628` |
+
+Shipping retains seven selected fuse gaps and unsigned owner-only scope. No provider password policy, IAM, billing, logging/protection, public distribution or main merge occurs. The [compliance checklist](COMPLIANCE_CHECKLIST.md) still requires actual operator/legal scope, normative access, approved/operated organizational controls, distributed abuse/alert decisions, MFA/device/access/signing, native/human/second-PC acceptance, continuity/incident drills and independent assurance. PHIPA is excluded; SOC 2 has no Type I/II report, ISO has no certification, DGSI has no conformance conclusion and PIPEDA compliance is not established. Earlier 0.1.15 source-only/installed checkpoints below retain their historical scope.
+
 ## October 2 complete presently executable compliance continuation
 
 The [ordered plan](COMPLIANCE_EXHAUSTION_PLAN.md) and [current checklist](COMPLIANCE_CHECKLIST.md) now distinguish each measured engineering result from its exact external gate. Installed/retained **0.1.15 remains unchanged**. No production fuse integration, provider password-policy mutation, IAM/protection/logging/retention/billing change, policy approval, main merge or public installer publication occurred. PHIPA remains outside the owner-selected scope.

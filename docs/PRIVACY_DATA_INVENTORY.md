@@ -1,5 +1,11 @@
 # C.C. Lime data and retention inventory
 
+## October 2 installed 0.1.16 update
+
+The [new release](RELEASE_0116_PLAN.md) installs the authentication-cleanup and protocol/frame controls described below; the earlier source-only paragraph is historical. No new calendar personal-data field, analytics or vendor is added. A fresh private verified backup preserves 108 normal profile files, both account databases and 35 records. All account records and non-cache files/private configuration match after installation. This is another plaintext retained backup requiring an approved retention decision, not encrypted off-device recovery.
+
+Actual installed-byte email/password tests use one disposable identity and separate profile: sign-in, encrypted remembered session, normal restart, sign-out and fresh signed-out restart pass, with three normal exits and verified identity/data/configuration cleanup. Fresh/restarted configured email/Google/reset controls pass against physically verified normal installation/configuration; this does not prove inbox delivery or a new Google consent exchange. [Implementation evidence](IMPLEMENTATION_STATUS.md) retains exact results, including failed verification-helper assumptions. Operator/contact/retention/legal approvals remain pending; PHIPA remains excluded.
+
 ## October 2 source-only authentication cleanup
 
 Uninstalled source removes orphan `session.enc.new` files without promoting them. Ordinary sign-out removes both committed encrypted session and staging file. If storage removal fails, the account is still cleared from memory and the renderer notified; a fixed non-secret `session.enc.signed-out` marker containing `1` is attempted, preventing old-session adoption on restart and triggering another cleanup attempt. Successful explicit sign-in atomically persists a fresh encrypted session and removes the marker. Filesystem failures can prevent local cleanup; this does not claim erasure from snapshots/backups or protect a compromised OS account. The marker has no account identifier, password or token, does not sync and does not enter calendar backups.

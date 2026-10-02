@@ -1,5 +1,9 @@
 # Sign-in checks required after every update
 
+## October 2 installed 0.1.16 result
+
+The actual installed normal executable and private configuration pass physical identity checks and remain unchanged through isolated fresh startup and ordinary restart. Email, Google and reset controls are enabled in both cycles, with no owner session or records copied into the fixture; its environment copy is removed. A separate live disposable password account passes actual renderer sign-in, Windows-encrypted session storage, remembered-account restart, sign-out and a fresh signed-out restart, with three normal exits and complete identity/data/environment cleanup. Google consent and email delivery remain separate human/provider observations. [Implementation evidence](IMPLEMENTATION_STATUS.md) records exact fingerprints, ordinary reopening and the two 495-test/no-skip Windows CI runs; [release plan](RELEASE_0116_PLAN.md) keeps this gate mandatory. Earlier 0.1.15 incident/checkpoints below remain historical.
+
 October 1, 2026. The owner reported disabled sign-in again and requires working sign-in after each version update. Inspection found only the intentionally unconfigured isolated security-test copy running; the installed application was not running. Close that owned copy normally and restore the ordinary installed app for the owner. Preserve its private environment, calendar and remembered account; no version change is needed to correct which copy is open.
 
 ## Ordered verification and release gate
