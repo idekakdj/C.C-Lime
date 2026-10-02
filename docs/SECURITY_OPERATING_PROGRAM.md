@@ -23,7 +23,7 @@ flowchart LR
   G[Reviewed source / Windows CI] --> B[Unsigned candidate build]
 ```
 
-Provider database location observed in Montreal does not establish all identity, log, support or subprocessors' residency. User exports, upgrade copies and OneDrive may introduce additional locations and access. GitHub contains public source; ignored private configuration and restricted evidence must never be uploaded as release/test artifacts. This description requires operator/vendor confirmation before it can support a SOC engagement.
+The observed database region, `northamerica-northeast2`, does not establish all identity, log, support or subprocessors' residency. User exports, upgrade copies and OneDrive may introduce additional locations and access. GitHub contains public source; ignored private configuration and restricted evidence must never be uploaded as release/test artifacts. This description requires operator/vendor confirmation before it can support a SOC engagement.
 
 ## Proposed duties, intervals and acceptance
 

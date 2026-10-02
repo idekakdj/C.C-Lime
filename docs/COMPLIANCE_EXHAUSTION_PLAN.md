@@ -13,4 +13,6 @@ October 1, 2026. Continue until the remaining checklist consists of externally g
 
 ## Stop criterion
 
+October 2 checkpoint: steps 1–6 completed for currently available engineering and preparable documents. Session/OAuth/frame/worker repairs and redistribution checks pass; all three generated SQLite source/header files match exactly. Draft scope/privacy/operating/standards packets are linked in the [current checklist](COMPLIANCE_CHECKLIST.md). Both source Windows runs pass 495 tests with no skips, twelve evidence archive digests/contents are independently verified, synthetic accounts/processes are cleaned up and installed artifacts remain unchanged. Every remaining item has a named unavailable prerequisite; no missing provider approval or assessor/native/organizational evidence is counted as done.
+
 Do not stop because one task needs input while another can proceed. End this batch only after each remaining checklist item has either concrete verified completion or a specific unavailable prerequisite with the reviewable preparation completed. Do not mark broader tasks complete on partial observations. The final checklist must identify exactly which user/provider/native/independent actions unlock further work. No SOC report, ISO certificate, DGSI conformance or PIPEDA conclusion can be manufactured by completing engineering tests.

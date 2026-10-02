@@ -1,5 +1,13 @@
 # Production acceptance coverage migration
 
+## October 2 current-source checkpoint
+
+Current uninstalled source adds successful-document CSP headers denying child frames, explicit service-worker protocol refusal and regression evidence with a positive worker control. Local full runs pass **35 original + 38 independent + 27 all-seven renderer cases**, preserving original coverage. The frame check observes Chromium's CSP violation and absence of child bridge/Node APIs; the main bridge still works. The positive worker activates, answers a message and unregisters; disabled registration is refused. These are packaged boundaries, not native OS observations.
+
+The current-source archive also passes the eight-check disposable live password-account matrix with four normal exits: encrypted session migration/restart, UI completion/profile/theme writes independently observed in cloud, sign-out and fresh-account convergence. One identity was created and removed, fixture environments removed and installed bytes unchanged. An interrupted earlier attempt was independently cleaned up and never counted as a pass. Identities/current CI are in [implementation evidence](IMPLEMENTATION_STATUS.md).
+
+A freshly owned all-seven native preview opened with a separate local profile and synthetic inputs. Both refreshed Computer Use app/window inventories exposed only the installed owner's window, so no native input was sent to either profile. The owned preview closed normally. Its ignored local checklist prepares actual chooser/import/export/backup observations; dialog, Google consent/inbox, physical notification/logon/sleep and separate-PC acceptance remain open. No production fuse flip, installation or owner-profile mutation occurred.
+
 ## Current combined-copy and scoped probe checkpoint
 
 Final source 57a4214, including the queued-status repair and narrowly scoped Firebase-tooling FTP patch, passes both full Windows runs with 462 tests/no skips. Each run has 36 independent and 26 combined summaries with exact per-run identities; all four downloaded renderer artifacts verify fresh/restarted configured and absent-config sign-in controls. Both dependency artifacts verify the patched lockfile and zero findings. Exact separate source/CI/retained/installed identities and failed preceding gates are recorded in [implementation evidence](IMPLEMENTATION_STATUS.md). This verifies source copies; it does not update the installed release or close the remaining native/OS/Google/final-release gates.

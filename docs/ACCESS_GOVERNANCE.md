@@ -1,5 +1,9 @@
 # Administrative access and repository controls
 
+## October 2 observability and operating preparation
+
+The read-only refresh at 2026-10-02 03:38 UTC returned zero policies in the complete monitoring alert-policy response, two enabled sinks and two active global buckets with 30-day and locked 400-day retention. A bounded selected-service log query returned zero entries; coverage remains unknown, not inferred disabled. No policy, retention, IAM, access or billing change occurred. Sanitized evidence SHA-256 `6c841d00f0080984f8c211ad69bf8b17c46e12b98e4ef8932458bb5a3abc47cc`. The [operating program](SECURITY_OPERATING_PROGRAM.md) prepares cadences, treatment deadlines, management review, evidence custody and training/check forms. Named owners, actual MFA/recovery/device evidence, approved thresholds and exercised alerts/revocation/training remain gates in the [current checklist](COMPLIANCE_CHECKLIST.md).
+
 Engineering draft, September 28, 2026, T-54/T-57/T-58. Ontario operator; owner-only distribution; legal entity, named officers and deputies remain undecided. This is an inventory and proposed procedure, not approved policy or evidence that organizational controls operate continuously. Raw account, credential, recovery and access-review records belong in private evidence storage, not Git.
 
 ## Read-only repository observations

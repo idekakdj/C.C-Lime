@@ -1,5 +1,9 @@
 # Security, privacy and assurance work plan
 
+## October 2 executable-work checkpoint
+
+The [current checklist](COMPLIANCE_CHECKLIST.md) and [ordered execution plan](COMPLIANCE_EXHAUSTION_PLAN.md) record measured authentication/resource/renderer repairs, exact JavaScript/MPL redistribution checks, independent SQLite source reproduction and proposed organizational/privacy/standards packets. [Implementation evidence](IMPLEMENTATION_STATUS.md) separates source/CI and installed identities. Operator approval, legal scope, provider decisions, native/OS acceptance and independent assurance remain explicit gates; prepared documents and code tests do not certify compliance.
+
 ## October 1 latest measured continuation
 
 The [hardened-account plan](HARDENED_ACCOUNT_ACCEPTANCE_PLAN.md) now observes eight real synthetic password-account migration/cloud/restart/sign-out checks on retained-byte all-seven copies, with complete cleanup. Google/browser, inbox, native-dialog/OS/second-PC and exact final hardened artifact acceptance remain distinct gates. The discovered queued-status defect is repaired in source only. A newly reported Firebase-tooling FTP parser finding is treated under the [dependency repair plan](FTP_DEPENDENCY_REPAIR_PLAN.md), with six bounded runtime cases and a clean full-tree local audit; full new Windows verification is recorded in the [implementation register](IMPLEMENTATION_STATUS.md).

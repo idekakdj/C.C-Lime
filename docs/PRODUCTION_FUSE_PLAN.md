@@ -1,5 +1,9 @@
 # Production executable hardening and acceptance plan
 
+## October 2 current-source boundary checkpoint
+
+Current source passes renderer frame/service-worker refusal, 38 independent and 27 combined renderer cases locally, plus the eight-check live disposable password-account matrix with four normal exits. All seven switches remain limited to owned copies; installed 0.1.15 is unchanged. Actual native dialogs, Google browser/inbox, physical OS/second-PC acceptance and release approval remain required. See [acceptance coverage](PRODUCTION_ACCEPTANCE_MAP.md), [implementation evidence](IMPLEMENTATION_STATUS.md) and [remaining checklist](COMPLIANCE_CHECKLIST.md). Partial observations do not constitute a production rollout.
+
 ## October 1 hardened password-account checkpoint
 
 The [live-account continuation](HARDENED_ACCOUNT_ACCEPTANCE_PLAN.md) now observes a real synthetic password identity on retained-byte baseline/all-seven copies: encrypted-session migration, refreshed authentication, exact calendar/profile/history preservation, cloud writes, ordinary restart, sign-out and fresh-profile cloud convergence. Eight checks, four normal exits and complete independent identity/data/configuration cleanup pass. Exact evidence/fingerprints and two failed baseline attempts are in [the implementation register](IMPLEMENTATION_STATUS.md). A discovered snapshot acknowledgment race has a source-only repair; no owner installation or version metadata changed. This narrows the signed-in gate to remaining Google/provider-hosted interaction, native/OS/second-PC and exact final artifact acceptance. All seven installed fuse gaps still remain; these copies do not ship production hardening.

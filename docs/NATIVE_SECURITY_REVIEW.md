@@ -1,5 +1,29 @@
 # Native package security review
 
+## October 2 generated-source checkpoint
+
+The [independent SQLite generation](SQLITE_SOURCE_RECONCILIATION_PLAN.md) completes the previously open generated-source comparison: official version/manifest verified, all 36 dependency definitions supplied, existing VS 2022 toolchain, normal generation exit and exact hashes for sqlite3.c/sqlite3.h/sqlite3ext.h. The two patch results already exist in official source; no redundant patch was applied. Six versioned better-sqlite3 generation/build inputs independently match upstream. The refreshed extractor lock matches the retained version and its 51 registry crate versions return zero matching OSV advisories. This is dated source/dependency evidence, not comprehensive embedded native coverage or a reproducible shipped binary.
+
+Current uninstalled source uses Electron 44.4.5 and packages ten actual JavaScript/Node license notices plus 23 unmodified ical.js MPL source files. Exact ASAR/external-resource and installer ZIP-content checks pass. Chromium notice bytes remain verified separately. Generated source checks replaced no dependency or installed artifact. Source/CI/package identities and failed attempts are recorded in [implementation evidence](IMPLEMENTATION_STATUS.md). Historical 0.1.8 findings below are preserved, with later patch/notice repairs superseding those specific observations.
+
+The owner remains on installed 0.1.15 with seven recorded fuse gaps. Disposable all-seven copies pass scoped renderer/live password-account checks; production integration remains gated by native/OS/Google/second-PC acceptance, approved release controls and signing. Broader native advisory/embedded-source/final-binary assessment remains open.
+
+### Isolated native binding rebuilds and remaining binary gate
+
+Two new workspace-only source/API/header copies build normally with the existing VS 2022 toolchain, node-gyp 12.4.0 and node-addon-api 8.9.2: one with cached Electron 44.4.5 headers, one with cached Node 24.21.0 Node-API headers/import library. Each copied input is hashed; no original dependency/header cache, installed binary or calendar was replaced. Explicit generated-binding loads use in-memory databases only. Both return the expected SQLite 3.53.4/source ID, match the vendor binding's runtime compile-option list, retain enabled foreign keys and pass transaction/rollback observations, then close their databases.
+
+| Binding | Bytes / SHA-256 | Exact vendor match |
+| --- | --- | --- |
+| Actual shipped Windows x64 prebuild | 1,989,632 / `e21e5efd71fba66578e95b62554d9028064a80dafd7221bf8a8ef155de8d240a` | Baseline |
+| Isolated Electron-header rebuild | 1,989,632 / `d138f5766c88735e056dc2f4e54f162cec0e12240d06680d205fc414f84ff39d` | No |
+| Isolated Node-header rebuild | 2,549,760 / `46059bae05575f2e0302831d943fdebf2c949b69a777687fd5fa8f9ecc02eb3e` | No |
+
+Read-only PE comparisons find differing executable/data sections, not only timestamps. No binary normalization or semantic-equivalence claim is made. Ignored Electron rebuild/difference report hashes: `0cae490b1b8c26fd0e6d54a0a16588732260eec069a4eae3d972d3e7769c046f` / `1138060662604acf23287866bd41c5e8653f4d86ae56e349ef8564ed476335b7`; Node reports: `c758e2a51eea79b97d9b8ee07c2fbaad19febaca041df499ff0eec006e48bde5` / `b4447b2c00284b3b23c247563bc6d726b6846e90f420ace8c4def6c06a8c3281`.
+
+The pinned [vendor release workflow](https://github.com/WiseLibs/better-sqlite3/blob/v13.0.3/.github/workflows/build.yml), SHA-256 `b4eb4f8eb9f3d94c6b109f457c6051479d381c11d7ba3fa9f665b9e54156a029`, selects a Windows-2022 image and floating Node 24, then resolves dependencies and builds release output. That recipe is not a digest of its historical runner/compiler/SDK, resolved Node/API/node-gyp dependencies or linker inputs. Local rebuilds do not reconstruct that historical environment. Exact vendor-binary reproduction needs those resolved inputs/provenance and an agreed reproducibility assessment; complete Electron/Chromium and embedded native coverage remain separate. Do not replace the vendor binary to manufacture a matching result.
+
+Preparation failures are preserved as failures: an uncreated target folder and overly broad OpenSSL-header copy stopped before compilation; direct cached-header linking failed because node-gyp expected a Release/node.lib layout. Owned header/library copies repaired that layout. An in-memory fixture's double-quoted literal was correctly refused by DQS=0; parameter binding repaired the fixture before passing checks. No failed attempt is counted as a successful build or a product security failure. These observations add no tests to the separately verified 495-test source CI count.
+
 September 29, 2026. T-45/T-58 follow-up after the verified owner upgrade to 0.1.8. This review supplements the npm lockfile inventory. It must not label an inventory, signature or version match a complete vulnerability assessment.
 
 ## Ordered work and precise evidence gates

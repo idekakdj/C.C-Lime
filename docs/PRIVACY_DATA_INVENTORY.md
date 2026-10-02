@@ -1,5 +1,11 @@
 # C.C. Lime data and retention inventory
 
+## October 2 source-only authentication cleanup
+
+Uninstalled source removes orphan `session.enc.new` files without promoting them. Ordinary sign-out removes both committed encrypted session and staging file. If storage removal fails, the account is still cleared from memory and the renderer notified; a fixed non-secret `session.enc.signed-out` marker containing `1` is attempted, preventing old-session adoption on restart and triggering another cleanup attempt. Successful explicit sign-in atomically persists a fresh encrypted session and removes the marker. Filesystem failures can prevent local cleanup; this does not claim erasure from snapshots/backups or protect a compromised OS account. The marker has no account identifier, password or token, does not sync and does not enter calendar backups.
+
+OAuth codes/state/error and temporary sockets remain memory-only with bounded resources and non-reflecting responses. No new calendar personal-data field, analytics or vendor is introduced. Live tests used generated identities/profiles with independently verified cleanup; owner profile and installed 0.1.15 remain unchanged. The [draft notice/rights procedure](PRIVACY_RIGHTS_PROCEDURE.md) awaits operator/contact/retention and legal approval; it is not a published policy.
+
 ## October 1 installed 0.1.15 update
 
 The task visibility/range/repetition changes are now installed under the [release plan](RELEASE_0115_PLAN.md). They add no new personal-data field or external service. A fresh ignored private normal-profile backup preceded installation; both account databases, 34 calendar records, 106 non-cache profile files and private sign-in configuration were preserved. Synthetic acceptance profiles and cloud identities were separate from the owner profile; all live test identities/data were deleted. The approved additive rules retain account ownership, verified-email and write-quota requirements. Exact observations and artifact identities are in [implementation evidence](IMPLEMENTATION_STATUS.md).
