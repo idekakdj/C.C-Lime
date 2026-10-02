@@ -1,4 +1,14 @@
-# C.C. Lime 0.1.14 — development preview
+# C.C. Lime release notes
+
+## 0.1.16 — accumulated security fixes and compliance inventory
+
+This owner-only Windows update includes all existing calendar, recurrence/task history, course editing, circular profile crop, password confirmation/strength and custom-theme features. It adds immediate pending-write status, safer remembered-session cleanup, bounded/cancellable Google callback handling, stronger document response/frame/worker restrictions, the reviewed tooling dependency fix and complete bundled/copied runtime notices with unchanged covered MPL sources.
+
+The [comprehensive capabilities inventory](APP_CAPABILITIES_0116.md) separates shipped functions and security controls from experimental fuse checks, uncompleted native acceptance and formal assurance. No SOC 2 report, ISO certificate, DGSI conformance or PIPEDA compliance conclusion is claimed; PHIPA is excluded. [Release plan](RELEASE_0116_PLAN.md) and [implementation evidence](IMPLEMENTATION_STATUS.md) record installation/validation independently. Shipping fuse settings and provider policy remain unchanged.
+
+## 0.1.15 — recurring scheduled items and reliable task progress
+
+All scheduled calendar types gain recurrence, while undated tasks remain unscheduled. Twelve-hour calendar labels show AM/PM. Completion history and weekly progress persist, including repeating-task occurrences, with to-do ranges for this week, this month and all. Cloud payload compatibility was approved and deployed with disposable-account verification. Installed email/Google controls are protected by fresh/restart checks and private normal configuration; actual password-account restoration was tested separately.
 
 ## 0.1.14 course filters, editing and selection safety
 
