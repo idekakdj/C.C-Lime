@@ -48,3 +48,20 @@ it('successful explicit sign-in replaces saved identity and removes the prior si
   expect(f.auth.remembered).toBe(true); expect(fs.existsSync(`${f.committed}.signed-out`)).toBe(false);
   const fresh = new AuthService(config, f.root, secure, async () => {}); fresh.restore(); expect(fresh.session?.uid).toBe('fixture');
 });
+it('password change removes saved credentials, preserves calendar files and cannot restore on restart',async()=>{
+ const f=fixture();provider();await f.auth.signIn('fixture@example.test','existing-password');fs.writeFileSync(path.join(f.root,'calendar-sentinel'),'preserve');
+ await f.auth.changePassword('existing-password','Synthetic newer meadow 42');expect(f.auth.session).toBeNull();expect(f.auth.signInNotice).toContain('Password changed');expect(fs.existsSync(f.committed)).toBe(false);expect(fs.existsSync(f.staged)).toBe(false);expect(fs.readFileSync(path.join(f.root,'calendar-sentinel'),'utf8')).toBe('preserve');
+ const restarted=new AuthService(config,f.root,secure,async()=>{});restarted.restore();expect(restarted.session).toBeNull();await f.auth.signIn('fixture@example.test','Synthetic newer meadow 42');expect(f.auth.signInNotice).toBeNull();
+});
+it('password change with failed credential deletion uses the durable sign-out marker and never restores login',async()=>{
+ const f=fixture();provider();await f.auth.signIn('fixture@example.test','existing-password');const original=fs.rmSync;
+ vi.spyOn(fs,'rmSync').mockImplementation((file,options)=>{if(file===f.committed)throw Error('synthetic denial');original(file,options);});
+ await expect(f.auth.changePassword('existing-password','Synthetic newer meadow 42')).rejects.toMatchObject({code:'SESSION_REMOVAL_FAILED'});expect(f.auth.session).toBeNull();expect(f.auth.remembered).toBe(false);expect(fs.existsSync(`${f.committed}.signed-out`)).toBe(true);
+ vi.restoreAllMocks();const restarted=new AuthService(config,f.root,secure,async()=>{});restarted.restore();expect(restarted.session).toBeNull();expect(fs.existsSync(f.committed)).toBe(false);
+});
+it.each(['TOKEN_EXPIRED','INVALID_REFRESH_TOKEN','USER_DISABLED','USER_NOT_FOUND'])('provider %s clears an older remembered session and requires sign-in on restart',async(code)=>{
+ const f=fixture();provider();await f.auth.signIn('fixture@example.test','existing-password');
+ vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({error:{message:code}}),{status:400})));
+ await expect(f.auth.token(true)).rejects.toMatchObject({code});expect(f.auth.session).toBeNull();expect(f.auth.remembered).toBe(false);expect(f.auth.signInNotice).toContain('Sign in again');expect(fs.existsSync(f.committed)).toBe(false);
+ const restarted=new AuthService(config,f.root,secure,async()=>{});restarted.restore();expect(restarted.session).toBeNull();
+});

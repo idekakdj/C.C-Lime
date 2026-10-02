@@ -19,14 +19,24 @@ function auth(root=directory()){return new AuthService({projectId:project,apiKey
 beforeEach(async()=>{await fetch(`${firestoreOrigin}/emulator/v1/projects/${project}/databases/(default)/documents`,{method:'DELETE'});await fetch(`${authOrigin}/emulator/v1/projects/${project}/accounts`,{method:'DELETE'});});
 afterEach(async()=>{await Promise.all(engines.splice(0).map(e=>e.stop()));stores.splice(0).forEach(s=>s.close());for(const root of roots.splice(0))if(root.startsWith(path.join(os.tmpdir(),'cc-lime-cloud-')))fs.rmSync(root,{recursive:true,force:true});});
 async function verifiedAccount(){const a=auth();await a.signUp('student@example.test','test-password-123','Student');await a.sendVerification();const codes=await (await fetch(`${authOrigin}/emulator/v1/projects/${project}/oobCodes`)).json();const code=codes.oobCodes.find((c:any)=>c.requestType==='VERIFY_EMAIL');await fetch(`${authOrigin}/identitytoolkit.googleapis.com/v1/accounts:update?key=demo-key`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({oobCode:code.oobCode})});await a.refreshProfile();expect(a.session?.verified).toBe(true);return a;}
-function device(a:AuthService){const s=new LocalStore(directory(),a.session!.uid);stores.push(s);const c=new FirestoreCloud(project,a.session!.uid,()=>a.token(),firestoreOrigin);const e=new SyncEngine(s,c,()=>a.session);engines.push(e);return {s,c,e};}
+function device(a:AuthService){const s=new LocalStore(directory(),a.session!.uid);stores.push(s);const c=new FirestoreCloud(project,a.session!.uid,()=>a.token(),firestoreOrigin);const e=new SyncEngine(s,c,()=>a.session,undefined,undefined,()=>a.token(true));engines.push(e);return {s,c,e};}
 describe('authentication and two-device integration',()=>{
-  it('changes a password only after verification, rotates the remembered session and rejects the old password',async()=>{
+  it('retains another device pending changes across password change and explicit re-sign-in (emulator does not revoke refresh tokens)',async()=>{
+    const a=await verifiedAccount(),bRoot=directory(),b=auth(bRoot),old='test-password-123',next='Synthetic newer meadow 42';
+    await b.signIn('student@example.test',old);const uid=b.session!.uid,d=device(b),pending=item();d.s.save(pending);
+    await a.changePassword(old,next);
+    // firebase-tools' validateRefreshToken does not check password/validSince.
+    // Production revocation is measured separately; this tests preservation.
+    b.signOut();expect(b.session).toBeNull();expect(b.remembered).toBe(false);expect(d.c.operations).toEqual({reads:0,writes:0});expect(d.s.get(pending.id)).toEqual(pending);expect(d.s.queueCount()).toBe(1);
+    const restarted=auth(bRoot);restarted.restore();expect(restarted.session).toBeNull();
+    await expect(b.signIn('student@example.test',old)).rejects.toThrow('incorrect');await b.signIn('student@example.test',next);expect(b.session!.uid).toBe(uid);expect(b.signInNotice).toBeNull();await d.e.sync();expect(d.e.status.state).toBe('synced');expect(d.s.queueCount()).toBe(0);
+  });
+  it('changes a password only after verification, removes the remembered session and rejects the old password',async()=>{
     const root=directory(),a=auth(root),old='test-password-123',next='Synthetic newer meadow 42';await a.signUp('student@example.test',old,'Student');const uid=a.session!.uid;
     await expect(a.changePassword('wrong-current',next)).rejects.toThrow('incorrect');await auth().signIn('student@example.test',old);
-    await a.changePassword(old,next);expect(a.session!.uid).toBe(uid);const restored=auth(root);restored.restore();expect(restored.session!.uid).toBe(uid);await restored.token(true);
+    await a.changePassword(old,next);expect(a.session).toBeNull();expect(a.remembered).toBe(false);expect(fs.existsSync(path.join(root,'session.enc'))).toBe(false);const restored=auth(root);restored.restore();expect(restored.session).toBeNull();await expect(restored.token(true)).rejects.toMatchObject({code:'SIGNED_OUT'});
     await expect(auth().signIn('student@example.test',old)).rejects.toThrow('incorrect');expect((await auth().signIn('student@example.test',next)).uid).toBe(uid);
-    const encrypted=fs.readFileSync(path.join(root,'session.enc')).toString('utf8');expect(encrypted).not.toContain(old);expect(encrypted).not.toContain(next);
+    await a.signIn('student@example.test',next);expect(a.session!.uid).toBe(uid);expect(a.signInNotice).toBeNull();const encrypted=fs.readFileSync(path.join(root,'session.enc')).toString('utf8');expect(encrypted).not.toContain(old);expect(encrypted).not.toContain(next);
   });
   it('keeps a persisted linked group atomic through a lost response and restart',async()=>{const a=await verifiedAccount(),x=device(a),y=device(a),first=item(),second=item();x.s.saveGroup([{id:first.id,value:first},{id:second.id,value:second}]);const group=x.s.queue();expect(group[0].groupId).toBe(group[1].groupId);const remotes=await x.c.commitGroup(group,group[0].groupId!);expect(remotes[0].sequence).toBe(remotes[1].sequence);await x.e.sync();expect(x.s.queue()).toHaveLength(0);expect(await x.c.head()).toBe(1);await y.e.sync();expect(y.s.list()).toEqual(x.s.list());});
   it('registers, verifies, encrypts a remembered session, restores and serializes refresh',async()=>{

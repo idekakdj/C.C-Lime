@@ -4,6 +4,8 @@ October 2, 2026. **0.1.16 is installed and the normal app window has reopened.**
 
 ## Calendar and student planning
 
+The installed inventory below is unchanged. A [source-only password-session follow-up](PASSWORD_SESSION_CHANGE_PLAN.md) requires fresh sign-in after password changes and validates old refresh tokens before each sync; it has separate live-provider and source/test-package evidence and is not yet installed.
+
 - Month, week and agenda views, expandable day detail, today/navigation controls, search, course/type filters and 12/24-hour time display. Twelve-hour calendar labels use AM/PM.
 - Classes, events, assignments, exams, study sessions and tasks; timed, all-day, deadline and undated task scheduling as applicable. Titles, notes, location, priority, progress/completion state, reminders and course/assignment links.
 - Every scheduled item type can repeat daily, weekly, monthly or yearly. Interval, weekday, end-date/count and monthly date/ordinal choices; occurrence cancellation/editing and series/occurrence scope. Undated tasks cannot repeat without a schedule.

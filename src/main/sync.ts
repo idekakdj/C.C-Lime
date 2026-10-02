@@ -12,7 +12,7 @@ export class SyncEngine {
   private visible = true;
   private cooldownUntil = 0;
   status: SyncStatus;
-  constructor(private store: LocalStore, private cloud: CloudAdapter, private session: () => Session | null, private changed: () => void = () => {}, private now = () => performance.now()) {
+  constructor(private store: LocalStore, private cloud: CloudAdapter, private session: () => Session | null, private changed: () => void = () => {}, private now = () => performance.now(), private validateSession: () => Promise<unknown> = async () => {}) {
     this.status = { state: 'local', pending: store.queueCount(), lastSynced: store.metadata('lastSynced', null), message: 'Changes are saved on this computer.' };
   }
   private update(state: SyncStatus['state'], message: string): void { if (this.stopped) return; this.status = { state, message, pending: this.store.queueCount(), lastSynced: this.store.metadata('lastSynced', null) }; this.changed(); }
@@ -30,9 +30,13 @@ export class SyncEngine {
   private async run(): Promise<void> {
     const session = this.session();
     if (!session) { this.update('local', 'Sign in to sync. Changes are saved on this computer.'); return; }
-    if (!session.verified) { this.update('verification', 'Verify your email to sync. Changes are saved on this computer.'); return; }
-    this.update('syncing', 'Syncing your calendar…');
     try {
+      // Cached ID tokens can outlive a password change. Validate the refresh
+      // token first, including accounts that are awaiting email verification.
+      await this.validateSession();
+      if(this.stopped||this.session()?.uid!==session.uid)return;
+      if (!session.verified) { this.update('verification', 'Verify your email to sync. Changes are saved on this computer.'); return; }
+      this.update('syncing', 'Syncing your calendar…');
       const deleting=this.store.metadata('deleting',false)||await this.cloud.deletionStarted?.();
       if(this.stopped)return;
       if(deleting){this.store.setMetadata('deleting',true);this.update('error','Account deletion has started. Resume it in Settings.');return;}

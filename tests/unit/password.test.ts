@@ -17,10 +17,14 @@ it('wrong current password never reaches password update',async()=>{
  const a=auth(),request=vi.fn(async()=>new Response(JSON.stringify({error:{message:'INVALID_LOGIN_CREDENTIALS'}}),{status:400}));vi.stubGlobal('fetch',request);
  await expect(a.changePassword('wrong',newPassword)).rejects.toThrow('incorrect');expect(request).toHaveBeenCalledTimes(1);expect(a.session?.uid).toBe('alice');
 });
-it('fresh verification token changes the same account and rotates its session',async()=>{
+it('fresh verification token changes the same account and discards replacement credentials until explicit sign-in',async()=>{
  const a=auth(),bodies:any[]=[],actions:string[]=[];
  vi.stubGlobal('fetch',vi.fn(async(url:string,options:any)=>{actions.push(new URL(url).pathname);const body=JSON.parse(options.body);bodies.push(body);return new Response(JSON.stringify(actions.length===1?{localId:'alice',idToken:'fresh-current',refreshToken:'old'}:actions.length===2?{localId:'alice',idToken:'rotated',refreshToken:'new',expiresIn:'3600'}:{users:[{localId:'alice',email:'alice@example.test',emailVerified:true,providerUserInfo:[{providerId:'password'}]}]}));}));
- await a.changePassword('old-password',newPassword);expect(bodies[1]).toEqual({idToken:'fresh-current',password:newPassword,returnSecureToken:true});expect(await a.token()).toBe('rotated');expect(actions.map(x=>x.split(':')[1])).toEqual(['signInWithPassword','update','lookup']);
+ await a.changePassword('old-password',newPassword);expect(bodies[1]).toEqual({idToken:'fresh-current',password:newPassword,returnSecureToken:true});expect(a.session).toBeNull();expect(a.remembered).toBe(false);expect(a.signInNotice).toBe('Password changed. Sign in with your new password.');await expect(a.token()).rejects.toMatchObject({code:'SIGNED_OUT'});expect(actions.map(x=>x.split(':')[1])).toEqual(['signInWithPassword','update']);
+});
+it('a rejected password update preserves the current session and does not announce success',async()=>{
+ const a=auth();let calls=0;vi.stubGlobal('fetch',vi.fn(async()=>++calls===1?new Response(JSON.stringify({localId:'alice',idToken:'fresh'})):new Response(JSON.stringify({error:{message:'TOO_MANY_ATTEMPTS_TRY_LATER'}}),{status:429})));
+ await expect(a.changePassword('old-password',newPassword)).rejects.toThrow('Please wait');expect(a.session?.uid).toBe('alice');expect(a.signInNotice).toBeNull();
 });
 it('Google-only accounts and weak new passwords are rejected before network effects',async()=>{
  const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);await expect(auth(['google.com']).changePassword('old',newPassword)).rejects.toThrow('does not have');await expect(auth().changePassword('old','short')).rejects.toThrow();expect(fetcher).not.toHaveBeenCalled();

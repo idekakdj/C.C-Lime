@@ -23,6 +23,7 @@ function accountCreatedAt(value:unknown):string|undefined{const milliseconds=typ
 export class AuthService {
   private readonly providerCooldown = new ProviderCooldown();
   session: Session | null = null;
+  signInNotice: string | null = null;
   remembered = false;
   private refreshToken = '';
   private idToken = '';
@@ -88,7 +89,7 @@ export class AuthService {
     if (!user || user.localId !== result.localId) throw new Error('Unable to verify this account.');
     this.idToken = result.idToken; this.refreshToken = result.refreshToken; this.expires = Date.now() + Math.min(3600, Number(result.expiresIn) || 3600) * 1000;
     this.session = { uid: user.localId, email: user.email ?? '', displayName: user.displayName ?? '', verified: user.emailVerified === true, providers: (user.providerUserInfo ?? []).map((p: any) => p.providerId), createdAt:accountCreatedAt(user.createdAt) };
-    this.persist(); this.changed(); return this.session;
+    this.signInNotice = null; this.persist(); this.changed(); return this.session;
   }
   async signIn(email: string, password: string): Promise<Session> {
     z.string().email().max(254).parse(email); z.string().min(1).max(4096).parse(password);
@@ -133,7 +134,7 @@ export class AuthService {
       if (!response.ok) {
         const code = result.error?.message ?? 'REFRESH_FAILED';
         if (code === 'TOO_MANY_ATTEMPTS_TRY_LATER') this.providerCooldown.pause(retryAfterMs(response.headers));
-        if (['TOKEN_EXPIRED','INVALID_REFRESH_TOKEN','USER_DISABLED','USER_NOT_FOUND'].includes(code)) this.signOut();
+        if (['TOKEN_EXPIRED','INVALID_REFRESH_TOKEN','USER_DISABLED','USER_NOT_FOUND'].includes(code)) this.signOut('Your session has ended. Sign in again to open your calendar. Your saved changes are still on this computer.');
         throw new AuthError(messages[code] ?? 'Could not reconnect. Your changes remain on this computer.', code);
       }
       if (result.user_id !== expectedUid || typeof result.id_token !== 'string' || typeof result.refresh_token !== 'string') throw new Error('Invalid refreshed identity.');
@@ -142,7 +143,8 @@ export class AuthService {
     })().finally(() => { this.refreshPromise = null; });
     return this.refreshPromise;
   }
-  signOut(): void {
+  signOut(notice: string | null = null): void {
+    this.signInNotice = notice;
     this.generation++; this.cancelGoogle(); this.idToken = ''; this.refreshToken = ''; this.expires = 0; this.session = null; this.remembered = false;
     let failed = false;
     for (const file of [this.filename, `${this.filename}.new`]) { try { fs.rmSync(file, { force: true }); } catch { failed = true; } }
@@ -197,7 +199,11 @@ export class AuthService {
       if(generation!==this.generation||this.session?.uid!==account.uid)throw new Error('Account changed. Please sign in again.');
       if(verified.localId!==account.uid||typeof verified.idToken!=='string')throw new Error('The identity does not match the signed-in account.');
       const result=await this.request('update',{idToken:verified.idToken,password,returnSecureToken:true});
-      await this.accept(result,account.uid,generation);
+      if(generation!==this.generation||this.session?.uid!==account.uid)throw new AuthError('Account changed. Please sign in again.','SIGNED_OUT');
+      // A successful update invalidates older refresh tokens. Never adopt its
+      // replacement credentials: the owner explicitly requires fresh sign-in.
+      this.signOut('Password changed. Sign in with your new password.');
+      if(result.localId!==account.uid)throw new Error('The password update could not be verified. Sign in with your new password or use password reset.');
     });
   }
   async deleteIdentity(): Promise<void> { await this.request('delete', { idToken: await this.token() }); this.signOut(); }

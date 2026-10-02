@@ -10,6 +10,7 @@ export function PasswordSettings({ change, run }: { change:boolean;run(command:s
   const clear=()=>{setCurrent('');setPassword('');setConfirmation('');};
   return <form className="password-settings" onSubmit={async e=>{e.preventDefault();setBusy(true);try{if(await run(change?'auth.changePassword':'auth.linkPassword',{...(change?{currentPassword:current}:{}),password,confirmation},change?'Password changed':'Password sign-in added'))clear();}finally{setCurrent('');setBusy(false);}}}>
     <h3>{change?'Change password':'Add email/password sign-in'}</h3>
+    {change&&<p className="field-help">After changing your password, you’ll need to sign in again. Other computers will require sign-in when they next connect and check their session.</p>}
     {change&&<label>Current password<input type="password" required autoComplete="current-password" value={current} maxLength={4096} disabled={busy} onChange={e=>setCurrent(e.target.value)}/></label>}
     <NewPasswordFields password={password} confirmation={confirmation} setPassword={setPassword} setConfirmation={setConfirmation} disabled={busy}/>
     <div className="button-row"><button className="button secondary" disabled={busy||(change&&!current)||!passwordFeedback(password).valid||password!==confirmation}>{busy?'Updating…':change?'Change password':'Add password sign-in'}</button><button type="button" className="text-button" disabled={busy} onClick={clear}>Clear fields</button></div>

@@ -1,5 +1,11 @@
 # C.C. Lime release notes
 
+## Unreleased — fresh sign-in after password changes
+
+Changing a password now clears this computer's saved login and returns to sign-in with an explanation. Each updated client's sync pass checks its refresh token first; older revoked sessions must sign in again when they reconnect/check, while pending calendar edits are preserved. Live disposable-account verification covers two independent sessions and an older saved-session restart. Previously issued access tokens remain a separate backend enforcement window; immediate global logout is not claimed. [Plan and evidence](PASSWORD_SESSION_CHANGE_PLAN.md).
+
+This follow-up is source/test-package only. The normal installed version remains 0.1.16 until a separately requested release/install.
+
 ## 0.1.16 — accumulated security fixes and compliance inventory
 
 This owner-only Windows update includes all existing calendar, recurrence/task history, course editing, circular profile crop, password confirmation/strength and custom-theme features. It adds immediate pending-write status, safer remembered-session cleanup, bounded/cancellable Google callback handling, stronger document response/frame/worker restrictions, the reviewed tooling dependency fix and complete bundled/copied runtime notices with unchanged covered MPL sources.

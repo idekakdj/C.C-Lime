@@ -6,6 +6,10 @@ import { AuthScreen } from '../../src/renderer/screens';
 import { PasswordSettings } from '../../src/renderer/password-fields';
 import type { Snapshot } from '../../src/shared/model';
 afterEach(cleanup);
+it('shows the password-change sign-in explanation while keeping both configured sign-in methods available',()=>{
+ render(<AuthScreen snapshot={{configured:true,googleConfigured:true,signInNotice:'Password changed. Sign in with your new password.'} as Snapshot} run={vi.fn()}/>);
+ expect(screen.getByRole('status').textContent).toBe('Password changed. Sign in with your new password.');expect((screen.getByRole('button',{name:'Sign in'}) as HTMLButtonElement).disabled).toBe(false);expect((screen.getByRole('button',{name:/Continue with Google/}) as HTMLButtonElement).disabled).toBe(false);
+});
 it('asks for confirmation only when creating a password and clears secrets when switching modes',async()=>{
  const user=userEvent.setup(),run=vi.fn(async()=>null);render(<AuthScreen snapshot={{configured:true,googleConfigured:true} as Snapshot} run={run}/>);
  expect(screen.queryByLabelText('Confirm new password')).toBeNull();await user.click(screen.getByRole('button',{name:'Create an account'}));

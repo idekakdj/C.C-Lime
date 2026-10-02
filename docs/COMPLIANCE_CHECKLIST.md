@@ -6,6 +6,8 @@ October 2, 2026, Ontario owner-only pilot. Installed release is **0.1.16** under
 
 ## Engineering preparation and its precise limits
 
+The subsequent [password-session change](PASSWORD_SESSION_CHANGE_PLAN.md) is source/test-package only: forced current-device sign-in and sync refresh-token validation have live disposable two-session/restored-session evidence. This is an additional measured engineering control, not an installed update, immediate backend access-token revocation or a framework-compliance claim.
+
 | Work / task | Status | Evidence and next gate |
 | --- | --- | --- |
 | T-49 scope/traceability | Engineering specification prepared | [Security/privacy specification](SECURITY_PRIVACY_PLAN.md); personal calendar, Ontario, owner-only, PHIPA excluded. Final legal operator and assessed scope still required |

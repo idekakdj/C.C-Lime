@@ -83,7 +83,7 @@ export class ApplicationService {
       if(!this.store.metadata('profileFirstUsed',''))this.store.setMetadata('profileFirstUsed',new Date().toISOString());
       this.store.retainCompletionHistory();
       this.scheduler=new ReminderScheduler(this.store,()=>this.device,()=>this.displayZone(),n=>this.host.notify(n),()=>this.host.changed());this.scheduler.start();
-      if(this.config&&!local){this.cloud=new FirestoreCloud(this.config.projectId,accountId,()=>this.auth.token());this.sync=new SyncEngine(this.store,this.cloud,()=>this.auth.session,()=>{if(this.store?.metadata('deleting',false))this.scheduler?.stop();else this.scheduler?.reconcile();this.host.changed();});this.sync.start();}
+      if(this.config&&!local){this.cloud=new FirestoreCloud(this.config.projectId,accountId,()=>this.auth.token());this.sync=new SyncEngine(this.store,this.cloud,()=>this.auth.session,()=>{if(this.store?.metadata('deleting',false))this.scheduler?.stop();else this.scheduler?.reconcile();this.host.changed();},undefined,()=>this.auth.token(true));this.sync.start();}
     }catch(error){this.recoveryError=(error as Error).message;}
     finally{this.switching=false;this.host.changed();}
   }
@@ -109,7 +109,7 @@ export class ApplicationService {
     const pending=visible?.queueCount()??0;
     // A committed edit queues work before the delayed sync run updates its cached status.
     const sync:Snapshot['sync']=this.sync&&visible?{...this.sync.status,pending,...(this.sync.status.state==='synced'&&pending>0?{state:'local' as const,message:'Changes are saved on this computer and waiting to sync.'}:{})}:this.sync?.status??{state:'local',pending,lastSynced:null,message:visible?.metadata('deleting',false)?'Account deletion is paused. Resume it in Settings.':this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'};
-    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),profile:visible?this.profile(visible):undefined,localCreatedAt:visible?.metadata('profileFirstUsed',undefined),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,device:this.device,sync,conflicts:visible?.conflicts()??[],reminders:visible?.reminders().slice(0,500)??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
+    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),profile:visible?this.profile(visible):undefined,localCreatedAt:visible?.metadata('profileFirstUsed',undefined),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,signInNotice:this.auth.signInNotice,device:this.device,sync,conflicts:visible?.conflicts()??[],reminders:visible?.reminders().slice(0,500)??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
   }
   private async work<T>(type:'parse'|'export',payload:unknown):Promise<T>{
     if(this.worker)throw new Error('Another calendar file is being processed.');
