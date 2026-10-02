@@ -21,7 +21,7 @@ Quiet background startup succeeds with the physical 0.1.16 process. The first re
 | Actual installed main executable | `cdba2a166c7e0973a52ce5e9337b2423592359f9af7d709d5b43d8d33b70de8a` |
 | Nupkg used by distribution vector | `033324a9f0478bf8d948f13e3448b52fe243444a851c411f78abd4201f0649b5` |
 | Stable launcher / exact package stub | `1aee72754d10fb176c6a510a5716885ea9bf9b5e38c5fde640b9edfcff41afc8` |
-| Final private engineering evidence | `b8272cbaff7c0dc50a79d6cc6b41b66927b74a7d225a7b9fb15ac2a53c0a67c3` |
+| Final private engineering evidence | `f7fc2832fc53f2f860b953f4afe0bb72ca22401ea6605f20b1159c849e26b42b` |
 
 Versioned source **3fbd11a089b549f1765578701da950c1a6789e43** passes both [Windows PR CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36969392247) and [Windows push CI](https://github.com/idekakdj/C.C-Lime/actions/runs/36969387868): **254 unit/UI + 83 tooling + 58 cloud + 35 original desktop + 38 independent renderer + 27 combined renderer = 495 passes with zero skips** per run. Local counterparts pass 493 with two explicitly disclosed symlink-privilege skips; CI closes those two cases. Type/build, source/package boundaries, installer notices/source and native inventory pass. Full npm audit/SBOM inventories 1,126 components with zero findings against root lock SHA-256 `beddeee6b18d50a1c209d77fe1beae4d3a6cfd8864583592ee7ccf3079ee6a8b`. Later evidence-only documentation preserves executable/source/workflow/dependency identity.
 
