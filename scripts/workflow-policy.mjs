@@ -37,7 +37,10 @@ export function inspectWorkflow(text,pins){
     assert.equal(step.run,undefined,'Mixed action/run step denied');references++;
    }
    if(step.run!==undefined){assert.equal(typeof step.run,'string');assert.ok(!step.run.includes('${{'),'Direct expression interpolation in run commands denied');}
-   if(step.env?.CC_LIME_ACCEPTANCE_FUSES==='all-seven')assert.ok(step.run?.includes('signin-readiness.spec.ts'),'Combined-hardening sign-in coverage missing');
+   if(step.env?.CC_LIME_ACCEPTANCE_FUSES==='all-seven'){
+    assert.ok(step.run?.includes('signin-readiness.spec.ts'),'Combined-hardening sign-in coverage missing');
+    assert.ok(step.run?.includes('frame-boundaries.spec.ts'),'Combined-hardening frame coverage missing');
+   }
   }
  }
  assert.ok(references>0,'Action references missing');

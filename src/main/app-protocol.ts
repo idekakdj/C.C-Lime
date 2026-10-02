@@ -43,8 +43,14 @@ export function appProtocol(rendererRoot: string, fetchFile: (url: string) => Pr
       if (!stat.isFile() || !inside(realRoot, realFile)) return errorPage(404, head);
       const response = await fetchFile(pathToFileURL(realFile).href);
       if (!response.ok) { await response.body?.cancel(); return errorPage(404, head); }
-      if (head) { await response.body?.cancel(); return new Response(null, { status: response.status, headers: response.headers }); }
-      return response;
+      const headers = new Headers(response.headers);
+      if (path.extname(file) === '.html') {
+        // frame-ancestors is enforced only as a response header, never by a meta tag.
+        headers.set('Content-Security-Policy', "frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'");
+      }
+      headers.set('X-Content-Type-Options', 'nosniff'); headers.set('Referrer-Policy', 'no-referrer');
+      if (head) { await response.body?.cancel(); return new Response(null, { status: response.status, headers }); }
+      return new Response(response.body, { status: response.status, headers });
     } catch { return errorPage(404, head); }
   };
 }

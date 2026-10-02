@@ -12,6 +12,14 @@ it('serves the root/assets and HEAD without losing status or headers', async () 
   const response = await handler({ url: 'cclime://app/app.js', method: 'HEAD' });
   expect(response.status).toBe(200); expect(await response.text()).toBe(''); expect(response.headers.get('content-type')).toBe('text/html');
 });
+it('HTML GET and HEAD deny framing without preventing ordinary asset fetches', async () => {
+  const handler = appProtocol(root, async () => new Response('calendar', { headers: { 'Content-Type': 'text/html' } }));
+  for (const method of ['GET', 'HEAD']) {
+    const response = await handler({ url: 'cclime://app/index.html', method }); expect(response.status).toBe(200);
+    expect(response.headers.get('content-security-policy')).toContain("frame-ancestors 'none'"); expect(response.headers.get('content-security-policy')).toContain("frame-src 'none'");
+  }
+  expect((await handler({ url: 'cclime://app/app.js', method: 'GET' })).headers.has('content-security-policy')).toBe(false);
+});
 it.each(['cclime://app/missing', 'cclime://app/missing.js', 'cclime://else/index.html', 'cclime://user@app/index.html', 'cclime://app:80/index.html', 'cclime://app/%ZZ', 'cclime://app/%2e%2e%2fprivate.html', 'cclime://app/%5c..%5cprivate.html', 'cclime://app/C%3a/private.html', 'cclime://app/%00.html'])('returns an unreflected secure 404 for %s', async url => {
   const fetcher = vi.fn(); const response = await appProtocol(root, fetcher)({ url: `${url}?secret=do-not-reflect`, method: 'GET' });
   expect(response.status).toBe(404); expect(fetcher).not.toHaveBeenCalled(); const body = await response.text();

@@ -22,7 +22,7 @@ if(process.platform==='win32'){
 }
 const shortcutPaths=()=>({appData:app.getPath('appData'),desktop:app.getPath('desktop'),profile:app.getPath('userData')});
 const repairShortcuts=()=>{if(installation&&!testProfile)repairInstalledShortcuts(installation,shortcutPaths(),shortcutIO(shell));};
-protocol.registerSchemesAsPrivileged([{scheme:'cclime',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
+protocol.registerSchemesAsPrivileged([{scheme:'cclime',privileges:{standard:true,secure:true,supportFetchAPI:true,allowServiceWorkers:false,bypassCSP:false}}]);
 let window:BrowserWindow|null=null,tray:Tray|null=null,service:ApplicationService|null=null;
 let quitting=false,shutdownDone=false;let changeTimer:ReturnType<typeof setTimeout>|null=null;
 const notices=new Set<Notification>();

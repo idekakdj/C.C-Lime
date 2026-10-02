@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import http from 'node:http';
-import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { z } from 'zod';
 import type { CloudConfiguration, Session } from '../shared/model';
 import { ProviderCooldown, retryAfterMs } from './rate-limit';
 import { newPasswordSchema } from '../shared/password';
+import { oauthCallback } from './oauth-callback';
 
 export interface SecureStorage { isEncryptionAvailable(): boolean; encryptString(value: string): Buffer; decryptString(value: Buffer): string; }
 export class AuthError extends Error { constructor(message: string, readonly code: string) { super(message); } }
@@ -37,6 +37,11 @@ export class AuthService {
     fs.mkdirSync(directory, { recursive: true }); this.filename = path.join(directory, 'session.enc');
   }
   restore(): void {
+    if (fs.existsSync(`${this.filename}.signed-out`)) {
+      try { for (const file of [this.filename, `${this.filename}.new`, `${this.filename}.signed-out`]) fs.rmSync(file, { force: true }); } catch { /* Keep sign-out intent until removal succeeds. */ }
+      return;
+    }
+    try { fs.rmSync(`${this.filename}.new`, { force: true }); } catch { /* Never adopt an incomplete replacement. */ }
     if (!this.config || !fs.existsSync(this.filename) || !this.secure.isEncryptionAvailable()) return;
     try {
       const saved = savedSchema.parse(JSON.parse(this.secure.decryptString(fs.readFileSync(this.filename))));
@@ -49,7 +54,13 @@ export class AuthService {
     if (!this.session || !this.config || !this.secure.isEncryptionAvailable()) return;
     const { offline: _, ...session } = this.session;
     const bytes = this.secure.encryptString(JSON.stringify({ projectId: this.config.projectId, refreshToken: this.refreshToken, session }));
-    fs.writeFileSync(`${this.filename}.new`, bytes, { mode: 0o600 }); fs.renameSync(`${this.filename}.new`, this.filename); this.remembered = true;
+    try {
+      fs.writeFileSync(`${this.filename}.new`, bytes, { mode: 0o600 }); fs.renameSync(`${this.filename}.new`, this.filename);
+      fs.rmSync(`${this.filename}.signed-out`, { force: true }); this.remembered = true;
+    } catch {
+      try { fs.rmSync(`${this.filename}.new`, { force: true }); } catch { /* Retried on restore/sign-out. */ }
+      throw new AuthError('Your sign-in could not be saved on this computer. Check its storage permissions and try again.', 'SESSION_STORAGE_FAILED');
+    }
   }
   private async request(action: string, body: object): Promise<any> {
     if (!this.config) throw new AuthError('Cloud sign-in is not configured in this build.', 'NOT_CONFIGURED');
@@ -131,7 +142,16 @@ export class AuthService {
     })().finally(() => { this.refreshPromise = null; });
     return this.refreshPromise;
   }
-  signOut(): void { this.generation++; this.cancelGoogle(); this.idToken = ''; this.refreshToken = ''; this.expires = 0; this.session = null; this.remembered = false; if (fs.existsSync(this.filename)) fs.unlinkSync(this.filename); this.changed(); }
+  signOut(): void {
+    this.generation++; this.cancelGoogle(); this.idToken = ''; this.refreshToken = ''; this.expires = 0; this.session = null; this.remembered = false;
+    let failed = false;
+    for (const file of [this.filename, `${this.filename}.new`]) { try { fs.rmSync(file, { force: true }); } catch { failed = true; } }
+    if (failed) {
+      try { fs.writeFileSync(`${this.filename}.signed-out`, '1', { mode: 0o600 }); } catch { /* Still report that disk cleanup failed. */ }
+    } else { try { fs.rmSync(`${this.filename}.signed-out`, { force: true }); } catch { failed = true; } }
+    this.changed();
+    if (failed) throw new AuthError('You are signed out here, but the saved sign-in could not be fully removed. Check this computer’s storage permissions and sign out again.', 'SESSION_REMOVAL_FAILED');
+  }
   cancelGoogle(): void { this.cancelOAuth?.(); this.cancelOAuth = null; }
   async google(link = false, expectedAccount?:string): Promise<Session> {
     if (!this.config?.googleClientId) throw new AuthError('Google sign-in is awaiting the owner’s desktop OAuth configuration.', 'GOOGLE_NOT_CONFIGURED');
@@ -140,29 +160,13 @@ export class AuthService {
       const generation=this.generation;
       const existingToken = link ? await this.token() : undefined; const existingUid = link ? this.session!.uid : expectedAccount;
       const verifier = randomBytes(48).toString('base64url'), nonce = randomBytes(24).toString('base64url'), state = randomBytes(24).toString('base64url');
-      const code = await new Promise<{ code: string; redirect: string }>((resolve, reject) => {
-        let finished = false; let redirect = '';
-        const server = http.createServer((req, res) => {
-          const url = new URL(req.url ?? '/', 'http://127.0.0.1');
-          if (req.method !== 'GET' || url.pathname !== '/oauth/callback') { res.writeHead(404); res.end(); return; }
-          const receivedState = url.searchParams.get('state') ?? '';
-          const receivedBytes = Buffer.from(receivedState), expectedBytes = Buffer.from(state);
-          if (receivedBytes.length !== expectedBytes.length || !timingSafeEqual(receivedBytes, expectedBytes)) { res.writeHead(400); res.end('Invalid sign-in state. Return to C.C. Lime and try again.'); return; }
-          res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'none'" }); res.end('You can close this page and return to C.C. Lime.');
-          if (url.searchParams.get('error') || !url.searchParams.get('code')) finish(new Error('Google sign-in was canceled.'));
-          else finish(null, { code: url.searchParams.get('code')!, redirect });
-        });
-        const finish = (error: Error | null, value?: { code: string; redirect: string }) => { if (finished) return; finished = true; clearTimeout(timer); server.close(); this.cancelOAuth = null; error ? reject(error) : resolve(value!); };
-        const timer = setTimeout(() => finish(new Error('Google sign-in timed out. Please try again.')), 300000);
-        this.cancelOAuth = () => finish(new Error('Google sign-in canceled.'));
-        server.on('error', error => finish(error));
-        server.listen(0, '127.0.0.1', () => {
-          const address = server.address(); if (!address || typeof address === 'string') return finish(new Error('Could not start sign-in.'));
-          redirect = `http://127.0.0.1:${address.port}/oauth/callback`;
-          const params = new URLSearchParams({ client_id: this.config!.googleClientId!, redirect_uri: redirect, response_type: 'code', scope: 'openid email profile', state, nonce, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256', prompt: 'select_account' });
-          void this.openBrowser(`https://accounts.google.com/o/oauth2/v2/auth?${params}`).catch(error => finish(error));
-        });
+      const callback = oauthCallback(state, async redirect => {
+        const params = new URLSearchParams({ client_id: this.config!.googleClientId!, redirect_uri: redirect, response_type: 'code', scope: 'openid email profile', state, nonce, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256', prompt: 'select_account' });
+        await this.openBrowser(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
       });
+      this.cancelOAuth = callback.cancel;
+      let code: { code: string; redirect: string };
+      try { code = await callback.result; } finally { if (this.cancelOAuth === callback.cancel) this.cancelOAuth = null; }
       const params = new URLSearchParams({ client_id: this.config!.googleClientId!, grant_type: 'authorization_code', code: code.code, redirect_uri: code.redirect, code_verifier: verifier });
       if (this.config!.googleClientSecret) params.set('client_secret', this.config!.googleClientSecret);
       const response = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params, signal: AbortSignal.timeout(20000) });
