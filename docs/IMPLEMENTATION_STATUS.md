@@ -1,5 +1,11 @@
 # Implementation and verification evidence
 
+## October 2 complete time-zone catalog (source and test package)
+
+The requested [time-zone expansion](TIME_ZONE_OPTIONS_PLAN.md) replaces the 16 suggestions with the pinned runtime's complete geographic catalog plus UTC/fixed-offset zones. The Windows package exposes 447 options covering all 418 runtime-enumerated zones. Saved aliases remain selectable, and valid aliases can still be typed. The shared searchable datalist also serves onboarding, event/semester editors and import.
+
+Typecheck, 39 relevant source cases, a real isolated packaged Settings/save/45-minute-offset/event-instant/restart/alias case, both configured and absent-config fresh/restart sign-in readiness cases, credential scanning and package inspection pass. Two initial test-locator failures and the sandboxed Git-spawn failure remain in local evidence; corrected reruns pass. Version stays 0.1.16. The installed app, normal profile/private configuration and cloud policy are unchanged; this is not a new release or compliance certification.
+
 ## October 2 password-change fresh-sign-in follow-up (source only)
 
 The owner requested fresh sign-in after changing passwords and verification that other devices' old sessions require sign-in too. The [ordered plan](PASSWORD_SESSION_CHANGE_PLAN.md) preceded edits. AuthService still verifies the current password/account and validates new-password policy; successful updates discard replacement credentials and use durable sign-out cleanup. Snapshot carries a non-sensitive explanation independently of renderer toasts. The existing account-change path immediately hides data/stops reminders and closes SQLite only after in-flight sync unwinds. Pending edits and calendar files remain for same-account sign-in.

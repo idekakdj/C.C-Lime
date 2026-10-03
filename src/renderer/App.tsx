@@ -18,6 +18,7 @@ import { AuthScreen, DataDialog, Onboarding, SettingsScreen } from './screens';
 type Page='calendar'|'tasks'|'courses'|'settings'|'profile';
 import { ProfileScreen } from './profile-screen';
 import { applyAppearance } from './apply-appearance';
+import { timeZoneOptions } from './time-zones';
 type Editor={item:CalendarItem|Occurrence|null;date:string;modified?:boolean};
 function unscheduled(item:CalendarItem):Occurrence{return{...item,occurrenceKey:item.id,originalDate:'',seriesId:null,startMs:null,endMs:null,date:'',endDate:''};}
 export default function App(){
@@ -55,6 +56,7 @@ export default function App(){
   }),[records]);
   const savedPrefs=useMemo(()=>records.find((r):r is Preferences=>r.kind==='preferences')??preferencesSchema.parse({id:'c44ba791-5ae6-5ec6-9813-0c840db2f0f2',kind:'preferences',zone:DateTime.local().zoneName??'UTC'}),[records]);
   const prefs=useMemo(()=>({...savedPrefs,zone:snapshot?.displayZone??savedPrefs.zone}),[savedPrefs,snapshot?.displayZone]);
+  const zones=useMemo(()=>timeZoneOptions([savedPrefs.zone,snapshot?.displayZone]),[savedPrefs.zone,snapshot?.displayZone]);
   const today=DateTime.fromMillis(now,{zone:prefs.zone}).toISODate()!,view=snapshot?.device.view??'month';
   useEffect(()=>{if(view==='week'){const element=document.querySelector('.week-scroll');if(element)element.scrollTop=7*56;}},[view]);
   const courses=useMemo(()=>records.filter((r):r is Course=>r.kind==='course'),[records]),semesters=useMemo(()=>records.filter((r):r is Semester=>r.kind==='semester'),[records]);
@@ -106,8 +108,7 @@ export default function App(){
   if(fatal)return <div className="loading-screen"><Logo/><h2>We couldn’t open your calendar.</h2><p>{fatal}</p><button className="button secondary" onClick={()=>location.reload()}>Try again</button></div>;
   if(!snapshot)return <div className="loading-screen"><Logo/><span className="spinner"/><p>Making room for your day…</p></div>;
   const loggedIn=!!snapshot.session||snapshot.localMode;
-  const zones=['America/Toronto','America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Vancouver','America/Halifax','Europe/London','Europe/Paris','Europe/Berlin','Asia/Kolkata','Asia/Singapore','Asia/Tokyo','Australia/Sydney','Pacific/Auckland','UTC'];
-  const dataList=<datalist id="zones">{zones.map(z=><option key={z} value={z}/>)}</datalist>;
+  const dataList=<datalist id="zones">{zones.map(z=><option key={z} value={z} label={z.replaceAll('_',' ')}/>)}</datalist>;
   if(!loggedIn)return <><AuthScreen snapshot={snapshot} run={run}/>{toastNode}{dataList}</>;
   const activeSemester=semesters.find(s=>!s.archived&&s.startDate<=today&&s.endDate>=today)??semesters.find(s=>!s.archived);
   const completedWeek=weekProgress.completed;
