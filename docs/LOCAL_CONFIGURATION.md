@@ -10,6 +10,8 @@ The `.local` directory is excluded from Git and desktop packaging. Never use a `
 
 An installer does not contain the project's key. Each computer needs its local environment configuration to enable cloud sign-in. Without it, a clearly labeled local calendar preview remains available. Keep this configuration separate from shared installer/source artifacts.
 
+The proposed [automatic account setup plan](AUTOMATIC_ACCOUNT_SETUP_PLAN.md) would introduce an explicitly reviewed three-value client configuration during trusted release packaging, while retaining private repository exclusions and forbidding genuine secrets everywhere in the distribution. That feature is not implemented; prerequisite verification is incomplete. The instructions above continue to describe installed 0.1.17 and current application code.
+
 ## Windows normal-launch verification
 
 Verify configuration from the same Windows context that opens the user's app. A tool running with filesystem virtualization can see a private redirected AppData copy at the ordinary logical path; a valid file in that copy does not prove a normal Start-menu/Explorer launch can read it. Microsoft describes the merged and redirected [AppData behavior](https://learn.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes). Resolve the opened file's physical identity and separately check through the normal desktop context before claiming installed cloud configuration is preserved.
