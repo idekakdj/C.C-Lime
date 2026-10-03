@@ -73,7 +73,7 @@ export class AuthService {
     if (!response.ok || result.needConfirmation) {
       const code = result.needConfirmation ? 'NEED_CONFIRMATION' : String(result.error?.message ?? 'AUTH_FAILED').split(' : ')[0];
       if (code === 'TOO_MANY_ATTEMPTS_TRY_LATER') this.providerCooldown.pause(retryAfterMs(response.headers));
-      throw new AuthError(messages[code] ?? (code.startsWith('WEAK_PASSWORD') ? 'Use a stronger password with at least six characters.' : 'Sign-in could not be completed. Please try again.'), code);
+      throw new AuthError(messages[code] ?? (code.startsWith('WEAK_PASSWORD') || code === 'PASSWORD_DOES_NOT_MEET_REQUIREMENTS' ? 'Use a unique password of 8–128 characters that meets the account password policy.' : 'Sign-in could not be completed. Please try again.'), code);
     }
     return result;
   }

@@ -6,6 +6,8 @@ October 2, 2026, Ontario owner-only pilot. Installed release is **0.1.17** under
 
 ## Engineering preparation and its precise limits
 
+October 3 continuation: [eight-character source policy](PASSWORD_MINIMUM_8_PLAN.md) and [live provider rollout](PROVIDER_PASSWORD_POLICY_PLAN.md) add direct ASCII 8–128 signup/change enforcement with legacy compatibility and six independently cleaned fixtures. Unicode counting differs; remote screening, raw attachment/reset and complete length alignment remain open. The owner requests mandatory MFA for password accounts; [the staged plan](REQUIRED_MFA_PLAN.md) covers SMS, an unrestricted TOTP alternative, reserved-claim access tests and live activation prerequisites. MFA/billing/live rules remain unchanged, so NIST single-factor length/AAL2 conformance is not claimed. Installed 0.1.17 still uses fifteen for newly set passwords; no version/install update was requested.
+
 The subsequent [password-session change](PASSWORD_SESSION_CHANGE_PLAN.md) is now included in installed 0.1.17: forced current-device sign-in and sync refresh-token validation have earlier live disposable two-session/restored-session evidence. This is an additional measured engineering control, not immediate backend access-token revocation or a framework-compliance claim.
 
 The owner-authorized [adversarial assessment](ADVERSARIAL_TEST_REPORT.md) adds five repaired calendar/import/read-bound findings, earlier source/package/cloud/matrix/decoder evidence and now installed 0.1.17 repairs. The release also adds the complete time-zone catalog and exact new verification counts in its notes. These measured controls do not substitute for the independent attack/native assessment or organizational assurance gates below.

@@ -22,9 +22,9 @@ async function fixture(){
 }
 it('password change hides account data, stops services, clears login and reloads preserved pending edits after sign-in',async()=>{
  const f=await fixture();await f.service.sync!.stop();const pending=item();await f.service.command('save',pending);
- const scheduler=f.service.scheduler!,stop=vi.spyOn(scheduler,'stop');await f.service.command('auth.changePassword',{currentPassword:'old-password',password:'Synthetic newer meadow 42',confirmation:'Synthetic newer meadow 42'});
+ const scheduler=f.service.scheduler!,stop=vi.spyOn(scheduler,'stop');await f.service.command('auth.changePassword',{currentPassword:'old-password',password:'V9!r2Kq8',confirmation:'V9!r2Kq8'});
  expect(f.service.snapshot()).toMatchObject({session:null,records:[],remembered:false,signInNotice:'Password changed. Sign in with your new password.'});expect(stop).toHaveBeenCalled();expect(fs.existsSync(path.join(f.root,'session.enc'))).toBe(false);await vi.waitFor(()=>expect(f.service.store).toBeNull());
- await f.service.command('auth.signIn',{email:'alice@example.test',password:'Synthetic newer meadow 42'});await f.service.sync!.stop();expect(f.service.snapshot().signInNotice).toBeNull();expect(f.service.store!.get(pending.id)).toEqual(pending);expect(f.service.store!.queueCount()).toBe(1);
+ await f.service.command('auth.signIn',{email:'alice@example.test',password:'V9!r2Kq8'});await f.service.sync!.stop();expect(f.service.snapshot().signInNotice).toBeNull();expect(f.service.store!.get(pending.id)).toEqual(pending);expect(f.service.store!.queueCount()).toBe(1);
 });
 it('revocation found during sync hides the account and closes its store after the in-flight request unwinds',async()=>{
  const f=await fixture(),scheduler=f.service.scheduler!,stop=vi.spyOn(scheduler,'stop');f.setRefreshError('TOKEN_EXPIRED');f.requests.mockClear();await f.service.sync!.sync();
