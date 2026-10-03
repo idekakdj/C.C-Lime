@@ -1,0 +1,44 @@
+# Owner upgrade and remaining engineering fixes
+
+September 27, 2026. User authorizes installing the existing verified 0.1.5 and continuing remaining fixes. Preserve the 0.1.5 installer identity; subsequent code changes target 0.1.6 rather than replacing a tested artifact under the same version. No certification, legal approval, public release, billing or signing purchase is implied.
+
+## A. Install exactly 0.1.5
+
+1. Verify no calendar process is using the real profile. If one is running, request normal tray quit, never terminate a user-owned session with unsaved work.
+2. Require the recorded installer SHA-256 `c0b25f524b39f832598a7672d056074a6dde3bab1d5a873b5e61a6ffa5cb90df` and package SHA-256 `b933b74971f4c544b3abc39d5f62d164fba4014b1bcb8fe50439910fc5531240`.
+3. Save a private before-baseline using installed 0.1.4: version/profile, exact records/device preferences and earlier feasibility database digest. Never print calendar text or credentials. Also seed a separate eight-record upgrade fixture containing recurrence exceptions/history, queued writes, reminder state and preferences.
+4. Check populated fixture with packaged 0.1.5, then run the verified installer. Require exit zero and installed ASAR digest equality. Inspect real shortcut targets by Windows file identity, not only redirected path strings, before normal-startup repair.
+5. Check real profile preservation and configured Google/cloud availability with installed 0.1.5; compare the populated fixture again. Run the complete desktop suite against installed executable with isolated profiles. Repeat normal launches to verify stable shortcuts/activator. Do not claim a new visible-banner, login/sleep or clean-PC result without observing it.
+6. Retain private evidence, record exact results and leave the owner's version at 0.1.5. Subsequent engineering builds are separate until an update is requested.
+
+## B. Bounded dependency remediation
+
+1. Inspect fresh registry advisories and current parent package manifests/call sites. Prefer supported patched versions. In particular, verify Firebase CLI's own declared overrides for OpenTelemetry and UUID; npm does not automatically apply a transitive package's overrides at the application root.
+2. Evaluate a scoped parent override matching upstream's tested intent, and a compatible patched native re2 release. Review exact lockfile additions/removals. Do not downgrade Forge or conceal the unfixed extraction advisories.
+   - September 28 compatibility check: patched re2 requires Node 24.15 or later in the Node 24 line. Use the observed current official Node 24.21.0 release in an ignored project-local tools directory, verified against the official SHA-256 list; do not replace system Node. Pin CI/toolchain documentation to that same version and exercise native regex loading rather than accepting Superstatic's silent JavaScript fallback. Pin re2 1.27.0, OpenTelemetry core 2.8.0 and gaxios's UUID 11.1.1 under Firebase tooling only; the latter two follow Firebase CLI's own declared override intent.
+   - npm 11.19 defaults to blocking dependency lifecycle scripts. Pin approval for esbuild binary setup and re2 native installation only. Deny Firebase util's environment-to-bundle configuration hook and protobufjs's optional version-warning hook. The current installer hook also has an `os.arch` invocation error; deny it and explicitly copy/verify the dependency's existing x64 vendor files before `make`. This remains a Windows x64 build, not a claim of ARM/Linux/macOS packaging support. Record policy and test fresh CI installation; do not enable all future scripts. Rebuild native re2 under explicit policy before final compatibility checks.
+3. Exercise relevant UUID and OpenTelemetry behavior, native regex paths and the Firebase emulator suite; avoid destructive memory/crash proof-of-concept inputs. Regenerate full dependency evidence and verify production gate reflects remaining findings.
+4. Inspect the remaining extraction fix/replacement route from primary sources. If no compatible patched release exists, keep its exact exposure and next remediation explicit; no unsupported zero-vulnerability claim.
+
+## C. Expired quick-undo minimization
+
+1. Remove only undo rows whose ten-second validity has already ended. Keep the existing strict expiry boundary (`expires_ms < now`): an undo at exact expiry remains valid. Do not change imports, backups, queues, tombstones, conflicts, delivery markers or deletion markers.
+2. Clean on opening an account, before creating new snapshots, during mutation housekeeping and on scheduler reconciliation so an idle active account is cleaned. Reuse the scheduler lifecycle instead of introducing a new process or timer. This is logical row deletion, not forensic erasure or expiry of prior snapshot copies.
+3. Test just-before/exact/after expiry, expired-row removal across restart and active idle reconciliation, unchanged calendar/outbox/import/conflict data, valid undo, account separation and read-only/failure behavior. An expired undo must remain rejected even if cleanup cannot run; failed cleanup must not discard a saved mutation.
+4. Update inventory and risk status to distinguish the fixed active-store history from import/snapshot/quarantine/vendor retention gaps. Keep policy decisions for those other classes pending.
+
+## D. Verify and record
+
+Run appropriate source/credential/type/unit/tooling/cloud/package/desktop checks for changed paths. Record versioned artifact/evidence hashes, unresolved advisories and exact installed versus development versions. Commit reviewed source/docs to the existing branch and update its draft PR; generated artifacts, user profile data and secrets stay excluded. Broad product acceptance and organizational/independent-assessment tasks remain tracked separately.
+
+September 28 execution checkpoint: A complete (0.1.5 installed, profile/fixture/shortcuts checked, 25 installed desktop tests pass). B/C implemented in separate 0.1.6: 158 app unit, 12 tooling, 36 emulator and 25 packaged desktop checks pass; source/archive scans clean. Full audit is 15 high inherited extraction findings, so production gate remains blocked. D complete for this checkpoint: local evidence recorded and both fresh GitHub Windows runs passed for `d49ed18632b41ca99c4c38fa71e05db018c0f6ed`, including the Squirrel installer step as well as packaging. Exact evidence and remaining gates are in [implementation status](IMPLEMENTATION_STATUS.md) and [supply-chain report](SUPPLY_CHAIN_REPORT.md).
+
+## Next dependency review: extraction containment
+
+1. Inventory every resolved `extract-zip` consumer and the archive origin/checksum/cache/custom-archive options reaching it. Record destination creation, reuse, ownership and cleanup. Do not assume a third-party archive or reused writable destination meets the replacement's threat model.
+2. Evaluate the already-resolved Electron internal extractor against its versioned API/security policy, native Windows loading and the actual packager CommonJS wrapper. Preserve legitimate Electron symlinks and modes where supported; Windows without symlink permission is a separate behavior. Its supported scope is not a general untrusted-archive guarantee.
+3. Use small synthetic fixtures in a uniquely named workspace/temp directory: normal nested files, traversal/absolute/reserved paths, relative and escaping symlink chains, duplicate file/link entries, pre-existing destination links and existing regular files. Put all sentinels inside the fixture root but outside the extraction subdirectory. Assert unchanged sentinel bytes and absence of unintended files, with platform limitations explicit. No decompression bombs, arbitrary system targets or user files.
+4. If safe use requires a fresh destination/checksum boundary, implement and test those boundaries rather than relying on an audit-name change. If compatibility/security is not demonstrated, preserve the blocker and record the failed case. Never silently skip a Windows containment case and call it passed.
+5. After a justified dependency change, review lockfile/provenance, refresh the full audit/SBOM, run affected tooling plus the full build/cloud/desktop/installer sequence and fresh CI. Record a new artifact identity/version before distributing. Organizational release gates remain independent of an npm audit result.
+
+September 28 extraction checkpoint: the [detailed repair plan](ARCHIVE_EXTRACTION_PLAN.md) is implemented in separate source version 0.1.7. The full npm audit is clean; installed npm signatures/available provenance verify; both fresh Windows CI runs pass all 252 automated tests, including the two file-symlink cases unavailable locally. Exact artifact identities and remaining scope limits are recorded in the evidence documents. The owner's installed version remains 0.1.5.

@@ -98,10 +98,10 @@ describe('student sidebar and reminders', () => {
 
 describe('schema boundaries', () => {
   it.each(['', ' ', 'x'.repeat(201)])('rejects invalid titles', title => { expect(() => item({ title })).toThrow(); });
-  it('rejects invalid end dates, unknown fields and repeating assignments', () => {
+  it('rejects invalid end dates, unknown fields and repetition without a date', () => {
     expect(() => item({ timing: { mode: 'timed', start: '2026-01-01T10:00:00Z', end: '2026-01-01T09:00:00Z', zone: 'UTC' } })).toThrow();
     expect(() => recordSchema.parse({ ...item(), admin: true })).toThrow();
-    expect(() => item({ itemType: 'assignment', recurrence: recurrence() })).toThrow();
+    expect(() => item({ itemType: 'task', timing: {mode:'unscheduled',zone:'UTC'}, recurrence: recurrence() })).toThrow('Repeating items need a date');
     expect(() => itemSchema.parse({ ...item(), notes: 'x'.repeat(10001) })).toThrow();
   });
 });

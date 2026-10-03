@@ -1,36 +1,45 @@
 {
   "name": "cc-lime",
   "productName": "C.C. Lime",
-  "version": "0.0.1",
+  "version": "0.1.17",
   "description": "A thoughtful calendar and task planner for university life.",
   "author": "idekakdj",
   "private": true,
+  "engines": {
+    "node": ">=24.21.0 <25",
+    "npm": ">=11.19.0 <12"
+  },
   "type": "module",
   "license": "UNLICENSED",
   "main": "dist/main/index.cjs",
   "scripts": {
-    "start": "npm run build && electron .",
+    "start": "npm run build && node scripts/dev.mjs --production",
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check": "npm run check:secrets && npm run typecheck && npm test && npm run build",
+    "check": "npm run check:secrets && npm run check:tooling && npm run typecheck && npm test && npm run build",
+    "check:tooling": "node --test tests/tooling/*.test.mjs",
+    "security:report": "node scripts/dependency-evidence.mjs",
+    "check:release-security": "node scripts/dependency-evidence.mjs --release",
     "check:secrets": "node scripts/check-secrets.mjs",
     "package": "npm run build && electron-forge package",
-    "make": "npm run build && electron-forge make",
+    "make": "npm run build && node scripts/prepare-windows-installer.mjs && electron-forge make",
     "rebuild:electron": "electron-rebuild -f -w better-sqlite3",
-    "rebuild:node": "npm rebuild better-sqlite3"
+    "rebuild:node": "npm rebuild better-sqlite3",
+    "test:cloud": "node scripts/emulators.mjs",
+    "check:package": "node scripts/check-package.mjs"
   },
   "config": {
     "forge": "./forge.config.cjs"
   },
   "dependencies": {
-    "better-sqlite3": "13.0.3",
-    "electron-squirrel-startup": "1.0.1"
+    "better-sqlite3": "13.0.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@electron-forge/cli": "7.11.2",
     "@electron-forge/maker-squirrel": "7.11.2",
     "@electron/rebuild": "4.2.0",
@@ -39,22 +48,23 @@
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
     "@types/better-sqlite3": "9.6.0",
-    "@types/electron-squirrel-startup": "1.0.2",
     "@types/luxon": "3.7.5",
     "@types/node": "26.6.1",
+    "@types/qrcode": "1.5.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.1",
-    "electron": "44.4.2",
+    "electron": "44.4.5",
     "esbuild": "0.28.2",
     "firebase": "12.19.0",
-    "firebase-tools": "15.30.2",
+    "firebase-tools": "15.31.0",
     "ical.js": "2.2.1",
     "jose": "6.2.12",
     "jsdom": "29.1.1",
     "lucide-react": "1.47.0",
     "luxon": "3.7.2",
     "png-to-ico": "3.0.2",
+    "qrcode": "1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "sharp": "0.35.4",
@@ -62,5 +72,32 @@
     "vite": "8.3.0",
     "vitest": "5.0.1",
     "zod": "4.6.5"
+  },
+  "overrides": {
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.13.6"
+    },
+    "@electron/rebuild": "$@electron/rebuild",
+    "@electron/packager": {
+      "extract-zip": "npm:@electron-internal/extract-zip@1.0.5"
+    },
+    "tmp": "0.2.7",
+    "firebase-tools": {
+      "get-uri": {
+        "basic-ftp": "6.2.1"
+      },
+      "@opentelemetry/core": "2.8.0",
+      "gaxios": {
+        "uuid": "11.1.1"
+      },
+      "re2": "1.27.0"
+    }
+  },
+  "allowScripts": {
+    "electron-winstaller": false,
+    "esbuild@0.28.2": true,
+    "re2@1.27.0": true,
+    "@firebase/util": false,
+    "protobufjs": false
   }
 }

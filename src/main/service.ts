@@ -1,25 +1,36 @@
 import fs from 'node:fs';
+import { readBoundedText } from './bounded-file';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Worker } from 'node:worker_threads';
 import { z } from 'zod';
 import { DateTime } from 'luxon';
 import { LocalStore } from './store';
+import { recoverySnapshots, recoverSnapshot } from './recovery';
 import { AuthService, type SecureStorage } from './auth';
 import { FirestoreCloud } from './cloud';
 import { SyncEngine } from './sync';
+import { CommandRateLimits } from './rate-limit';
+import type { PreparedAvatar } from './avatar';
+import { avatarCropSchema } from '../shared/avatar-crop';
+import { validateNewPassword } from '../shared/password';
+import { PROFILE_ID, profileSchema, avatarSchema, type UserProfile } from '../shared/model';
+import { appearanceSchema, defaultAppearance } from '../shared/appearance';
 import { ReminderScheduler, type ReminderNotice } from './scheduler';
 import { atDate, recurringDates, sourceDate, addDays, localInstant } from '../domain/calendar';
 import { createBackup, readBackup, remapBackup, previewImport, type ParsedCalendar, type ParseOptions } from '../domain/interchange';
-import { defaultDeviceSettings, parseRecord, preferencesSchema, localDate, localTime, uid, zone as zoneSchema, type CloudConfiguration, type DeviceSettings, type DomainRecord, type ImportPreview, type Preferences, type Snapshot, type CalendarItem } from '../shared/model';
+import { seriesImpact, seriesChanges, semesterClass, type SchedulePreview, type RecordChange } from '../domain/schedule-changes';
+import { defaultDeviceSettings, parseRecord, preferencesSchema, itemSchema, semesterSchema, localDate, localTime, uid, zone as zoneSchema, type CloudConfiguration, type DeviceSettings, type DomainRecord, type ImportPreview, type Preferences, type Snapshot, type CalendarItem, type Semester, type NotificationTest } from '../shared/model';
 
 const deviceSchema=z.object({notifications:z.boolean(),startAtLogin:z.boolean(),closeToTray:z.boolean(),quietStart:localTime.nullable(),quietEnd:localTime.nullable(),privacy:z.boolean(),followZone:z.boolean(),onboardingDone:z.boolean(),view:z.enum(['month','week','agenda']),month:z.string().regex(/^\d{4}-\d{2}$/).nullable(),hideCompleted:z.boolean()}).strict();
 export interface HostServices {
+  chooseAvatar?():Promise<PreparedAvatar|null>;
   secure:SecureStorage; openBrowser(url:string):Promise<void>; changed():void; notify(notice:ReminderNotice):void;
   openFile(kind:'ics'|'backup'):Promise<string|null>; saveFile(kind:'ics'|'backup'|'diagnostics'):Promise<string|null>;
-  setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string;
+  setStartup(enabled:boolean):void; startupStatus():{enabled:boolean;registered?:boolean;wasOpenedAtLogin:boolean}; dataFolder():void; version:string; timeZone?():string;
 }
 export class ApplicationService {
+  private readonly rateLimits = new CommandRateLimits();
   readonly auth:AuthService;
   store:LocalStore|null=null;
   sync:SyncEngine|null=null;
@@ -30,36 +41,77 @@ export class ApplicationService {
   private switching=false;
   private cloud:FirestoreCloud|null=null;
   private worker:Worker|null=null;
-  private imports=new Map<string,{preview:ImportPreview;account:string}>();
+  private imports=new Map<string,{preview:ImportPreview;account:string;before:Map<string,string>}>();
   private restorePreview:{token:string;records:DomainRecord[];account:string;foreign:boolean;count:number}|null=null;
+  private schedulePreview:{token:string;account:string;revision:string;expires:number;semester:Semester|null;pairs:Array<{before:CalendarItem|null;after:CalendarItem}>}|null=null;
+  private notificationTest:NotificationTest|null=null;
+  private avatarIntent = 0;
+  private avatarTimer: ReturnType<typeof setTimeout> | null = null;
+  private avatarDraft: { store: LocalStore; token: string; expires: number; previous: string|null; photo: PreparedAvatar } | null = null;
+  private clearAvatar() { this.avatarIntent++; this.avatarDraft = null; if(this.avatarTimer)clearTimeout(this.avatarTimer);this.avatarTimer=null; }
   private readonly settingsPath:string;
   constructor(readonly root:string,readonly config:CloudConfiguration|null,private host:HostServices){
     fs.mkdirSync(root,{recursive:true});this.settingsPath=path.join(root,'device.json');
     try{this.device=deviceSchema.parse({...defaultDeviceSettings,...JSON.parse(fs.readFileSync(this.settingsPath,'utf8'))});}catch{}
-    this.auth=new AuthService(config,root,host.secure,url=>host.openBrowser(url),()=>host.changed());
+    this.auth=new AuthService(config,root,host.secure,url=>host.openBrowser(url),()=>this.authChanged());
+  }
+  private authChanged():void{
+    // Revocation can arrive inside a sync request. Hide data and stop reminders
+    // immediately; close SQLite only after that request has unwound.
+    if((!this.auth.session||this.auth.session.enrollmentRequired)&&!this.localMode&&this.store){
+      this.clearAvatar();
+      const previous=this.store;this.scheduler?.stop();this.switching=true;
+      void this.stopServices().then(()=>{if(this.store===previous&&(!this.auth.session||this.auth.session.enrollmentRequired)){previous.close();this.store=null;this.imports.clear();this.restorePreview=null;}this.switching=false;this.host.changed();});
+    }
+    this.host.changed();
   }
   async initialize():Promise<void>{this.auth.restore();if(this.auth.session)await this.activate(this.auth.session.uid);}
   preferences():Preferences{
     const existing=this.store?.list().find((r):r is Preferences=>r.kind==='preferences');
     return existing??preferencesSchema.parse({id:'c44ba791-5ae6-5ec6-9813-0c840db2f0f2',kind:'preferences',zone:DateTime.local().zoneName??'UTC'});
   }
+  private displayZone():string{
+    const fixed=this.preferences().zone;if(!this.device.followZone)return fixed;
+    const zone=zoneSchema.safeParse(this.host.timeZone?.()??new Intl.DateTimeFormat().resolvedOptions().timeZone);return zone.success?zone.data:fixed;
+  }
   private async activate(accountId:string,local=false):Promise<void>{
+    this.clearAvatar();
+    this.schedulePreview=null;
     this.switching=true;this.host.changed();await this.stopServices();this.store?.close();this.store=null;this.localMode=local;this.imports.clear();this.restorePreview=null;
     try{
+      if(!local&&this.auth.session?.enrollmentRequired)return;
       this.store=new LocalStore(this.root,accountId);this.recoveryError=null;
-      this.scheduler=new ReminderScheduler(this.store,()=>this.device,()=>this.preferences().zone,n=>this.host.notify(n),()=>this.host.changed());this.scheduler.start();
-      if(this.config&&!local){this.cloud=new FirestoreCloud(this.config.projectId,accountId,()=>this.auth.token());this.sync=new SyncEngine(this.store,this.cloud,()=>this.auth.session,()=>{this.scheduler?.reconcile();this.host.changed();});this.sync.start();}
+      if(this.store.metadata('deleting',false))return;
+      if(!this.store.metadata('profileFirstUsed',''))this.store.setMetadata('profileFirstUsed',new Date().toISOString());
+      this.store.retainCompletionHistory();
+      this.scheduler=new ReminderScheduler(this.store,()=>this.device,()=>this.displayZone(),n=>this.host.notify(n),()=>this.host.changed());this.scheduler.start();
+      if(this.config&&!local){this.cloud=new FirestoreCloud(this.config.projectId,accountId,()=>this.auth.token());this.sync=new SyncEngine(this.store,this.cloud,()=>this.auth.session,()=>{if(this.store?.metadata('deleting',false))this.scheduler?.stop();else this.scheduler?.reconcile();this.host.changed();},undefined,()=>this.auth.token(true));this.sync.start();}
     }catch(error){this.recoveryError=(error as Error).message;}
     finally{this.switching=false;this.host.changed();}
   }
   private async stopServices(){this.scheduler?.stop();this.scheduler=null;await this.sync?.stop();this.sync=null;this.cloud=null;}
-  async close(){this.auth.cancelGoogle();await this.stopServices();this.worker?.terminate();this.store?.close();this.store=null;}
+  private async removeLocal():Promise<void>{
+    this.clearAvatar();
+    const store=this.active(),directory=path.resolve(store.directory),expected=path.resolve(this.root,'accounts',createHash('sha256').update(store.accountId).digest('hex').slice(0,32));
+    if(directory!==expected||path.dirname(directory)!==path.resolve(this.root,'accounts'))throw new Error('Local data path could not be verified.');
+    this.switching=true;await this.stopServices();await this.worker?.terminate();store.close();this.store=null;this.localMode=false;this.imports.clear();this.restorePreview=null;
+    this.auth.signOut();fs.rmSync(directory,{recursive:true,force:true});this.switching=false;this.host.changed();
+  }
+  async close(){this.clearAvatar();this.schedulePreview=null;this.auth.cancelAuthentication();await this.stopServices();this.worker?.terminate();this.store?.close();this.store=null;}
   setVisible(visible:boolean){this.sync?.setVisible(visible);}
   resume(){this.scheduler?.reconcile();this.sync?.schedule(100);}
-  private active():LocalStore{if(this.switching||!this.store)throw new Error('Open a calendar account first.');return this.store;}
+  private active():LocalStore{if(this.switching||!this.store||(!this.localMode&&(this.auth.session?.enrollmentRequired||this.store.accountId!==this.auth.session?.uid)))throw new Error('Open a calendar account first.');return this.store;}
   private changed(){this.scheduler?.reconcile();this.sync?.schedule();this.host.changed();}
-  snapshot():Snapshot&{recoveryError:string|null;remembered:boolean;dataPath:string;startup:{enabled:boolean;wasOpenedAtLogin:boolean}}{
-    return {records:this.switching?[]:this.store?.list()??[],session:this.auth.session,device:this.device,sync:this.sync?.status??{state:'local',pending:this.store?.queue().length??0,lastSynced:null,message:this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'},conflicts:this.store?.conflicts()??[],reminders:this.store?.reminders().slice(0,500)??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:this.store?.directory??this.root,startup:this.host.startupStatus()};
+  private profile(store:LocalStore):UserProfile{
+    const saved=store.get(PROFILE_ID);if(saved?.kind==='profile')return saved;
+    return profileSchema.parse({id:PROFILE_ID,kind:'profile',name:this.auth.session?.displayName?.trim()||'Student',avatar:null,joinedAt:this.auth.session?.createdAt??null,appearance:defaultAppearance});
+  }
+  snapshot():Snapshot&{recoveryError:string|null;remembered:boolean;dataPath:string;startup:{enabled:boolean;registered?:boolean;wasOpenedAtLogin:boolean}}{
+    const visible=!this.switching&&(this.localMode||!this.auth.session?.enrollmentRequired&&this.store?.accountId===this.auth.session?.uid)?this.store:null;
+    const pending=visible?.queueCount()??0;
+    // A committed edit queues work before the delayed sync run updates its cached status.
+    const sync:Snapshot['sync']=this.sync&&visible?{...this.sync.status,pending,...(this.sync.status.state==='synced'&&pending>0?{state:'local' as const,message:'Changes are saved on this computer and waiting to sync.'}:{})}:this.sync?.status??{state:'local',pending,lastSynced:null,message:visible?.metadata('deleting',false)?'Account deletion is paused. Resume it in Settings.':this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'};
+    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),profile:visible?this.profile(visible):undefined,localCreatedAt:visible?.metadata('profileFirstUsed',undefined),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,mfaChallenge:this.auth.mfaChallenge,accountSecurity:this.auth.security,signInNotice:this.auth.signInNotice,device:this.device,sync,conflicts:visible?.conflicts()??[],reminders:visible?.reminderInbox()??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
   }
   private async work<T>(type:'parse'|'export',payload:unknown):Promise<T>{
     if(this.worker)throw new Error('Another calendar file is being processed.');
@@ -70,25 +122,117 @@ export class ApplicationService {
     });
   }
   async command(command:string,payload:any):Promise<any>{
+    this.rateLimits.take(command);
+    if(this.store?.metadata('deleting',false)&&!['snapshot','auth.reauthenticate','auth.mfa.verify','auth.cancel','auth.signOut','account.delete','backup','dataFolder','diagnostics'].includes(command))throw new Error('Account deletion has started. Resume it in Settings; editing and reminders are paused.');
     switch(command){
-      case 'snapshot':return this.snapshot();
+      case 'profile.save':{const p=z.object({name:z.string().trim().min(1).max(100)}).strict().parse(payload),store=this.active();store.save({...this.profile(store),name:p.name,joinedAt:this.auth.session?.createdAt??this.profile(store).joinedAt});this.changed();return true;}
+      case 'profile.photo':{
+        const store=this.active();if(!this.host.chooseAvatar)throw new Error('Photo selection is unavailable.');
+        this.clearAvatar();const intent=this.avatarIntent,previous=this.profile(store).avatar;
+        const photo=await this.host.chooseAvatar();
+        if(this.active()!==store||intent!==this.avatarIntent)throw new Error('The account or photo selection changed. Please try again.');
+        if(photo===null)return null;
+        const token=randomUUID();this.avatarDraft={store,token,expires:performance.now()+600000,previous,photo};
+        this.avatarTimer=setTimeout(()=>this.clearAvatar(),600000);this.avatarTimer.unref();
+        return {token,preview:photo.preview,width:photo.width,height:photo.height};
+      }
+      case 'profile.photo.save':{
+        const p=z.object({token:z.string().uuid(),adjustment:avatarCropSchema}).strict().parse(payload),store=this.active(),draft=this.avatarDraft;
+        if(!draft||draft.token!==p.token||draft.store!==store||performance.now()>draft.expires||this.profile(store).avatar!==draft.previous){this.clearAvatar();throw new Error('This photo preview expired or changed. Please choose the photo again.');}
+        const avatar=avatarSchema.parse(draft.photo.render(p.adjustment));store.save({...this.profile(store),avatar});this.clearAvatar();this.changed();return true;
+      }
+      case 'profile.photo.cancel':{const p=z.object({token:z.string().uuid()}).strict().parse(payload);if(this.avatarDraft?.token===p.token)this.clearAvatar();return true;}
+      case 'profile.removePhoto':{const store=this.active();this.clearAvatar();store.save({...this.profile(store),avatar:null});this.changed();return true;}
+      case 'appearance':{const appearance=appearanceSchema.parse(payload),store=this.active();store.save({...this.profile(store),appearance});this.changed();return true;}
+      case 'snapshot':{
+        const p=z.object({recordsRevision:z.string().max(200).optional()}).strict().parse(payload??{}),snapshot=this.snapshot();
+        // A store's revision contains its random instance identity. It cannot
+        // reuse another account's records, including after reopening that store.
+        if(p.recordsRevision&&p.recordsRevision===snapshot.recordsRevision){const {records,...update}=snapshot;return update;}
+        return snapshot;
+      }
+      case 'recovery.list':{const account=this.localMode?'local-preview':this.auth.session?.uid;if(!account||!this.recoveryError)throw new Error('No calendar is waiting for recovery.');return recoverySnapshots(this.root,account);}
+      case 'recovery.restore':{const p=z.object({name:z.string().max(250),confirmation:z.literal('RESTORE')}).strict().parse(payload);const account=this.localMode?'local-preview':this.auth.session?.uid;if(!account||!this.recoveryError)throw new Error('No calendar is waiting for recovery.');recoverSnapshot(this.root,account,p.name);await this.activate(account,this.localMode);return true;}
       case 'auth.signIn':{const p=z.object({email:z.string(),password:z.string()}).strict().parse(payload);const session=await this.auth.signIn(p.email,p.password);await this.activate(session.uid);return true;}
-      case 'auth.signUp':{const p=z.object({email:z.string(),password:z.string(),name:z.string()}).strict().parse(payload);const session=await this.auth.signUp(p.email,p.password,p.name);await this.activate(session.uid);await this.auth.sendVerification();return true;}
+      case 'auth.signUp':{const p=z.object({email:z.string(),password:z.string(),confirmation:z.string(),name:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);const session=await this.auth.signUp(p.email,p.password,p.name);await this.activate(session.uid);await this.auth.sendVerification();return true;}
       case 'auth.google':{const p=z.object({link:z.boolean().default(false)}).strict().parse(payload??{});const old=this.auth.session?.uid;const session=await this.auth.google(p.link);if(session.uid!==old||!this.store)await this.activate(session.uid);return true;}
-      case 'auth.cancel':this.auth.cancelGoogle();return true;
+      case 'auth.cancel':this.auth.cancelAuthentication();return true;
+      case 'auth.mfa.verify':{const p=z.object({handle:z.string().uuid(),factor:z.string().uuid(),code:z.string().regex(/^\d{6}$/)}).strict().parse(payload);await this.auth.verifyMfa(p.handle,p.factor,p.code);return true;}
+      case 'auth.totp.start':return this.auth.startEnrollment();
+      case 'auth.totp.finish':{const p=z.object({handle:z.string().uuid(),code:z.string().regex(/^\d{6}$/),name:z.string().trim().min(1).max(60)}).strict().parse(payload);await this.auth.finishEnrollment(p.handle,p.code,p.name);return true;}
+      case 'auth.totp.cancel':this.auth.cancelEnrollment();return true;
+      case 'auth.passkey.signIn':{const session=await this.auth.passkeySignIn();await this.activate(session.uid);return true;}
+      case 'auth.passkey.register':{const p=z.object({name:z.string().trim().min(1).max(60)}).strict().parse(payload);await this.auth.registerPasskey(p.name);return true;}
+      case 'auth.passkey.list':return this.auth.managePasskeys('credentials');
+      case 'auth.passkey.remove':{const p=z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,2048}$/)}).strict().parse(payload);return this.auth.managePasskeys('remove',p.id);}
       case 'auth.verify':await this.auth.sendVerification();return true;
       case 'auth.refresh':await this.auth.refreshProfile();this.sync?.schedule(0);this.host.changed();return true;
       case 'auth.reset':await this.auth.resetPassword(z.object({email:z.string()}).strict().parse(payload).email);return true;
-      case 'auth.linkPassword':await this.auth.linkPassword(z.object({password:z.string()}).strict().parse(payload).password);return true;
-      case 'auth.signOut':await this.stopServices();this.store?.close();this.store=null;this.localMode=false;this.auth.signOut();this.imports.clear();this.host.changed();return true;
-      case 'localPreview':if(this.auth.session)throw new Error('Sign out before opening a local preview.');await this.activate('local-preview',true);return true;
+      case 'auth.linkPassword':{const p=z.object({password:z.string(),confirmation:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);await this.auth.linkPassword(p.password);return true;}
+      case 'auth.changePassword':{const p=z.object({currentPassword:z.string(),password:z.string(),confirmation:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);await this.auth.changePassword(p.currentPassword,p.password);return true;}
+      case 'auth.reauthenticate':{const p=z.object({method:z.enum(['password','google','passkey']),password:z.string().optional()}).strict().parse(payload);const account=this.auth.session?.uid;if(!account)throw new Error('Sign in first.');if(p.method==='password')await this.auth.reauthenticate(p.password??'');else if(p.method==='passkey')await this.auth.passkeySignIn(account);else await this.auth.google(false,account);return true;}
+      case 'local.remove':{z.object({confirmation:z.literal('REMOVE')}).strict().parse(payload);await this.removeLocal();return true;}
+      case 'account.delete':{
+        z.object({confirmation:z.literal('DELETE')}).strict().parse(payload);const store=this.active(),account=this.auth.session;
+        if(!this.config||!account?.verified||this.localMode)throw new Error('Sign in to a verified online account before deleting it.');
+        await this.stopServices();const cloud=new FirestoreCloud(this.config.projectId,account.uid,()=>this.auth.token());
+        try{await cloud.beginDeletion();store.setMetadata('deleting',true);this.host.changed();await cloud.deleteCalendarData();await this.auth.deleteIdentity();}
+        catch(error){if(!store.metadata('deleting',false))await this.activate(account.uid);this.host.changed();throw error;}
+        // Auth sign-out hides data immediately. Await its outstanding cleanup,
+        // then remove only this account's local calendar and automatic snapshots.
+        const directory=path.resolve(store.directory),expected=path.resolve(this.root,'accounts',createHash('sha256').update(account.uid).digest('hex').slice(0,32));
+        if(directory!==expected)throw new Error('Local account path could not be verified.');
+        store.close();this.store=null;fs.rmSync(directory,{recursive:true,force:true});this.switching=false;this.host.changed();return true;
+      }
+      case 'auth.signOut':this.clearAvatar();this.schedulePreview=null;await this.stopServices();this.store?.close();this.store=null;this.localMode=false;this.auth.signOut();this.imports.clear();this.host.changed();return true;
+      case 'localPreview':if(this.auth.session)throw new Error('Sign out before opening a local preview.');this.auth.cancelAuthentication();await this.activate('local-preview',true);return true;
+      case 'schedule.preview':{
+        const p=z.object({value:z.union([itemSchema,semesterSchema]),from:localDate.optional(),to:localDate.optional(),restoreOldBreaks:z.boolean().default(false)}).strict().parse(payload);
+        const store=this.active(),records=store.list(),previous=store.get(p.value.id);
+        const pairs:Array<{before:CalendarItem|null;after:CalendarItem}>=[];const warnings:string[]=[];
+        let from:string,to:string,semester:Semester|null=null;
+        if(p.value.kind==='semester'){
+          if(previous?.kind!=='semester')throw new Error('Save the semester before changing its timetable.');
+          semester=p.value;const courseIds=new Set(records.filter(r=>r.kind==='course'&&r.semesterId===semester!.id).map(r=>r.id));
+          for(const record of records)if(record.kind==='item'&&record.itemType==='class'&&record.recurrence&&record.courseId&&courseIds.has(record.courseId))pairs.push({before:record,after:semesterClass(record,previous,semester,p.restoreOldBreaks)});
+          from=previous.startDate<semester.startDate?previous.startDate:semester.startDate;to=previous.endDate>semester.endDate?previous.endDate:semester.endDate;
+          warnings.push('Timetable changes apply only to repeating classes in this semester. Assignments, exams and independent events keep their dates.');
+          warnings.push('Class patterns keep their interval phase and wall-clock start time, use the semester time zone, and end on the new semester end date. Occurrence-count endings are replaced.');
+          warnings.push(p.restoreOldBreaks?'Exclusions inside previous semester breaks will be replaced, including manually excluded dates in those ranges. Other exclusions remain.':'Previously excluded dates stay excluded. The new semester breaks are added.');
+        }else{
+          if(previous&&previous.kind!=='item')throw new Error('This identity belongs to another record type.');
+          const before=previous?.kind==='item'?previous:null;pairs.push({before,after:p.value});
+          const first=sourceDate(p.value.timing)??DateTime.now().setZone(p.value.timing.zone).toISODate()!;
+          const oldFirst=before?sourceDate(before.timing):null;from=oldFirst&&oldFirst<first?oldFirst:first;
+          const end=p.value.recurrence?.until??before?.recurrence?.until;
+          to=end&&end>=from?end:DateTime.fromISO(from).plus({years:1}).toISODate()!;
+        }
+        from=p.from??from;to=p.to??(to>'2100-12-31'?'2100-12-31':to);
+        if(to<from)throw new Error('The preview end must be on or after its start.');
+        const series=pairs.map(pair=>seriesImpact(pair.before,pair.after,records,from,to));
+        if(series.reduce((sum,s)=>sum+s.beforeCount+s.afterCount,0)>20000)throw new Error('This preview exceeds 20,000 meetings. Choose a shorter preview range.');
+        const token=randomUUID();this.schedulePreview={token,account:store.accountId,revision:store.listRevision(),expires:Date.now()+10*60*1000,semester,pairs};
+        const result:SchedulePreview={token,kind:semester?'semester':'series',from,to,series,historyCount:series.reduce((sum,s)=>sum+s.affectedHistory.length,0),warnings,restoreOldBreaks:p.restoreOldBreaks};return result;
+      }
+      case 'schedule.commit':{
+        const p=z.object({token:uid,history:z.enum(['preserve','discard']),applyTimetable:z.boolean().default(true)}).strict().parse(payload),store=this.active(),preview=this.schedulePreview;
+        if(!preview||preview.token!==p.token||preview.account!==store.accountId||preview.expires<Date.now())throw new Error('This preview has expired. Review the schedule again.');
+        if(store.listRevision()!==preview.revision)throw new Error('Your calendar changed after this preview. Review the latest schedule before applying it.');
+        if(!preview.semester&&!p.applyTimetable)throw new Error('A series change must apply the reviewed schedule.');
+        const changes:RecordChange[]=preview.semester?[{id:preview.semester.id,value:preview.semester}]:[];
+        if(p.applyTimetable)for(const pair of preview.pairs)changes.push(...seriesChanges(pair.before,pair.after,store.list(),p.history,randomUUID));
+        const result=store.saveGroup(changes);this.schedulePreview=null;this.changed();return result;
+      }
+      case 'schedule.cancel':this.schedulePreview=null;return true;
       case 'save':{
         const value=parseRecord(payload),store=this.active();
         if(value.kind==='item'){
           if(value.timing.mode==='deadline')localInstant(value.timing.date,value.timing.time??value.timing.anchorTime,value.timing.zone);
           const old=store.get(value.id);if(old?.kind==='item'&&old.recurrence){
             const dependent=store.list().filter(r=>(r.kind==='exception'||r.kind==='occurrenceState')&&r.seriesId===value.id);
-            for(const r of dependent)if((r.kind==='exception'||r.kind==='occurrenceState')&&(!value.recurrence||!recurringDates(value,r.originalDate,addDays(r.originalDate,1)).includes(r.originalDate)))throw new Error('This repeat change removes an occurrence with an edit or completion history. Keep the current pattern, or detach those occurrences first.');
+            const removed=dependent.filter(r=>(r.kind==='exception'||r.kind==='occurrenceState')&&(!value.recurrence||!recurringDates(value,r.originalDate,addDays(r.originalDate,1)).includes(r.originalDate)));
+            if(removed.some(r=>r.kind!=='exception'||!r.cancelled))throw new Error('This repeat change removes an occurrence with an edit or completion history. Keep the current pattern, or detach those occurrences first.');
+            if(removed.length){const result=store.saveGroup([{id:value.id,value},...removed.map(r=>({id:r.id,value:null}))]);this.changed();return result;}
           }
         }
         const result=store.save(value);this.changed();return result;
@@ -105,7 +249,10 @@ export class ApplicationService {
           const old=store.list().find(r=>r.kind==='exception'&&r.seriesId===p.seriesId&&r.originalDate===p.date);
           if(p.action==='detach'){
             const effective=old?.kind==='exception'?old.override:{};
-            store.importRecords([{...series,...effective,id:randomUUID(),timing:effective.timing??atDate(series.timing,p.date),recurrence:null,sourceUid:null},{id:old?.id??randomUUID(),kind:'exception',seriesId:p.seriesId,originalDate:p.date,cancelled:true,override:{}}]);
+            const state=store.list().find(r=>r.kind==='occurrenceState'&&r.seriesId===p.seriesId&&r.originalDate===p.date);
+            const independent=parseRecord({...series,...effective,...(state?.kind==='occurrenceState'?{status:state.status,completedAt:state.completedAt}:{}),id:randomUUID(),timing:effective.timing??atDate(series.timing,p.date),recurrence:null,sourceUid:null});
+            const cancellation=parseRecord({id:old?.id??randomUUID(),kind:'exception',seriesId:p.seriesId,originalDate:p.date,cancelled:true,override:{}});
+            store.saveGroup([{id:independent.id,value:independent},{id:cancellation.id,value:cancellation},...(state?[{id:state.id,value:null}]:[])]);
           }else store.save({id:old?.id??randomUUID(),kind:'exception',seriesId:p.seriesId,originalDate:p.date,cancelled:p.action==='cancel',override:p.action==='save'?p.override??{}:{}});
         }
         this.changed();return true;
@@ -114,24 +261,30 @@ export class ApplicationService {
         const p=z.object({id:uid,completed:z.boolean()}).strict().parse(payload),store=this.active(),item=store.get(p.id);if(item?.kind!=='item')throw new Error('Item not found.');if(item.recurrence)throw new Error('Choose a specific occurrence to complete.');const result=store.save({...item,status:p.completed?'completed':'open',completedAt:p.completed?new Date().toISOString():null});this.changed();return result;
       }
       case 'device':{
-        const next=deviceSchema.parse({...this.device,...payload});if(next.startAtLogin!==this.device.startAtLogin)this.host.setStartup(next.startAtLogin);
+        const next=deviceSchema.parse({...this.device,...payload});if(Object.hasOwn(payload??{},'startAtLogin'))this.host.setStartup(next.startAtLogin);
         fs.writeFileSync(`${this.settingsPath}.new`,JSON.stringify(next));fs.renameSync(`${this.settingsPath}.new`,this.settingsPath);this.device=next;this.changed();return true;
       }
       case 'sync':await this.sync?.retry();return true;
       case 'conflict':{const p=z.object({id:uid,choice:z.enum(['local','remote','both'])}).strict().parse(payload);const store=this.active(),conflict=store.conflicts().find(c=>c.id===p.id);if(!conflict||!this.cloud)throw new Error('Reconnect to review this conflict.');store.resolve(p.id,p.choice,await this.cloud.get(conflict.recordId));this.changed();return true;}
-      case 'testNotification':this.host.notify({title:'C.C. Lime',body:'Your test reminder has been submitted to Windows.',inbox:true,onFailure:()=>{}});return true;
+      case 'testNotification':{
+        const attempt:NotificationTest={state:'submitted',checkedAt:new Date().toISOString(),message:'Test reminder submitted to Windows. Check for a banner or open Notification Center; submission does not confirm that a banner was displayed.'};this.notificationTest=attempt;
+        const onFailure=()=>{if(this.notificationTest!==attempt)return;attempt.state='failed';attempt.message='Windows could not display the test reminder. Check Windows Settings → System → Notifications for C.C. Lime, then try again.';this.host.changed();};
+        try{this.host.notify({title:'C.C. Lime',body:'Your test reminder is ready. Open C.C. Lime to return to your calendar.',inbox:true,onFailure});}catch{onFailure();}
+        this.host.changed();return attempt;
+      }
       case 'snooze':{const p=z.object({id:z.string().max(250),minutes:z.number()}).strict().parse(payload);this.scheduler?.snooze(p.id,p.minutes);return true;}
       case 'dismissReminder':this.scheduler?.dismiss(z.object({id:z.string().max(250)}).strict().parse(payload).id);return true;
       case 'import.preview':{
         const p=z.object({zone:zoneSchema,finiteRange:z.object({from:localDate,to:localDate}).optional()}).strict().parse(payload),store=this.active(),account=store.accountId;
-        const filename=await this.host.openFile('ics');if(!filename)return null;const stat=fs.statSync(filename);if(stat.size>10*1024*1024)throw new Error('Choose a calendar file smaller than 10 MiB.');
-        const parsed=await this.work<ParsedCalendar>('parse',{text:fs.readFileSync(filename,'utf8'),options:p as ParseOptions});if(this.store?.accountId!==account)throw new Error('Account changed; import canceled.');
-        const preview:ImportPreview={token:randomUUID(),filename:path.basename(filename),candidates:previewImport(parsed,store.list()),warnings:parsed.warnings,invalid:parsed.invalid};this.imports.clear();this.imports.set(preview.token,{preview,account});return preview;
+        const filename=await this.host.openFile('ics');if(!filename)return null;
+        const parsed=await this.work<ParsedCalendar>('parse',{text:readBoundedText(filename,10*1024*1024,'Calendar'),options:p as ParseOptions});if(this.store?.accountId!==account)throw new Error('Account changed; import canceled.');
+        const preview:ImportPreview={token:randomUUID(),filename:path.basename(filename),candidates:previewImport(parsed,store.list()),warnings:parsed.warnings,invalid:parsed.invalid};this.imports.clear();this.imports.set(preview.token,{preview,account,before:new Map(preview.candidates.map(c=>[c.record.id,JSON.stringify(store.get(c.record.id))]))});return preview;
       }
       case 'import.cancel':await this.worker?.terminate();this.imports.clear();return true;
       case 'import.commit':{
         const p=z.object({token:uid,includeChanged:z.boolean()}).strict().parse(payload),stored=this.imports.get(p.token),store=this.active();if(!stored||stored.account!==store.accountId)throw new Error('Preview expired. Preview the file again.');
         const candidates=stored.preview.candidates.filter(c=>c.action==='new'||p.includeChanged&&c.action==='changed');const idSet=new Set(candidates.map(c=>c.record.id));
+        if(candidates.some(c=>JSON.stringify(store.get(c.record.id))!==stored.before.get(c.record.id)))throw new Error('Your calendar changed after this preview. Preview the file again before importing.');
         const values=candidates.filter(c=>c.record.kind!=='exception'||idSet.has(c.record.seriesId)||store.get(c.record.seriesId)).map(c=>c.record);
         const batch=store.importRecords(values);this.imports.delete(p.token);this.changed();return {batch,count:values.length};
       }
@@ -141,7 +294,7 @@ export class ApplicationService {
       }
       case 'backup':{const store=this.active(),text=createBackup(store.accountId,store.list()),destination=await this.host.saveFile('backup');if(!destination)return null;fs.writeFileSync(destination,text,'utf8');return path.basename(destination);}
       case 'restore.preview':{
-        const store=this.active(),account=store.accountId,filename=await this.host.openFile('backup');if(!filename)return null;if(fs.statSync(filename).size>50*1024*1024)throw new Error('Backup exceeds 50 MiB.');const backup=readBackup(fs.readFileSync(filename,'utf8'));if(this.store?.accountId!==account)throw new Error('Account changed.');const token=randomUUID(),foreign=backup.accountId!==account;
+        const store=this.active(),account=store.accountId,filename=await this.host.openFile('backup');if(!filename)return null;const backup=readBackup(readBoundedText(filename,50*1024*1024,'Backup'));if(this.store?.accountId!==account)throw new Error('Account changed.');const token=randomUUID(),foreign=backup.accountId!==account;
         this.restorePreview={token,account,records:backup.records,foreign,count:backup.records.length};return{token,count:backup.records.length,foreign,createdAt:backup.createdAt,filename:path.basename(filename)};
       }
       case 'restore.commit':{
@@ -152,7 +305,7 @@ export class ApplicationService {
         store.snapshot('before-restore');store.importRecords(values.filter(v=>JSON.stringify(store.get(v.id))!==JSON.stringify(v)));this.restorePreview=null;this.changed();return true;
       }
       case 'dataFolder':this.host.dataFolder();return true;
-      case 'diagnostics':{const destination=await this.host.saveFile('diagnostics');if(!destination)return null;fs.writeFileSync(destination,JSON.stringify({version:this.host.version,platform:process.platform,arch:process.arch,electron:process.versions.electron,records:this.store?.list().length??0,pending:this.store?.queue().length??0,conflicts:this.store?.conflicts().length??0,sync:this.sync?.status.state??'local',cloudOperations:this.cloud?.operations??null,notifications:this.device.notifications,secureStorage:this.host.secure.isEncryptionAvailable()},null,2));return true;}
+      case 'diagnostics':{const destination=await this.host.saveFile('diagnostics');if(!destination)return null;fs.writeFileSync(destination,JSON.stringify({version:this.host.version,platform:process.platform,arch:process.arch,electron:process.versions.electron,records:this.store?.list().length??0,pending:this.store?.queueCount()??0,conflicts:this.store?.conflicts().length??0,sync:this.sync?.status.state??'local',cloudOperations:this.cloud?.operations??null,notifications:this.device.notifications,secureStorage:this.host.secure.isEncryptionAvailable()},null,2));return true;}
       default:throw new Error('This action is not supported.');
     }
   }

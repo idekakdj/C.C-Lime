@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { parseRecord, type DomainRecord } from '../shared/model';
 import type { Mutation, RemoteRecord } from './store';
+import { AttemptWindow, ProviderCooldown } from './rate-limit';
 
 type FirestoreValue = { nullValue?: null; stringValue?: string; booleanValue?: boolean; integerValue?: string; doubleValue?: number; mapValue?: { fields: Record<string, FirestoreValue> }; arrayValue?: { values: FirestoreValue[] }; timestampValue?: string };
 export function encode(value: unknown): FirestoreValue {
@@ -24,15 +25,23 @@ export function decode(value: FirestoreValue): any {
 }
 function fields(value: object) { return Object.fromEntries(Object.entries(value).map(([key, v]) => [key, encode(v)])); }
 function readFields(document: any) { return Object.fromEntries(Object.entries(document.fields ?? {}).map(([key, value]) => [key, decode(value as FirestoreValue)])); }
-export class CloudError extends Error { constructor(message: string, readonly code: string, readonly status: number) { super(message); } }
+export class CloudError extends Error { constructor(message: string, readonly code: string, readonly status: number, readonly retryAfterMs?: number) { super(message); } }
+type SyncHead = { sequence: number; version: string | null; rateWindowStart?: string; rateWindowCount?: number };
+export const COMMIT_LIMIT = 60;
+export const COMMIT_WINDOW_MS = 60_000;
 export class VersionConflict extends Error { constructor(readonly current: RemoteRecord | null) { super('This item changed on another device.'); } }
 export interface CloudAdapter {
   get(id: string): Promise<RemoteRecord | null>;
   commit(mutation: Mutation): Promise<RemoteRecord>;
+  commitGroup?(mutations:Mutation[],groupId:string):Promise<RemoteRecord[]>;
   head(): Promise<number>;
   changes(after: number, through: number, afterId?: string): Promise<RemoteRecord[]>;
+  deletionStarted?():Promise<boolean>;
 }
 export class FirestoreCloud implements CloudAdapter {
+  private readonly requestLimit = new AttemptWindow(600, 60_000);
+  private readonly cooldown = new ProviderCooldown();
+  private serverOffset = 0;
   readonly base: string;
   readonly root: string;
   operations = { reads: 0, writes: 0 };
@@ -45,8 +54,13 @@ export class FirestoreCloud implements CloudAdapter {
   }
   private name(suffix: string) { return `${this.root}/users/${this.uid}/${suffix}`; }
   private async request(suffix: string, init: RequestInit = {}): Promise<any> {
+    this.cooldown.check(); this.requestLimit.take();
     const response = await fetch(`${this.base}${suffix}`, { ...init, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await this.token()}`, ...init.headers }, signal: AbortSignal.timeout(20000) });
+    const serverDate = Date.parse(response.headers.get('date') ?? '');
+    if (Number.isFinite(serverDate)) this.serverOffset = serverDate - Date.now();
+    this.cooldown.observe(response);
     if (response.status === 404) return null;
+    if (response.status === 204) return true;
     const body = await response.json();
     if (!response.ok) throw new CloudError(body.error?.message ?? 'Cloud request failed.', body.error?.status ?? 'UNKNOWN', response.status);
     return body;
@@ -62,9 +76,24 @@ export class FirestoreCloud implements CloudAdapter {
     if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error('Invalid record identity.');
     this.operations.reads++; const doc = await this.request(`/users/${this.uid}/records/${id}`); return doc ? this.fromDocument(doc) : null;
   }
-  private async rawHead(): Promise<{ sequence: number; version: string | null }> {
+  private async rawHead(): Promise<SyncHead> {
     this.operations.reads++; const doc = await this.request(`/users/${this.uid}/system/sync`);
-    return doc ? { sequence: readFields(doc).sequence, version: doc.updateTime } : { sequence: 0, version: null };
+    if (!doc) return { sequence: 0, version: null };
+    const data = readFields(doc);
+    if (data.rateWindowStart !== undefined || data.rateWindowCount !== undefined) {
+      if (!doc.fields.rateWindowStart?.timestampValue || !Number.isFinite(Date.parse(data.rateWindowStart)) ||
+          !Number.isInteger(data.rateWindowCount) || data.rateWindowCount < 1 || data.rateWindowCount > COMMIT_LIMIT)
+        throw new CloudError('The cloud rate counter needs attention.', 'SCHEMA_MISMATCH', 400);
+    }
+    return { sequence: data.sequence, version: doc.updateTime, rateWindowStart: data.rateWindowStart, rateWindowCount: data.rateWindowCount };
+  }
+  private quotaRemaining(head: SyncHead): number {
+    // HTTP Date has second precision. Wait an extra second rather than reset early.
+    return head.rateWindowStart ? Math.max(0, Math.min(COMMIT_WINDOW_MS + 1000,
+      Date.parse(head.rateWindowStart) + COMMIT_WINDOW_MS + 1000 - (Date.now() + this.serverOffset))) : 0;
+  }
+  private quotaError(head: SyncHead): CloudError {
+    return new CloudError('Sync is taking a short pause. Your changes are saved on this computer.', 'RESOURCE_EXHAUSTED', 429, Math.max(1000, this.quotaRemaining(head)));
   }
   async head(): Promise<number> { return (await this.rawHead()).sequence; }
   async receipt(id: string): Promise<{ sequence: number; payloadHash: string; recordIds: string[] } | null> {
@@ -91,11 +120,15 @@ export class FirestoreCloud implements CloudAdapter {
       const current = await Promise.all(ids.map(id => this.get(id)));
       for (let i = 0; i < mutations.length; i++) if ((current[i]?.version ?? null) !== mutations[i].baseVersion) throw new VersionConflict(current[i]);
       const head = await this.rawHead(); const sequence = head.sequence + 1;
+      const resetWindow = !head.rateWindowStart || this.quotaRemaining(head) === 0;
+      if (!resetWindow && head.rateWindowCount! >= COMMIT_LIMIT) throw this.quotaError(head);
+      const headFields: Record<string, FirestoreValue> = fields({ ownerId: this.uid, sequence, mutationId: groupId, recordIds: ids, rateWindowCount: resetWindow ? 1 : head.rateWindowCount! + 1 });
+      if (!resetWindow) headFields.rateWindowStart = { timestampValue: head.rateWindowStart! };
       const values = mutations.map(m => m.value ? parseRecord(m.value) : null);
       const writes = [
         ...mutations.map((m, i) => ({ update: { name: this.name(`records/${m.recordId}`), fields: fields({ ownerId: this.uid, schemaVersion: 1, kind: values[i]?.kind ?? m.base?.kind ?? 'item', payload: values[i], deleted: values[i] === null, changeSeq: sequence, lastMutationId: groupId }) }, currentDocument: current[i] ? { updateTime: current[i]!.version } : { exists: false }, updateTransforms: [{ fieldPath: 'updatedAt', setToServerValue: 'REQUEST_TIME' }] })),
         { update: { name: this.name(`receipts/${groupId}`), fields: fields({ ownerId: this.uid, recordIds: ids, sequence, payloadHash: hash }) }, currentDocument: { exists: false } },
-        { update: { name: this.name('system/sync'), fields: fields({ ownerId: this.uid, sequence, mutationId: groupId, recordIds: ids }) }, currentDocument: head.version ? { updateTime: head.version } : { exists: false } },
+        { update: { name: this.name('system/sync'), fields: headFields }, currentDocument: head.version ? { updateTime: head.version } : { exists: false }, ...(resetWindow ? { updateTransforms: [{ fieldPath: 'rateWindowStart', setToServerValue: 'REQUEST_TIME' }] } : {}) },
       ];
       try {
         const result = await this.request(':commit', { method: 'POST', body: JSON.stringify({ writes }) });
@@ -106,7 +139,13 @@ export class FirestoreCloud implements CloudAdapter {
           if (acknowledged) return recover(acknowledged);
           const latest = await Promise.all(ids.map(id => this.get(id)));
           for (let i = 0; i < mutations.length; i++) if ((latest[i]?.version ?? null) !== mutations[i].baseVersion) throw new VersionConflict(latest[i]);
-          if (error.code === 'PERMISSION_DENIED' && (await this.rawHead()).version === head.version) throw error;
+          if (error.code === 'PERMISSION_DENIED') {
+            const latestHead = await this.rawHead();
+            if (latestHead.version === head.version) {
+              if (latestHead.rateWindowCount === COMMIT_LIMIT && this.quotaRemaining(latestHead) > 0) throw this.quotaError(latestHead);
+              throw error;
+            }
+          }
           continue;
         }
         throw error;
@@ -122,5 +161,27 @@ export class FirestoreCloud implements CloudAdapter {
     if (afterId) query.startAt = { values: [encode(after), { referenceValue: this.name(`records/${afterId}`) }], before: false };
     const rows = await this.request(`/users/${this.uid}:runQuery`, { method: 'POST', body: JSON.stringify({ structuredQuery: query }) });
     const result = (rows ?? []).filter((row: any) => row.document).map((row: any) => this.fromDocument(row.document)); this.operations.reads += Math.max(1, result.length); return result;
+  }
+  async deletionStarted():Promise<boolean>{this.operations.reads++;return !!await this.request(`/users/${this.uid}/system/deletion`);}
+  async beginDeletion():Promise<void>{
+    await this.request(`/users/${this.uid}/system/deletion`,{method:'PATCH',body:JSON.stringify({fields:fields({enabled:true})})});this.operations.writes++;
+  }
+  async deleteCalendarData():Promise<void>{
+    if(!await this.deletionStarted())throw new Error('Confirm account deletion before removing cloud data.');
+    // Every batch is restartable. The immutable marker blocks old clients from
+    // re-creating records while deletion proceeds, including after identity deletion.
+    for(const collection of ['records','receipts']){
+      for(let page=0;page<10000;page++){
+        const result=await this.request(`/users/${this.uid}/${collection}?pageSize=100`);
+        const documents=result?.documents??[];this.operations.reads+=Math.max(1,documents.length);
+        if(!documents.length)break;
+        for(const document of documents)if(!document.name.startsWith(this.name(`${collection}/`)))throw new Error('Unexpected cloud deletion path.');
+        await this.request(':commit',{method:'POST',body:JSON.stringify({writes:documents.map((document:any)=>({delete:document.name}))})});this.operations.writes+=documents.length;
+        if(page===9999)throw new Error('Deletion paused after a large batch. Resume to finish.');
+      }
+      const verify=await this.request(`/users/${this.uid}/${collection}?pageSize=1`);this.operations.reads++;
+      if(verify?.documents?.length)throw new Error('Cloud data is still being removed. Resume deletion.');
+    }
+    await this.request(`/users/${this.uid}/system/sync`,{method:'DELETE'});this.operations.writes++;
   }
 }
