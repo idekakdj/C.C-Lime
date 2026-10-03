@@ -1,5 +1,9 @@
 # Local cloud configuration
 
+The uninstalled [MFA source candidate](MFA_IMPLEMENTATION_EVIDENCE.md) adds `CC_LIME_TOTP_ENABLED`, `CC_LIME_PASSKEY_ORIGIN` and `CC_LIME_MFA_REQUIRED`, defaulting to off/blank/off. Set them only after the documented provider/hosting/recovery/compatible-release checks. An HTTPS origin does not create a working gateway and a local flag does not enable Firebase MFA. Required mode fails configuration without an available enrollment method. The owner configuration has not been changed. Passkeys for password accounts require native TOTP enrollment first.
+
+Gateway server credentials are a separate trust boundary. Actual `.dev.vars`/`.wrangler` files are ignored; examples have blank values. A Firebase administrator signing key must never be placed in any desktop `.local/.env`, renderer/build config or installer. Approved server-only secret bindings, privileged custody and rotation are described in [the deployment review](MFA_GATEWAY_DEPLOYMENT_REVIEW.md). The desktop packager excludes the entire gateway directory, and source/bundle scans check exact locally configured server secret values without printing them.
+
 Cloud credentials are read by the desktop main process at runtime, never imported by source code or injected into the renderer/build bundle.
 
 For development, copy the blank `.env.example` template to `.local/.env`. For an installed app, use `%APPDATA%/C.C. Lime/.local/.env`. Process environment variables override that file. Required variables are `CC_LIME_FIREBASE_PROJECT_ID` and `CC_LIME_FIREBASE_API_KEY`; Google desktop sign-in also uses `CC_LIME_GOOGLE_CLIENT_ID` and, if required by the installed-app OAuth client, `CC_LIME_GOOGLE_CLIENT_SECRET`.

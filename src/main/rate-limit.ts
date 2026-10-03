@@ -28,6 +28,9 @@ export class CommandRateLimits {
       [6, ['auth.refresh']], [6, ['sync']], [3, ['testNotification']],
       [6, ['profile.photo']],
       [12, ['profile.photo.save']], [5, ['auth.changePassword']],
+      [5, ['auth.mfa.verify', 'auth.totp.finish']], [3, ['auth.totp.start']],
+      [5, ['auth.passkey.signIn', 'auth.passkey.register']],
+      [5, ['auth.passkey.list', 'auth.passkey.remove']],
       [10, ['import.preview', 'restore.preview', 'export', 'backup', 'diagnostics']],
     ];
     this.buckets = new Map(policies.flatMap(([limit, commands]) => {

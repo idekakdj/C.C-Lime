@@ -1,4 +1,5 @@
-// Staging only: derive from current deployed-rule source, never edit/deploy it.
+// Legacy SMS/TOTP staging proposal. The active no-SMS design supersedes this
+// with passkey-rules-candidate.mjs. Retained for its isolated regression tests.
 export function mfaRulesCandidate(source) {
   const original = '    function owns(uid) { return request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true; }';
   if (source.split(original).length !== 2) throw new Error('Ownership predicate changed; review the MFA candidate before proceeding.');

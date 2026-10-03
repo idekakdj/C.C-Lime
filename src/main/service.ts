@@ -58,10 +58,10 @@ export class ApplicationService {
   private authChanged():void{
     // Revocation can arrive inside a sync request. Hide data and stop reminders
     // immediately; close SQLite only after that request has unwound.
-    if(!this.auth.session&&!this.localMode&&this.store){
+    if((!this.auth.session||this.auth.session.enrollmentRequired)&&!this.localMode&&this.store){
       this.clearAvatar();
       const previous=this.store;this.scheduler?.stop();this.switching=true;
-      void this.stopServices().then(()=>{if(this.store===previous&&!this.auth.session){previous.close();this.store=null;this.imports.clear();this.restorePreview=null;}this.switching=false;this.host.changed();});
+      void this.stopServices().then(()=>{if(this.store===previous&&(!this.auth.session||this.auth.session.enrollmentRequired)){previous.close();this.store=null;this.imports.clear();this.restorePreview=null;}this.switching=false;this.host.changed();});
     }
     this.host.changed();
   }
@@ -79,6 +79,7 @@ export class ApplicationService {
     this.schedulePreview=null;
     this.switching=true;this.host.changed();await this.stopServices();this.store?.close();this.store=null;this.localMode=local;this.imports.clear();this.restorePreview=null;
     try{
+      if(!local&&this.auth.session?.enrollmentRequired)return;
       this.store=new LocalStore(this.root,accountId);this.recoveryError=null;
       if(this.store.metadata('deleting',false))return;
       if(!this.store.metadata('profileFirstUsed',''))this.store.setMetadata('profileFirstUsed',new Date().toISOString());
@@ -96,21 +97,21 @@ export class ApplicationService {
     this.switching=true;await this.stopServices();await this.worker?.terminate();store.close();this.store=null;this.localMode=false;this.imports.clear();this.restorePreview=null;
     this.auth.signOut();fs.rmSync(directory,{recursive:true,force:true});this.switching=false;this.host.changed();
   }
-  async close(){this.clearAvatar();this.schedulePreview=null;this.auth.cancelGoogle();await this.stopServices();this.worker?.terminate();this.store?.close();this.store=null;}
+  async close(){this.clearAvatar();this.schedulePreview=null;this.auth.cancelAuthentication();await this.stopServices();this.worker?.terminate();this.store?.close();this.store=null;}
   setVisible(visible:boolean){this.sync?.setVisible(visible);}
   resume(){this.scheduler?.reconcile();this.sync?.schedule(100);}
-  private active():LocalStore{if(this.switching||!this.store||(!this.localMode&&this.store.accountId!==this.auth.session?.uid))throw new Error('Open a calendar account first.');return this.store;}
+  private active():LocalStore{if(this.switching||!this.store||(!this.localMode&&(this.auth.session?.enrollmentRequired||this.store.accountId!==this.auth.session?.uid)))throw new Error('Open a calendar account first.');return this.store;}
   private changed(){this.scheduler?.reconcile();this.sync?.schedule();this.host.changed();}
   private profile(store:LocalStore):UserProfile{
     const saved=store.get(PROFILE_ID);if(saved?.kind==='profile')return saved;
     return profileSchema.parse({id:PROFILE_ID,kind:'profile',name:this.auth.session?.displayName?.trim()||'Student',avatar:null,joinedAt:this.auth.session?.createdAt??null,appearance:defaultAppearance});
   }
   snapshot():Snapshot&{recoveryError:string|null;remembered:boolean;dataPath:string;startup:{enabled:boolean;registered?:boolean;wasOpenedAtLogin:boolean}}{
-    const visible=!this.switching&&(this.localMode||this.store?.accountId===this.auth.session?.uid)?this.store:null;
+    const visible=!this.switching&&(this.localMode||!this.auth.session?.enrollmentRequired&&this.store?.accountId===this.auth.session?.uid)?this.store:null;
     const pending=visible?.queueCount()??0;
     // A committed edit queues work before the delayed sync run updates its cached status.
     const sync:Snapshot['sync']=this.sync&&visible?{...this.sync.status,pending,...(this.sync.status.state==='synced'&&pending>0?{state:'local' as const,message:'Changes are saved on this computer and waiting to sync.'}:{})}:this.sync?.status??{state:'local',pending,lastSynced:null,message:visible?.metadata('deleting',false)?'Account deletion is paused. Resume it in Settings.':this.localMode?'Local preview — saved on this computer.':'Sign in to open your calendar.'};
-    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),profile:visible?this.profile(visible):undefined,localCreatedAt:visible?.metadata('profileFirstUsed',undefined),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,signInNotice:this.auth.signInNotice,device:this.device,sync,conflicts:visible?.conflicts()??[],reminders:visible?.reminderInbox()??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
+    return {records:visible?.list()??[],recordsRevision:visible?.listRevision(),profile:visible?this.profile(visible):undefined,localCreatedAt:visible?.metadata('profileFirstUsed',undefined),displayZone:visible?this.displayZone():undefined,notificationTest:this.notificationTest,session:this.auth.session,mfaChallenge:this.auth.mfaChallenge,accountSecurity:this.auth.security,signInNotice:this.auth.signInNotice,device:this.device,sync,conflicts:visible?.conflicts()??[],reminders:visible?.reminderInbox()??[],configured:!!this.config,googleConfigured:!!this.config?.googleClientId,version:this.host.version,localMode:this.localMode,deleting:visible?.metadata('deleting',false)??false,recoveryError:this.recoveryError,remembered:this.auth.remembered,dataPath:visible?.directory??this.root,startup:this.host.startupStatus()};
   }
   private async work<T>(type:'parse'|'export',payload:unknown):Promise<T>{
     if(this.worker)throw new Error('Another calendar file is being processed.');
@@ -122,7 +123,7 @@ export class ApplicationService {
   }
   async command(command:string,payload:any):Promise<any>{
     this.rateLimits.take(command);
-    if(this.store?.metadata('deleting',false)&&!['snapshot','auth.reauthenticate','auth.cancel','auth.signOut','account.delete','backup','dataFolder','diagnostics'].includes(command))throw new Error('Account deletion has started. Resume it in Settings; editing and reminders are paused.');
+    if(this.store?.metadata('deleting',false)&&!['snapshot','auth.reauthenticate','auth.mfa.verify','auth.cancel','auth.signOut','account.delete','backup','dataFolder','diagnostics'].includes(command))throw new Error('Account deletion has started. Resume it in Settings; editing and reminders are paused.');
     switch(command){
       case 'profile.save':{const p=z.object({name:z.string().trim().min(1).max(100)}).strict().parse(payload),store=this.active();store.save({...this.profile(store),name:p.name,joinedAt:this.auth.session?.createdAt??this.profile(store).joinedAt});this.changed();return true;}
       case 'profile.photo':{
@@ -155,13 +156,21 @@ export class ApplicationService {
       case 'auth.signIn':{const p=z.object({email:z.string(),password:z.string()}).strict().parse(payload);const session=await this.auth.signIn(p.email,p.password);await this.activate(session.uid);return true;}
       case 'auth.signUp':{const p=z.object({email:z.string(),password:z.string(),confirmation:z.string(),name:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);const session=await this.auth.signUp(p.email,p.password,p.name);await this.activate(session.uid);await this.auth.sendVerification();return true;}
       case 'auth.google':{const p=z.object({link:z.boolean().default(false)}).strict().parse(payload??{});const old=this.auth.session?.uid;const session=await this.auth.google(p.link);if(session.uid!==old||!this.store)await this.activate(session.uid);return true;}
-      case 'auth.cancel':this.auth.cancelGoogle();return true;
+      case 'auth.cancel':this.auth.cancelAuthentication();return true;
+      case 'auth.mfa.verify':{const p=z.object({handle:z.string().uuid(),factor:z.string().uuid(),code:z.string().regex(/^\d{6}$/)}).strict().parse(payload);await this.auth.verifyMfa(p.handle,p.factor,p.code);return true;}
+      case 'auth.totp.start':return this.auth.startEnrollment();
+      case 'auth.totp.finish':{const p=z.object({handle:z.string().uuid(),code:z.string().regex(/^\d{6}$/),name:z.string().trim().min(1).max(60)}).strict().parse(payload);await this.auth.finishEnrollment(p.handle,p.code,p.name);return true;}
+      case 'auth.totp.cancel':this.auth.cancelEnrollment();return true;
+      case 'auth.passkey.signIn':{const session=await this.auth.passkeySignIn();await this.activate(session.uid);return true;}
+      case 'auth.passkey.register':{const p=z.object({name:z.string().trim().min(1).max(60)}).strict().parse(payload);await this.auth.registerPasskey(p.name);return true;}
+      case 'auth.passkey.list':return this.auth.managePasskeys('credentials');
+      case 'auth.passkey.remove':{const p=z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,2048}$/)}).strict().parse(payload);return this.auth.managePasskeys('remove',p.id);}
       case 'auth.verify':await this.auth.sendVerification();return true;
       case 'auth.refresh':await this.auth.refreshProfile();this.sync?.schedule(0);this.host.changed();return true;
       case 'auth.reset':await this.auth.resetPassword(z.object({email:z.string()}).strict().parse(payload).email);return true;
       case 'auth.linkPassword':{const p=z.object({password:z.string(),confirmation:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);await this.auth.linkPassword(p.password);return true;}
       case 'auth.changePassword':{const p=z.object({currentPassword:z.string(),password:z.string(),confirmation:z.string()}).strict().parse(payload);validateNewPassword(p.password,p.confirmation);await this.auth.changePassword(p.currentPassword,p.password);return true;}
-      case 'auth.reauthenticate':{const p=z.object({method:z.enum(['password','google']),password:z.string().optional()}).strict().parse(payload);const account=this.auth.session?.uid;if(!account)throw new Error('Sign in first.');if(p.method==='password')await this.auth.reauthenticate(p.password??'');else await this.auth.google(false,account);return true;}
+      case 'auth.reauthenticate':{const p=z.object({method:z.enum(['password','google','passkey']),password:z.string().optional()}).strict().parse(payload);const account=this.auth.session?.uid;if(!account)throw new Error('Sign in first.');if(p.method==='password')await this.auth.reauthenticate(p.password??'');else if(p.method==='passkey')await this.auth.passkeySignIn(account);else await this.auth.google(false,account);return true;}
       case 'local.remove':{z.object({confirmation:z.literal('REMOVE')}).strict().parse(payload);await this.removeLocal();return true;}
       case 'account.delete':{
         z.object({confirmation:z.literal('DELETE')}).strict().parse(payload);const store=this.active(),account=this.auth.session;
@@ -176,7 +185,7 @@ export class ApplicationService {
         store.close();this.store=null;fs.rmSync(directory,{recursive:true,force:true});this.switching=false;this.host.changed();return true;
       }
       case 'auth.signOut':this.clearAvatar();this.schedulePreview=null;await this.stopServices();this.store?.close();this.store=null;this.localMode=false;this.auth.signOut();this.imports.clear();this.host.changed();return true;
-      case 'localPreview':if(this.auth.session)throw new Error('Sign out before opening a local preview.');await this.activate('local-preview',true);return true;
+      case 'localPreview':if(this.auth.session)throw new Error('Sign out before opening a local preview.');this.auth.cancelAuthentication();await this.activate('local-preview',true);return true;
       case 'schedule.preview':{
         const p=z.object({value:z.union([itemSchema,semesterSchema]),from:localDate.optional(),to:localDate.optional(),restoreOldBreaks:z.boolean().default(false)}).strict().parse(payload);
         const store=this.active(),records=store.list(),previous=store.get(p.value.id);

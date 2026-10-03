@@ -3,6 +3,31 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
+  passkey-gateway:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          allow-unsafe-pr-checkout: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+          cache: npm
+          cache-dependency-path: gateway/package-lock.json
+      - name: Install browser test harness without native build scripts
+        run: npm ci --ignore-scripts
+      - run: npm ci --ignore-scripts
+        working-directory: gateway
+      - run: npm audit --audit-level=moderate
+        working-directory: gateway
+      - run: npm run check:syntax
+        working-directory: gateway
+      - run: npm run build
+        working-directory: gateway
+      - run: npm test
+        working-directory: gateway
   windows:
     # Keep native builds on a known Visual Studio 2022 image.
     # Moving the runner/compiler is a separate compatibility change.
@@ -74,7 +99,7 @@ jobs:
       - name: Renderer compatibility with all seven fuses on disposable copies
         env:
           CC_LIME_ACCEPTANCE_FUSES: all-seven
-        run: node node_modules/@playwright/test/cli.js test --config playwright.production.config.ts appearance.spec.ts calendar.spec.ts courses.spec.ts password-form.spec.ts recurrence.spec.ts renderer.spec.ts frame-boundaries.spec.ts signin-readiness.spec.ts task-ranges.spec.ts tasks.spec.ts --output test-results/hardened-renderer-artifacts
+        run: node node_modules/@playwright/test/cli.js test --config playwright.production.config.ts appearance.spec.ts calendar.spec.ts courses.spec.ts password-form.spec.ts recurrence.spec.ts renderer.spec.ts frame-boundaries.spec.ts signin-readiness.spec.ts mfa-readiness.spec.ts task-ranges.spec.ts tasks.spec.ts --output test-results/hardened-renderer-artifacts
       - name: Retain combined fuse renderer evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

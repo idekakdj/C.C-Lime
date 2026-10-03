@@ -1,5 +1,9 @@
 # Implementation and verification evidence
 
+## October 3 authenticator/passkey source candidate
+
+The owner-authorized plan and two-method source work are recorded in [the MFA implementation evidence](MFA_IMPLEMENTATION_EVIDENCE.md), with [the detailed pre-work plan](TOTP_PASSKEY_IMPLEMENTATION_PLAN.md) and [exact pending deployment/trust review](MFA_GATEWAY_DEPLOYMENT_REVIEW.md). Billing stays disabled; the owner needs a Cloudflare account. No version/install, live provider MFA/rules, administrator key, gateway deployment or owner-factor mutation is claimed. Locally measured engineering evidence and remaining physical/provider/hosting/recovery gates are separated in that register.
+
 ## October 3 owner billing decision
 
 The owner explicitly instructs **keep billing disabled for now** and requests information about free MFA alternatives. This resolves the pending spending preference without authorizing paid SMS, billing/hosting changes or alternative-MFA activation. SMS activation is deferred; provider-managed TOTP on the existing no-cost Identity Platform setup is the recommended next option to investigate, subject to actual enrollment/sign-in/recovery and billing-disabled verification. [The MFA plan](REQUIRED_MFA_PLAN.md) records the decision. No provider or installed-app changes occur for this clarification.

@@ -136,5 +136,5 @@ export async function startDesktop(copy, profile, inspectPort, probe = {}) {
         } finally { await cleanup(); }
       },
     };
-  } catch (error) { await cleanup(); throw error; }
+  } catch (error) { try{await cleanup();}catch{throw new Error(`${error.message}; owned process cleanup also timed out.`,{cause:error});}throw error; }
 }

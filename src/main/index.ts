@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { ZodError } from 'zod';
 import { ApplicationService } from './service';
 import { loadCloudConfiguration } from './config';
+import { validateAuthenticationBrowserUrl } from './auth-browser';
 import { appProtocol, isAppDocument } from './app-protocol';
 import { prepareAvatar } from './avatar';
 import { STARTUP_NAME, STARTUP_ARGS, startupQuery, startupState } from './startup';
@@ -24,7 +25,7 @@ const shortcutPaths=()=>({appData:app.getPath('appData'),desktop:app.getPath('de
 const repairShortcuts=()=>{if(installation&&!testProfile)repairInstalledShortcuts(installation,shortcutPaths(),shortcutIO(shell));};
 protocol.registerSchemesAsPrivileged([{scheme:'cclime',privileges:{standard:true,secure:true,supportFetchAPI:true,allowServiceWorkers:false,bypassCSP:false}}]);
 let window:BrowserWindow|null=null,tray:Tray|null=null,service:ApplicationService|null=null;
-let quitting=false,shutdownDone=false;let changeTimer:ReturnType<typeof setTimeout>|null=null;
+let quitting=false,shutdownDone=false,shutdownStarted=false;let changeTimer:ReturnType<typeof setTimeout>|null=null;
 const notices=new Set<Notification>();
 function show(target?:{itemId?:string;occurrenceKey?:string;action?:string}){if(!window)return;window.show();if(window.isMinimized())window.restore();window.focus();if(target)window.webContents.send('lime:navigate',target);}
 const installerEvent=squirrelEvent(process.platform,process.argv);
@@ -36,7 +37,10 @@ if(installerEvent){
 }else if(!primary)app.quit();
 else{
   app.on('second-instance',()=>show());app.on('activate',()=>show());
-  app.on('before-quit',event=>{quitting=true;if(!shutdownDone&&service){event.preventDefault();void service.close().finally(()=>{shutdownDone=true;app.quit();});}});
+  // Direct window destruction can skip the window's close handler. Honor the
+  // user's non-tray choice instead of leaving a process with no usable window.
+  app.on('window-all-closed',()=>{if(process.platform!=='darwin'&&!quitting&&!service?.device.closeToTray)setImmediate(()=>app.quit());});
+  app.on('before-quit',event=>{quitting=true;if(!shutdownDone&&service){event.preventDefault();if(shutdownStarted)return;shutdownStarted=true;void service.close().then(()=>{shutdownDone=true;setImmediate(()=>app.quit());},()=>{shutdownDone=true;setImmediate(()=>app.exit(1));});}});
   app.whenReady().then(async()=>{
     const root=app.getPath('userData');fs.mkdirSync(root,{recursive:true});
     // Electron derives its Windows shortcut filename from the EXE resource, not app.setName.
@@ -53,7 +57,7 @@ else{
     service=new ApplicationService(root,config,{
       secure:safeStorage,version:app.getVersion(),changed,
       chooseAvatar:async()=>{const result=await dialog.showOpenDialog(window!,{title:'Choose a profile photo',properties:['openFile'],filters:[{name:'PNG or JPEG photo',extensions:['png','jpg','jpeg']}]});return result.canceled||!result.filePaths[0]?null:prepareAvatar(result.filePaths[0],bytes=>nativeImage.createFromBuffer(bytes));},
-      openBrowser:async url=>{const parsed=new URL(url);if(parsed.protocol!=='https:'||parsed.hostname!=='accounts.google.com')throw new Error('Unsupported sign-in address.');await shell.openExternal(url);},
+      openBrowser:async url=>{validateAuthenticationBrowserUrl(url,config);await shell.openExternal(url);},
       notify:notice=>{if(notificationSetupFailed||!Notification.isSupported()){notice.onFailure();return;}const notification=new Notification({title:notice.title,body:notice.body,icon:iconPath,silent:false});notices.add(notification);notification.on('click',()=>show(notice.inbox?{action:'inbox'}:{itemId:notice.itemId,occurrenceKey:notice.occurrenceKey}));notification.on('failed',()=>{notice.onFailure();notices.delete(notification);});notification.on('close',()=>notices.delete(notification));notification.show();},
       openFile:async kind=>{const result=await dialog.showOpenDialog(window!,{title:kind==='ics'?'Import calendar':'Restore calendar backup',properties:['openFile'],filters:[{name:kind==='ics'?'Calendar file':'C.C. Lime backup',extensions:kind==='ics'?['ics']:['json']} ]});return result.canceled?null:result.filePaths[0];},
       saveFile:async kind=>{const result=await dialog.showSaveDialog(window!,{title:kind==='ics'?'Export calendar':kind==='backup'?'Save full backup':'Save diagnostics',defaultPath:`CC-Lime-${kind}-${new Date().toISOString().slice(0,10)}.${kind==='ics'?'ics':'json'}`,filters:[{name:kind==='ics'?'Calendar file':'JSON file',extensions:[kind==='ics'?'ics':'json']} ]});return result.canceled?null:result.filePath??null;},

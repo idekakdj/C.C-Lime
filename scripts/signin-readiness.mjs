@@ -14,7 +14,7 @@ async function bounded(operation,ms,message){let timer;try{return await Promise.
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 
 /** Observes fresh actual renderer controls without authenticating or touching an owner profile. */
-export async function verifySignInReadiness({executable,expectedVersion,environmentBytes,expectConfigured=true,expectGoogle=true,fileOnly=false,expectedPolicy,outputDirectory='test-results/signin-readiness'}){
+export async function verifySignInReadiness({executable,expectedVersion,environmentBytes,expectConfigured=true,expectGoogle=true,expectPasskey,fileOnly=false,expectedPolicy,outputDirectory='test-results/signin-readiness'}){
  executable=path.resolve(executable);assert.ok((await fs.lstat(executable)).isFile(),'Executable missing');
  const archive=path.join(path.dirname(executable),'resources/app.asar');
  const initialExecutable=digest(await fs.readFile(executable)),initialArchive=digest(await fs.readFile(archive));
@@ -31,9 +31,9 @@ export async function verifySignInReadiness({executable,expectedVersion,environm
   const bytes=await fs.readFile(executable);assert.equal(digest(bytes),initialExecutable,'Executable changed before restart');assert.equal(digest(await fs.readFile(archive)),initialArchive,'Archive changed before restart');
   if(expectedPolicy?.mode==='all-seven'){assert.deepEqual(hardeningGaps(readElectronFuses(bytes)),[]);inspectAsarIntegrity(bytes,archive);}
   const env={...process.env};for(const key of ['ELECTRON_RUN_AS_NODE','NODE_OPTIONS','NODE_EXTRA_CA_CERTS','ELECTRON_NO_ASAR'])delete env[key];
-  if(fileOnly)for(const key of ['CC_LIME_FIREBASE_API_KEY','CC_LIME_FIREBASE_PROJECT_ID','CC_LIME_GOOGLE_CLIENT_ID','CC_LIME_GOOGLE_CLIENT_SECRET'])delete env[key];
+  if(fileOnly)for(const key of ['CC_LIME_FIREBASE_API_KEY','CC_LIME_FIREBASE_PROJECT_ID','CC_LIME_GOOGLE_CLIENT_ID','CC_LIME_GOOGLE_CLIENT_SECRET','CC_LIME_TOTP_ENABLED','CC_LIME_PASSKEY_ORIGIN','CC_LIME_MFA_REQUIRED'])delete env[key];
   const child=spawn(executable,[`--cc-lime-test-profile=${profile}`,'--remote-debugging-address=127.0.0.1','--remote-debugging-port=0','--no-error-dialogs'],{cwd:path.dirname(executable),env,windowsHide:true,stdio:['ignore','ignore','pipe']});
-  let outcome,stderr='',browser;
+  let outcome,stderr='',browser,primaryError;
   const exit=new Promise(resolve=>{child.once('exit',(code,signal)=>{outcome={code,signal};resolve(outcome);});child.once('error',()=>{outcome={spawnFailed:true};resolve(outcome);});});
   child.stderr.on('data',bytes=>{if(stderr.length<65536)stderr+=bytes.toString().slice(0,65536-stderr.length);});
   try{
@@ -45,16 +45,22 @@ export async function verifySignInReadiness({executable,expectedVersion,environm
    assert.deepEqual(flags,{version:expectedVersion,configured:expectConfigured,googleConfigured:expectGoogle,sessionPresent:false,localMode:false,records:0},'Fresh renderer configuration differs');
    assert.equal(await page.getByRole('button',{name:'Sign in',exact:true}).isEnabled(),expectConfigured,'Email sign-in availability differs');
    assert.equal(await page.getByRole('button',{name:/Continue with Google/}).isEnabled(),expectGoogle,'Google sign-in availability differs');
+   if(expectPasskey!==undefined){
+    assert.equal(await page.getByRole('button',{name:'Sign in with a passkey',exact:true}).isEnabled(),expectPasskey,'Passkey availability differs');
+    assert.equal(await page.evaluate(async()=>(await window.lime.call('snapshot')).accountSecurity?.passkeyAvailable),expectPasskey,'Passkey main-process capability differs');
+   }
    assert.deepEqual(await page.evaluate(()=>({local:Object.keys(localStorage),session:Object.keys(sessionStorage),node:typeof window.require})),{local:[],session:[],node:'undefined'});
    await page.getByRole('button',{name:'Forgot password?',exact:true}).click();
    assert.equal(await page.getByRole('button',{name:'Send reset link',exact:true}).isEnabled(),expectConfigured,'Reset availability differs');
    await page.getByRole('button',{name:'Back to sign in',exact:true}).click();
    assert.equal(await page.getByRole('button',{name:'Sign in',exact:true}).isEnabled(),expectConfigured);
-   const session=await browser.newBrowserCDPSession();await bounded(Promise.race([session.send('Browser.close').catch(()=>{}),exit]),3000,'Ordinary close request timed out.');
+   const session=await browser.newBrowserCDPSession();void session.send('Browser.close').catch(()=>{});
+   // Browser shutdown can close CDP before acknowledging the command. Measure
+   // the actual process exit, using the unchanged ten-second exit deadline.
    const result=await bounded(exit,10000,'Sign-in fixture did not exit normally');assert.deepEqual(result,{code:0,signal:null},'Normal sign-in fixture exit required');
-   cycles.push({...flags,emailControlEnabled:expectConfigured,googleControlEnabled:expectGoogle,resetControlEnabled:expectConfigured,normalExit:true});
-  }finally{
-   if(!outcome){child.kill();await bounded(exit,5000,'Owned fixture cleanup timed out');}
+   cycles.push({...flags,emailControlEnabled:expectConfigured,googleControlEnabled:expectGoogle,resetControlEnabled:expectConfigured,...(expectPasskey!==undefined?{passkeyControlEnabled:expectPasskey}:{}),normalExit:true});
+  }catch(error){primaryError=error;throw error;}finally{
+   if(!outcome){child.kill();try{await bounded(exit,5000,'Owned fixture cleanup timed out');}catch(cleanupError){if(primaryError)throw new Error(`${primaryError.message}; owned fixture cleanup also timed out.`,{cause:primaryError});throw cleanupError;}}
    if(browser)await bounded(browser.close().catch(()=>{}),3000,'Transport cleanup timed out');
   }
  }

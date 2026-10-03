@@ -7,7 +7,7 @@ module.exports = {
     download: buildPolicy.downloadOptions(),
     asar: { unpack: '**/*.node' }, executableName: 'cc-lime', icon: 'assets/icon',
     appBundleId: 'app.cclime.desktop',
-    ignore: [/^\/(src|tests|docs|scripts|cloud|test-results|playwright-report|coverage|release|build)(\/|$)/, /^\/\.(git|env|codex|agents|tools|local)/, /PROJECT_PLAN\.md$/, /.*-debug\.log$/, /cloud-client\.json$/],
+    ignore: [/^\/(src|tests|docs|scripts|cloud|gateway|test-results|playwright-report|coverage|release|build)(\/|$)/, /^\/\.(git|env|codex|agents|tools|local)/, /PROJECT_PLAN\.md$/, /.*-debug\.log$/, /cloud-client\.json$/],
     extraResource: ['assets/icon.png', 'assets/icon.ico', 'dist/THIRD_PARTY_NOTICES.txt', 'dist/third-party-source'],
   },
   hooks: {

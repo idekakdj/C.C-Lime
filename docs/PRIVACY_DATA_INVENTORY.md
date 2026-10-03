@@ -1,5 +1,13 @@
 # C.C. Lime data and retention inventory
 
+## October 3 staged authenticator/passkey data flows
+
+The [MFA candidate](MFA_IMPLEMENTATION_EVIDENCE.md) introduces source support for Firebase native authenticator enrollment/sign-in and a proposed Cloudflare Workers/D1 passkey verifier. Cloudflare resources have not been created and the owner's data has not been sent there. Native TOTP setup key/session/QR stays temporarily in main/renderer memory, clears on completion/cancel/account change/expiry and never enters snapshots, SQLite, calendar backup, diagnostics or browser URLs. No remote QR service is used.
+
+The proposed server data consists of Firebase UID, random RP user handle, public credential ID/key, counter/revision/backup properties, bounded name/timestamps, short-lived proof-bound ceremony records and HMAC-derived IP/hashed-UID quota buckets. Private passkey keys and biometric data stay in the authenticator. Signed Firebase identity/custom tokens are transient; the desktop's remembered refresh token remains protected by OS secure storage under existing semantics. Server signing credentials belong only in approved secret bindings, never desktop files/distribution.
+
+Hourly cleanup removes expired flows/quota buckets and reconciles deleted Firebase identities. Confirmed deletion purges public credentials/labels and bound flows; a minimal server UID/handle/epoch/cutoff tombstone and Firestore denial marker remain for 24 hours before rechecked erasure. Provider outages preserve pending retry state rather than pretending deletion succeeded. Fair 20-account batches and the owner-only pilot limits are technical bounds, not a guaranteed deletion deadline under outage. Vendor backups, D1 Time Travel, privileged secret custody, hosting locations/cross-border notices and approved retention/legal review remain open under [the deployment proposal](MFA_GATEWAY_DEPLOYMENT_REVIEW.md). No PHIPA scope or formal compliance claim is added.
+
 ## October 2 installed 0.1.16 update
 
 The [new release](RELEASE_0116_PLAN.md) installs the authentication-cleanup and protocol/frame controls described below; the earlier source-only paragraph is historical. No new calendar personal-data field, analytics or vendor is added. A fresh private verified backup preserves 108 normal profile files, both account databases and 35 records. All account records and non-cache files/private configuration match after installation. This is another plaintext retained backup requiring an approved retention decision, not encrypted off-device recovery.

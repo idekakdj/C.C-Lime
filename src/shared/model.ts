@@ -61,16 +61,16 @@ export type Preferences = z.infer<typeof preferencesSchema>;
 export type DomainRecord = z.infer<typeof recordSchema>;
 export type ItemType = CalendarItem['itemType'];
 export interface Occurrence extends CalendarItem { occurrenceKey: string; originalDate: string; seriesId: string | null; startMs: number | null; endMs: number | null; date: string; endDate: string; }
-export interface Session { uid: string; email: string; displayName: string; verified: boolean; providers: string[]; offline?: boolean; createdAt?: string; }
+export interface Session { uid: string; email: string; displayName: string; verified: boolean; providers: string[]; offline?: boolean; createdAt?: string; passkeyUntil?: number; enrollmentRequired?: boolean; assurance?: 'totp' | 'passkey' | 'google'; }
 export interface DeviceSettings { notifications: boolean; startAtLogin: boolean; closeToTray: boolean; quietStart: string | null; quietEnd: string | null; privacy: boolean; followZone: boolean; onboardingDone: boolean; view: 'month' | 'week' | 'agenda'; month: string | null; hideCompleted: boolean; }
 export const defaultDeviceSettings: DeviceSettings = { notifications: false, startAtLogin: false, closeToTray: true, quietStart: null, quietEnd: null, privacy: false, followZone: false, onboardingDone: false, view: 'month', month: null, hideCompleted: false };
 export interface SyncStatus { state: 'local' | 'syncing' | 'synced' | 'offline' | 'verification' | 'error' | 'conflict'; pending: number; lastSynced: string | null; message: string; }
 export interface Conflict { id: string; recordId: string; base: DomainRecord | null; local: DomainRecord | null; remote: DomainRecord | null; remoteVersion: string | null; }
 export interface ReminderEntry { id: string; itemId: string; occurrenceKey: string; ruleId: string; title: string; dueMs: number; anchorMs: number; endMs: number; task: boolean; state: string; snoozeMs: number | null; createdMs: number; }
 export interface NotificationTest { state:'submitted'|'failed'; checkedAt:string; message:string; }
-export interface Snapshot { records: DomainRecord[]; session: Session | null; signInNotice?:string|null; device: DeviceSettings; sync: SyncStatus; conflicts: Conflict[]; reminders: ReminderEntry[]; configured: boolean; googleConfigured: boolean; version: string; localMode: boolean; deleting?:boolean; recordsRevision?:string; displayZone?:string; notificationTest?:NotificationTest|null; profile?:UserProfile; localCreatedAt?:string; }
+export interface Snapshot { records: DomainRecord[]; session: Session | null; mfaChallenge?: { handle: string; expiresInMs: number; resendInMs: number; factors: Array<{ handle: string; kind: 'phone' | 'totp'; label: string }> } | null; accountSecurity?: { totpAvailable: boolean; passkeyAvailable?: boolean; factors: Array<{ kind: 'totp' | 'phone'; label: string }> }; signInNotice?:string|null; device: DeviceSettings; sync: SyncStatus; conflicts: Conflict[]; reminders: ReminderEntry[]; configured: boolean; googleConfigured: boolean; version: string; localMode: boolean; deleting?:boolean; recordsRevision?:string; displayZone?:string; notificationTest?:NotificationTest|null; profile?:UserProfile; localCreatedAt?:string; }
 export type SnapshotUpdate = Omit<Snapshot,'records'> & {records?:DomainRecord[]};
-export interface CloudConfiguration { apiKey: string; projectId: string; googleClientId?: string; googleClientSecret?: string; }
+export interface CloudConfiguration { apiKey: string; projectId: string; googleClientId?: string; googleClientSecret?: string; totpEnabled?: boolean; passkeyOrigin?: string; mfaRequired?: boolean; }
 export interface ImportCandidate { record: DomainRecord; sourceHash: string; action: 'new' | 'identical' | 'changed'; existingId?: string; }
 export interface ImportPreview { token: string; candidates: ImportCandidate[]; warnings: string[]; invalid: number; filename: string; }
 export interface LimeApi {

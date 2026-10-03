@@ -18,6 +18,8 @@ import { AuthScreen, DataDialog, Onboarding, SettingsScreen } from './screens';
 type Page='calendar'|'tasks'|'courses'|'settings'|'profile';
 import { ProfileScreen } from './profile-screen';
 import { applyAppearance } from './apply-appearance';
+import { SecurityOnboarding } from './security-onboarding';
+import { MfaDialog } from './account-security';
 import { timeZoneOptions } from './time-zones';
 type Editor={item:CalendarItem|Occurrence|null;date:string;modified?:boolean};
 function unscheduled(item:CalendarItem):Occurrence{return{...item,occurrenceKey:item.id,originalDate:'',seriesId:null,startMs:null,endMs:null,date:'',endDate:''};}
@@ -107,9 +109,9 @@ export default function App(){
   const toastNode=toastTarget?createPortal(toastContent,toastTarget):toastContent;
   if(fatal)return <div className="loading-screen"><Logo/><h2>We couldn’t open your calendar.</h2><p>{fatal}</p><button className="button secondary" onClick={()=>location.reload()}>Try again</button></div>;
   if(!snapshot)return <div className="loading-screen"><Logo/><span className="spinner"/><p>Making room for your day…</p></div>;
-  const loggedIn=!!snapshot.session||snapshot.localMode;
+  const loggedIn=!!snapshot.session&&!snapshot.session.enrollmentRequired||snapshot.localMode;
   const dataList=<datalist id="zones">{zones.map(z=><option key={z} value={z} label={z.replaceAll('_',' ')}/>)}</datalist>;
-  if(!loggedIn)return <><AuthScreen snapshot={snapshot} run={run}/>{toastNode}{dataList}</>;
+  if(!loggedIn)return <>{snapshot.session?.enrollmentRequired?<SecurityOnboarding snapshot={snapshot} run={run}/>:<AuthScreen snapshot={snapshot} run={run}/> }<MfaDialog snapshot={snapshot} run={run}/>{toastNode}{dataList}</>;
   const activeSemester=semesters.find(s=>!s.archived&&s.startDate<=today&&s.endDate>=today)??semesters.find(s=>!s.archived);
   const completedWeek=weekProgress.completed;
   const statusIcon=snapshot.sync.state==='syncing'?<RefreshCw size={14} className="spin"/>:snapshot.sync.state==='offline'?<CloudOff size={14}/>:snapshot.sync.state==='synced'?<Check size={14}/>:<Cloud size={14}/>;
@@ -118,7 +120,7 @@ export default function App(){
   const openNav=(next:Page)=>{setPage(next);setQuery('');setNavOpen(false);};
   const row=(o:Occurrence,compact=false,showDate=false)=><ItemRow key={o.occurrenceKey} item={o} courses={courses} prefs={prefs} onOpen={openItem} onComplete={complete} compact={compact} showDate={showDate}/>;
   return <div className="app-shell" data-calendar-ready={!calendar.pending} aria-busy={calendar.pending}>
-    {navOpen&&<button className="drawer-scrim" aria-label="Close navigation" onClick={()=>setNavOpen(false)}/>}
+    <MfaDialog snapshot={snapshot} run={run}/>{navOpen&&<button className="drawer-scrim" aria-label="Close navigation" onClick={()=>setNavOpen(false)}/>}
     <aside className={`navigation ${navOpen?'open':''}`}><Logo/><div className="workspace-name"><span className="workspace-avatar"><GraduationCap size={19}/></span><span>My workspace<small>{activeSemester?.name??'Your next chapter'}</small></span><ChevronDown size={14}/></div>
       <nav aria-label="Main navigation"><span className="nav-label">WORKSPACE</span>{([{id:'calendar',label:'Calendar',icon:CalendarDays},{id:'tasks',label:'My tasks',icon:CheckSquare2},{id:'courses',label:'Courses & semesters',icon:BookOpen}]as const).map(({id,label,icon:Icon})=><button key={id} className={page===id?'active':''} onClick={()=>openNav(id)} aria-current={page===id?'page':undefined}><Icon size={19}/><span>{label}</span>{id==='tasks'&&upcomingData.upcoming.length>0&&<span className="nav-count">{upcomingData.upcoming.length}</span>}</button>)}</nav>
       <div className="course-navigation"><div className="nav-label">MY COURSES<button className="icon-button small" aria-label="Add course" onClick={()=>setCourseEditor(null)}><Plus size={14}/></button></div>{courses.filter(c=>!c.archived).map(c=><div className="course-nav-row" key={c.id}><button className={`course-filter-button ${courseFilter===c.id?'selected':''}`} onClick={()=>{setCourseFilter(courseFilter===c.id?'':c.id);openNav('calendar');}}><span className="course-dot" style={{background:c.color}}/><span>{c.code||c.name}</span></button><button className="icon-button small course-edit-button" aria-label={`Edit course ${c.code||c.name}`} title={`Edit course ${c.code||c.name}`} onClick={()=>setCourseEditor(c)}><Pencil size={14}/></button></div>)}{courses.filter(c=>!c.archived).length===0&&<button className="add-course-link" onClick={()=>setCourseEditor(null)}><Plus size={15}/> Add your first course</button>}</div>

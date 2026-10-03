@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { z } from 'zod';
 
-// Source foundation only. The production AuthService/IPC does not activate it yet.
-// Transport must be main-process-only, origin-pinned and provider-rate-limited.
+// Ephemeral main-process challenge used by AuthService; pending credentials never enter snapshots.
+// Transport is origin-pinned and provider-rate-limited. Provider activation is a separate rollout.
 export type MfaTransport = (action: 'start' | 'finalize', body: object, signal: AbortSignal) => Promise<unknown>;
 export class MfaAttemptError extends Error {
   constructor(message: string, readonly code: string) { super(message); }
