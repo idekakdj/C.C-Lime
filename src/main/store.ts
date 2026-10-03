@@ -243,6 +243,7 @@ export class LocalStore {
     }
   }
   reminders(): ReminderEntry[] { return (this.db.prepare('SELECT payload FROM reminders ORDER BY due_ms DESC').all() as Array<{ payload: string }>).map(r => JSON.parse(r.payload)); }
+  reminderInbox(): ReminderEntry[] { return (this.db.prepare("SELECT payload FROM reminders WHERE state NOT IN ('pending','dismissed') ORDER BY due_ms DESC LIMIT 500").all() as Array<{ payload: string }>).map(r => JSON.parse(r.payload)); }
   putReminder(entry: ReminderEntry): void { this.db.prepare('INSERT OR REPLACE INTO reminders VALUES (?,?,?,?)').run(entry.id, JSON.stringify(entry), entry.snoozeMs ?? entry.dueMs, entry.state); }
   delivered(id: string): number | null { const row = this.db.prepare('SELECT due_ms FROM delivery_markers WHERE id=?').get(id) as { due_ms: number } | undefined; return row?.due_ms ?? null; }
   markDelivered(id: string, dueMs: number): void { this.db.prepare('INSERT OR REPLACE INTO delivery_markers VALUES (?,?)').run(id, dueMs); }

@@ -1,5 +1,11 @@
 # Implementation and verification evidence
 
+## October 2 reminder inbox dismissal repair (source/test package)
+
+The owner's reported Dismiss failure was retained dismissed journal entries still reaching the inbox. [The ordered repair](REMINDER_DISMISSAL_PLAN.md) separates the inbox query from the scheduler journal, excluding dismissed/pending states before the 500-row cap. Delivery markers/journal remain durable so reconciliation/restart does not replay dismissed popups. A late Windows failure callback can update only a current matching emitted/dispatching row, preserving a subsequent dismissal, snooze or changed due time.
+
+Typecheck and 45 related scheduler/store/service cases pass, including restart/no replay, delayed callback transitions and a visible older reminder behind 1,002 dismissed/pending journal entries. The real packaged renderer passes selected-row dismissal, neighboring-row retention, dialog reopen, two restarts, final empty state and unchanged items. Both configured/absent-config fresh/restart sign-in readiness cases also pass; source/package private-data and notice checks pass. This fix is source/test-package only; installed 0.1.17 and the normal owner profile stay unchanged. [User data and synchronization](USER_DATA_AND_SYNC.md) explains local/remote/device-only scope using current code and a new read-only database-region observation.
+
 ## October 2 installed 0.1.17 owner-only update
 
 The owner requested a new installed version and confirmed tray closure. [The plan](RELEASE_0117_PLAN.md) preceded the root-only metadata change. [Release notes](RELEASE_0117_NOTES.md) retain exact installed identities, features, tests and limits. Password-change sign-out/refresh-token preflight, adversarial calendar/import/read-bound repairs and the complete time-zone catalog are now installed. Normal account/configuration and startup approval are preserved; the ordinary installed window is reopened.

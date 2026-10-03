@@ -59,7 +59,17 @@ export class ReminderScheduler {
   private deliver(entries: ReminderEntry[], summary: boolean, privacy: boolean): void {
     for (const entry of entries) { this.store.putReminder({ ...entry, state: 'dispatching' }); this.store.markDelivered(entry.id, entry.dueMs); }
     let failed = false;
-    const onFailure = () => { failed = true; if (this.stopped) return; for (const entry of entries) this.store.putReminder({ ...entry, state: 'failed' }); this.changed(); };
+    const onFailure = () => {
+      failed = true; if (this.stopped) return;
+      const current = new Map(this.store.reminders().map(entry => [entry.id, entry]));
+      for (const entry of entries) {
+        const latest = current.get(entry.id);
+        // Windows can report delivery failure after an inbox action. Preserve
+        // a dismissal/snooze or a rescheduled reminder instead of reviving it.
+        if (latest && latest.dueMs === entry.dueMs && ['dispatching','emitted'].includes(latest.state)) this.store.putReminder({ ...latest, state: 'failed' });
+      }
+      this.changed();
+    };
     try {
       this.emit({ title: privacy ? 'C.C. Lime reminder' : summary ? `${entries.length} reminders to catch up on` : entries[0].title, body: privacy ? 'Open C.C. Lime to see the details.' : summary ? 'Open your reminder inbox to see what’s coming up.' : 'Your scheduled reminder is ready. Open C.C. Lime for details.', itemId: summary ? undefined : entries[0].itemId, occurrenceKey:summary?undefined:entries[0].occurrenceKey, inbox: summary, onFailure });
       if (!failed) for (const entry of entries) this.store.putReminder({ ...entry, state: 'emitted', snoozeMs: null });

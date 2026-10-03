@@ -44,5 +44,23 @@ describe('durable reminder scheduler', () => {
     const t=setup(); for(let i=0;i<3;i++) t.store.save(item({reminders:[{id:randomUUID(),minutesBefore:15}]})); t.device.privacy=true; t.scheduler.reconcile(false); expect(t.notices).toHaveLength(1); expect(t.notices[0].inbox).toBe(true); expect(t.notices[0].title).toBe('C.C. Lime reminder');
   });
   it('reports OS submission failure and leaves inbox evidence', () => { const t=setup(); t.scheduler.reconcile(false); t.notices[0].onFailure(); expect(t.store.reminders()[0].state).toBe('failed'); t.scheduler.reconcile(false); expect(t.notices).toHaveLength(1); });
+  it('keeps dismissal durable through a late delivery failure and ordinary store restart without replay',()=>{
+    const t=setup();t.scheduler.reconcile(false);const entry=t.store.reminders()[0];
+    t.scheduler.dismiss(entry.id);t.notices[0].onFailure();t.scheduler.reconcile(false);
+    expect(t.store.reminders()[0].state).toBe('dismissed');expect(t.store.reminderInbox()).toEqual([]);expect(t.store.delivered(entry.id)).toBe(entry.dueMs);
+    t.scheduler.stop();t.store.close();const restored=new LocalStore(t.root,'test');stores.push(restored);
+    const resumed=new ReminderScheduler(restored,()=>t.device,()=> 'America/Toronto',notice=>t.notices.push(notice),()=>{},()=>millis('2026-09-18T08:46'));schedulers.push(resumed);resumed.reconcile(false);
+    expect(restored.reminders()[0].state).toBe('dismissed');expect(restored.reminderInbox()).toEqual([]);expect(t.notices).toHaveLength(1);
+  });
+  it('does not overwrite snooze with a delayed failure, while a new failed delivery is still reported',()=>{
+    const t=setup();t.scheduler.reconcile(false);const id=t.store.reminders()[0].id;
+    t.scheduler.snooze(id,5);const snoozed=t.store.reminders()[0];t.notices[0].onFailure();expect(t.store.reminders()[0]).toEqual(snoozed);
+    t.advance(5*60000);t.scheduler.reconcile(false);expect(t.notices).toHaveLength(2);t.notices[1].onFailure();expect(t.store.reminders()[0].state).toBe('failed');
+  });
+  it('does not overwrite a rearmed future reminder with a previous delivery failure',()=>{
+    const t=setup();t.scheduler.reconcile(false);const id=t.store.reminders()[0].id;t.scheduler.dismiss(id);
+    t.store.save({...t.value,timing:{mode:'timed',zone:'America/Toronto',start:'2026-09-18T14:00:00Z',end:'2026-09-18T15:00:00Z'}});t.scheduler.reconcile(false);
+    const future=t.store.reminders()[0];expect(future.state).toBe('pending');t.notices[0].onFailure();expect(t.store.reminders()[0]).toEqual(future);
+  });
   it('handles daytime and overnight quiet windows in the selected time zone',()=>{ expect(inQuietHours(millis('2026-09-18T23:30'),'America/Toronto','22:00','07:00')).toBe(true); expect(inQuietHours(millis('2026-09-18T07:00'),'America/Toronto','22:00','07:00')).toBe(false); expect(inQuietHours(millis('2026-09-18T13:00'),'America/Toronto','12:00','14:00')).toBe(true); });
 });

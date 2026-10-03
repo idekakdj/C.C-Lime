@@ -12,6 +12,16 @@ import type { CloudAdapter } from '../../src/main/cloud';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('hides dismissed and pending reminders before the inbox cap without deleting delivery history',async()=>{
+ const {service}=await setup();service.scheduler!.stop();const store=service.store!,now=Date.now();
+ const entry={id:randomUUID(),itemId:randomUUID(),occurrenceKey:randomUUID(),ruleId:randomUUID(),title:'Visible older reminder',dueMs:now-60000,anchorMs:now,endMs:now+60000,task:true,state:'emitted',snoozeMs:null,createdMs:now};
+ store.putReminder(entry);
+ for(let i=0;i<501;i++){store.putReminder({...entry,id:randomUUID(),dueMs:now+i,state:'dismissed'});store.putReminder({...entry,id:randomUUID(),dueMs:now+i,state:'pending'});}
+ expect(service.snapshot().reminders).toEqual([entry]);
+ await service.command('dismissReminder',{id:entry.id});expect(service.snapshot().reminders).toEqual([]);
+ expect(store.reminders().find(value=>value.id===entry.id)?.state).toBe('dismissed');expect(store.delivered(entry.id)).toBe(entry.dueMs);
+ await service.command('dismissReminder',{id:entry.id});expect(service.snapshot().reminders).toEqual([]);
+});
 it('reports a newly queued save immediately instead of retaining the previous up-to-date status',async()=>{
  const {service}=await setup();let sequence=0;
  const commit=vi.fn(async(m:Mutation)=>({id:m.recordId,value:m.value,version:'synthetic-v1',sequence:++sequence}));
