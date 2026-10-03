@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { readBoundedText } from './bounded-file';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { Worker } from 'node:worker_threads';
@@ -266,8 +267,8 @@ export class ApplicationService {
       case 'dismissReminder':this.scheduler?.dismiss(z.object({id:z.string().max(250)}).strict().parse(payload).id);return true;
       case 'import.preview':{
         const p=z.object({zone:zoneSchema,finiteRange:z.object({from:localDate,to:localDate}).optional()}).strict().parse(payload),store=this.active(),account=store.accountId;
-        const filename=await this.host.openFile('ics');if(!filename)return null;const stat=fs.statSync(filename);if(stat.size>10*1024*1024)throw new Error('Choose a calendar file smaller than 10 MiB.');
-        const parsed=await this.work<ParsedCalendar>('parse',{text:fs.readFileSync(filename,'utf8'),options:p as ParseOptions});if(this.store?.accountId!==account)throw new Error('Account changed; import canceled.');
+        const filename=await this.host.openFile('ics');if(!filename)return null;
+        const parsed=await this.work<ParsedCalendar>('parse',{text:readBoundedText(filename,10*1024*1024,'Calendar'),options:p as ParseOptions});if(this.store?.accountId!==account)throw new Error('Account changed; import canceled.');
         const preview:ImportPreview={token:randomUUID(),filename:path.basename(filename),candidates:previewImport(parsed,store.list()),warnings:parsed.warnings,invalid:parsed.invalid};this.imports.clear();this.imports.set(preview.token,{preview,account,before:new Map(preview.candidates.map(c=>[c.record.id,JSON.stringify(store.get(c.record.id))]))});return preview;
       }
       case 'import.cancel':await this.worker?.terminate();this.imports.clear();return true;
@@ -284,7 +285,7 @@ export class ApplicationService {
       }
       case 'backup':{const store=this.active(),text=createBackup(store.accountId,store.list()),destination=await this.host.saveFile('backup');if(!destination)return null;fs.writeFileSync(destination,text,'utf8');return path.basename(destination);}
       case 'restore.preview':{
-        const store=this.active(),account=store.accountId,filename=await this.host.openFile('backup');if(!filename)return null;if(fs.statSync(filename).size>50*1024*1024)throw new Error('Backup exceeds 50 MiB.');const backup=readBackup(fs.readFileSync(filename,'utf8'));if(this.store?.accountId!==account)throw new Error('Account changed.');const token=randomUUID(),foreign=backup.accountId!==account;
+        const store=this.active(),account=store.accountId,filename=await this.host.openFile('backup');if(!filename)return null;const backup=readBackup(readBoundedText(filename,50*1024*1024,'Backup'));if(this.store?.accountId!==account)throw new Error('Account changed.');const token=randomUUID(),foreign=backup.accountId!==account;
         this.restorePreview={token,account,records:backup.records,foreign,count:backup.records.length};return{token,count:backup.records.length,foreign,createdAt:backup.createdAt,filename:path.basename(filename)};
       }
       case 'restore.commit':{

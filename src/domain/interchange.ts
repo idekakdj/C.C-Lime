@@ -3,7 +3,7 @@ import { DateTime, IANAZone } from 'luxon';
 import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { itemSchema, parseRecord, recurrenceSchema, localDate, zone as zoneSchema, type CalendarItem, type DomainRecord, type ImportCandidate, type Recurrence, type Timing } from '../shared/model';
-import { addDays, atDate, expand, localInstant, recurrenceRule, sourceDate } from './calendar';
+import { addDays, anchor, atDate, expand, localInstant, recurringDates, recurrenceRule, sourceDate, validateTiming } from './calendar';
 
 const hash = (v: unknown) => createHash('sha256').update(JSON.stringify(v)).digest('hex');
 function stableId(source: string): string { const h=createHash('sha256').update(source).digest('hex');return `${h.slice(0,8)}-${h.slice(8,12)}-5${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`; }
@@ -78,7 +78,7 @@ export function parseCalendar(text:string,options:ParseOptions):ParsedCalendar {
     const source=String(c.getFirstPropertyValue('uid')??'');
     if(seen.has(source)){warnings.push(`Duplicate UID in this file was skipped: ${source.slice(0,80)}`);invalid++;continue;}seen.add(source);
     try {
-      const value=componentItem(c,options);records.push(value);masters.set(source,value);
+      const value=componentItem(c,options);validateTiming(value.timing);records.push(value);masters.set(source,value);
       const start=c.getFirstProperty('dtstart')??c.getFirstProperty('due');const t=start?.getFirstValue() as ICAL.Time|undefined;
       if(t&&!t.isDate&&!start?.getParameter('tzid')&&t.zone?.tzid!=='UTC')warnings.push(`“${value.title}” uses floating times, interpreted in ${options.zone}.`);
       if(c.hasProperty('attendee')||c.hasProperty('attach'))warnings.push(`Attendees/attachments in “${value.title}” are not imported; no invitations are sent.`);
@@ -104,8 +104,21 @@ export function parseCalendar(text:string,options:ParseOptions):ParsedCalendar {
     }
     if(records.length>20000)throw new Error('Preview exceeds 20,000 occurrences. Narrow the date range.');
   }
+  const overrides = new Set<string>();
   for(const c of components.filter(c=>c.hasProperty('recurrence-id'))){
-    try{const source=String(c.getFirstPropertyValue('uid')??''),master=masters.get(source);if(!master?.recurrence)throw new Error('Occurrence override has no supported recurring parent.');const original=readTime(c.getFirstProperty('recurrence-id'),master.timing.zone).date;const cancelled=c.getFirstPropertyValue('status')==='CANCELLED';const value=cancelled?null:componentItem(c,options,true);records.push(parseRecord({id:randomUUID(),kind:'exception',seriesId:master.id,originalDate:original,cancelled,override:value?{title:value.title,timing:value.timing,notes:value.notes,location:value.location,reminders:value.reminders}:{}}));}catch(error){warnings.push((error as Error).message);invalid++;}
+    try {
+      const source=String(c.getFirstPropertyValue('uid')??''),master=masters.get(source);
+      if(!master?.recurrence)throw new Error('Occurrence override has no supported recurring parent.');
+      const identity=readTime(c.getFirstProperty('recurrence-id'),master.timing.zone);
+      const dateOnly=master.timing.mode==='allDay'||master.timing.mode==='deadline'&&!master.timing.time;
+      const original=identity.allDay?identity.date:DateTime.fromISO(identity.instant).setZone(master.timing.zone).toISODate()!;
+      if(identity.allDay!==dateOnly||!recurringDates(master,original,addDays(original,1)).includes(original)||!dateOnly&&anchor(atDate(master.timing,original))!==Date.parse(identity.instant))throw new Error('Occurrence override does not match a parent occurrence.');
+      const key=JSON.stringify([source,original]);if(overrides.has(key))throw new Error('Duplicate occurrence override was skipped.');
+      const cancelled=c.getFirstPropertyValue('status')==='CANCELLED',value=cancelled?null:componentItem(c,options,true);
+      if(value)validateTiming(value.timing);
+      records.push(parseRecord({id:randomUUID(),kind:'exception',seriesId:master.id,originalDate:original,cancelled,override:value?{title:value.title,timing:value.timing,notes:value.notes,location:value.location,reminders:value.reminders}:{}}));
+      overrides.add(key);
+    } catch(error){warnings.push((error as Error).message);invalid++;}
   }
   if(records.length>5000)throw new Error('Conversion produced more than 5,000 records. Choose a smaller date range.');
   return {records,warnings,invalid};

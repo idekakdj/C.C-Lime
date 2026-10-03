@@ -12,6 +12,14 @@ beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-lime-tests-'
 afterEach(() => { stores.forEach(store => store.close()); if (!path.resolve(root).startsWith(path.resolve(os.tmpdir()) + path.sep) || !path.basename(root).startsWith('cc-lime-tests-')) throw Error('Unsafe test cleanup path'); fs.rmSync(root, { recursive: true, force: true }); });
 
 describe('durable local storage and recovery', () => {
+  it('rejects nonexistent local times before changing records or outbox in single, linked and imported writes',()=>{
+    const store=open(),valid=item();store.save(valid);const before=store.list(),queue=store.queue();
+    const invalid=item({timing:{mode:'deadline',date:'2026-03-08',time:'02:30',zone:'America/Toronto',anchorTime:'09:00'}});
+    expect(()=>store.save(invalid)).toThrow(/does not exist/);
+    expect(()=>store.saveGroup([{id:valid.id,value:{...valid,title:'Must not save'}},{id:invalid.id,value:invalid}])).toThrow(/does not exist/);
+    expect(()=>store.importRecords([{...valid,title:'Must not import'},invalid])).toThrow(/does not exist/);
+    expect(store.list()).toEqual(before);expect(store.queue()).toEqual(queue);
+  });
   it('rolls back the entire group and queue when SQLite reaches its file-size limit',()=>{
     const store=open(),original=item();store.save(original);const records=store.list(),queue=store.queue(),pages=store.db.pragma('page_count',{simple:true})as number;
     store.db.pragma(`max_page_count = ${pages}`);

@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseRecord, type Conflict, type DomainRecord, type ReminderEntry } from '../shared/model';
-import { recurringDates } from '../domain/calendar';
+import { recurringDates, validateTiming } from '../domain/calendar';
 import { completionFor } from './profile';
 
 export interface Mutation { id: string; order: number; recordId: string; baseVersion: string | null; base: DomainRecord | null; value: DomainRecord | null; state: string; attempts: number; groupId?:string; }
@@ -95,11 +95,13 @@ export class LocalStore {
   private validateRelations(record: DomainRecord, prospective?: Map<string, DomainRecord>): void {
     const get = (id: string) => prospective ? prospective.get(id) : this.get(id);
     if (record.kind === 'item') {
+      validateTiming(record.timing);
       if (record.courseId && get(record.courseId)?.kind !== 'course') throw new Error('The selected course is unavailable.');
       if (record.assignmentId) { const assignment = get(record.assignmentId); if (assignment?.kind !== 'item' || assignment.itemType !== 'assignment') throw new Error('The linked assignment is unavailable.'); }
     }
     if (record.kind === 'course' && record.semesterId && get(record.semesterId)?.kind !== 'semester') throw new Error('The selected semester is unavailable.');
     if (record.kind === 'exception' || record.kind === 'occurrenceState') {
+      if (record.kind === 'exception' && record.override.timing) validateTiming(record.override.timing);
       const series = get(record.seriesId);
       if (series?.kind !== 'item' || !series.recurrence) throw new Error('The repeating series is unavailable.');
       const tomorrow = new Date(`${record.originalDate}T00:00:00Z`); tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);

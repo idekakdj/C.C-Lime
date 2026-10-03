@@ -562,3 +562,11 @@ No production release, signing certificate, automatic updater or macOS/Linux ins
 6. For the compliance program, appoint accountable privacy/security/incident/recovery roles, approve backup objectives and evidence retention, and arrange qualified legal/independent assessment. Draft procedures and automated tests cannot make these organizational decisions.
 
 These do not block independent code, emulator, package, documentation or performance work.
+
+## October 2 isolated adversarial checkpoint
+
+Owner-requested vulnerability and niche edge-case testing is recorded in [the detailed assessment](ADVERSARIAL_TEST_REPORT.md), with [the pre-work test plan](ADVERSARIAL_TEST_PLAN.md). Five findings are repaired in source and the separate test package: impossible local times breaking expansion/reminders, ambiguous duplicate overrides, UTC occurrence identities crossing local midnight, lost imported seconds and growing calendar/backup file reads exceeding a pre-read size decision. New-write rejection is atomic; legacy master/override repair remains available.
+
+Final evidence: 285/285 source tests with one worker and 15-second test budgets; typecheck; 59/59 cloud-emulator cases; 81 tooling passes plus two existing privilege skips; 144 matrix cases (112 supported round trips, 32 explicit unsupported-mode rejections); actual Electron image decoding with 22 files/13 rejections and 162 valid crops; secret/package gates. Forty-two distinct packaged cases passed across a 36/41 full attempt and an 8/8 retry (two overlaps, one additional legacy-override case). Earlier failures remain recorded; shutdown/probe timeouts are not accepted as passes, and the hostile-text fixture was corrected to expand Notes controls before filling them. Fresh/restart configured and unconfigured sign-in tests passed. Final test ASAR: `be5252f27314b1ef1c73f85291ba1ea342659c0b7cd0f3b973ea1efd5a81d208`.
+
+The normal 0.1.16 installation and profile were left untouched. No production provider/rules change or compliance certification occurred. Native computer control could target only the owner app; no owner interaction or new native/Google/OS/second-PC acceptance is claimed. Runtime fuse/signing/native-assessment and immediate backend ID-token revocation gaps remain separately listed in the report and compliance checklist.

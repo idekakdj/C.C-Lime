@@ -31,15 +31,18 @@ export function finish(timing: Timing): number | null {
   if (timing.mode === 'deadline') return timing.time ? localInstant(timing.date, timing.time, timing.zone).toMillis() : day(timing.date, timing.zone).plus({ days: 1 }).toMillis();
   return null;
 }
+// Validate writes without tightening the read schema: older saved calendars may
+// contain a civil time that never existed, and must remain readable for repair.
+export function validateTiming(timing: Timing): void { anchor(timing); finish(timing); }
 export function atDate(timing: Timing, date: string): Timing {
   const key=JSON.stringify([timing,date]),cached=timingCache.get(key);if(cached)return {...cached};
   if (timing.mode === 'timed') {
     const original = DateTime.fromISO(timing.start).setZone(timing.zone);
-    const start = localInstant(date, original.toFormat('HH:mm'), timing.zone);
+    const start = localInstant(date, original.toFormat('HH:mm'), timing.zone).plus({ seconds: original.second, milliseconds: original.millisecond });
     return {...remember(timingCache,key,{ ...timing, start: start.toUTC().toISO()!, end: start.plus({ milliseconds: DateTime.fromISO(timing.end).toMillis() - original.toMillis() }).toUTC().toISO()! })};
   }
-  if (timing.mode === 'allDay') return { ...timing, startDate: date, endDate: addDays(date, Math.round(day(timing.endDate).diff(day(timing.startDate), 'days').days)) };
-  if (timing.mode === 'deadline') return { ...timing, date };
+  if (timing.mode === 'allDay') { const value = { ...timing, startDate: date, endDate: addDays(date, Math.round(day(timing.endDate).diff(day(timing.startDate), 'days').days)) }; validateTiming(value); return value; }
+  if (timing.mode === 'deadline') { const value = { ...timing, date }; validateTiming(value); return value; }
   return timing;
 }
 export function recurrenceRule(recurrence: Recurrence, firstDate: string, includeCount = true): string {
@@ -75,12 +78,12 @@ function occurrence(item: CalendarItem, originalDate: string, displayZone: strin
   let timing: Timing; try { timing = item.recurrence ? atDate(item.timing, originalDate) : item.timing; } catch { return null; }
   const effective = { ...item, ...exception?.override, timing: exception?.override.timing ?? timing };
   const key=JSON.stringify([effective.timing,displayZone]);let display=displayCache.get(key);
-  if(!display){const startMs=anchor(effective.timing),endMs=finish(effective.timing);let date=sourceDate(effective.timing)??'',endDate=date;
+  try { if(!display){const startMs=anchor(effective.timing),endMs=finish(effective.timing);let date=sourceDate(effective.timing)??'',endDate=date;
     if(effective.timing.mode==='timed'){date=DateTime.fromMillis(startMs!,{zone:displayZone}).toISODate()!;endDate=DateTime.fromMillis(endMs!-1,{zone:displayZone}).toISODate()!;}
     if(effective.timing.mode==='allDay')endDate=addDays(effective.timing.endDate,-1);
     if(effective.timing.mode==='deadline'&&effective.timing.time)date=endDate=DateTime.fromMillis(startMs!,{zone:displayZone}).toISODate()!;
     display=remember(displayCache,key,{startMs,endMs,date,endDate});
-  }
+  } } catch { return null; }
   return { ...effective, originalDate, occurrenceKey: item.recurrence ? `${item.id}:${originalDate}` : item.id, seriesId: item.recurrence ? item.id : null,...display };
 }
 export function expand(records: DomainRecord[], from: string, toExclusive: string, displayZone: string, limit = 20000): Occurrence[] {
@@ -98,7 +101,8 @@ export function expand(records: DomainRecord[], from: string, toExclusive: strin
     if (record.kind !== 'item') continue;
     const first = sourceDate(record.timing); if (!first) continue;
     if (!record.recurrence) { push(occurrence(record, first, displayZone)); continue; }
-    const durationDays = Math.max(2, Math.ceil(((finish(record.timing) ?? 0) - (anchor(record.timing) ?? 0)) / 86400000) + 2);
+    let durationDays = 2;
+    try { durationDays = Math.max(2, Math.ceil(((finish(record.timing) ?? 0) - (anchor(record.timing) ?? 0)) / 86400000) + 2); } catch { /* Invalid legacy anchor: valid later repetitions may still render. */ }
     const dates = new Set(recurringDates(record, addDays(from, -durationDays), addDays(toExclusive, 2)));
     for (const exception of exceptions.values()) if (exception.seriesId === record.id && exception.override.timing) {
       const moved = sourceDate(exception.override.timing); if (moved && moved < addDays(toExclusive, 2) && moved >= addDays(from, -durationDays)) dates.add(exception.originalDate);

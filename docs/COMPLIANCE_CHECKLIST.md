@@ -8,6 +8,8 @@ October 2, 2026, Ontario owner-only pilot. Installed release is **0.1.16** under
 
 The subsequent [password-session change](PASSWORD_SESSION_CHANGE_PLAN.md) is source/test-package only: forced current-device sign-in and sync refresh-token validation have live disposable two-session/restored-session evidence. This is an additional measured engineering control, not an installed update, immediate backend access-token revocation or a framework-compliance claim.
 
+The owner-authorized [adversarial assessment](ADVERSARIAL_TEST_REPORT.md) adds five repaired calendar/import/read-bound findings, 285 passing source tests, 42 distinct passing packaged checks across retained attempts, 59 cloud cases, a 144-case recurrence matrix and real Electron decoder/crop probes. This is source/test-package evidence; it neither updates the installed release nor substitutes for the independent attack/native assessment or organizational assurance gates below.
+
 | Work / task | Status | Evidence and next gate |
 | --- | --- | --- |
 | T-49 scope/traceability | Engineering specification prepared | [Security/privacy specification](SECURITY_PRIVACY_PLAN.md); personal calendar, Ontario, owner-only, PHIPA excluded. Final legal operator and assessed scope still required |
