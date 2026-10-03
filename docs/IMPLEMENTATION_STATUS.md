@@ -1,5 +1,13 @@
 # Implementation and verification evidence
 
+## October 2 installed 0.1.17 owner-only update
+
+The owner requested a new installed version and confirmed tray closure. [The plan](RELEASE_0117_PLAN.md) preceded the root-only metadata change. [Release notes](RELEASE_0117_NOTES.md) retain exact installed identities, features, tests and limits. Password-change sign-out/refresh-token preflight, adversarial calendar/import/read-bound repairs and the complete time-zone catalog are now installed. Normal account/configuration and startup approval are preserved; the ordinary installed window is reopened.
+
+All 287 source, 81 tooling, 59 cloud emulator, 35 original desktop, 43 independent renderer, 32 disposable all-seven and five live installed checks pass. Two local tooling symlink-privilege skips remain explicit. The 12-record populated upgrade preserves exactly; the 109-file owner profile retains all 39 records across both account databases and every non-cache file before reopening; 108 distributed files match the nupkg vector. Actual installed fresh/restart email/Google/reset readiness passes, as do real disposable email sign-in, Windows-encrypted restart and sign-out with independently cleaned identity/data/configuration.
+
+The newly changed full-lockfile audit reports 23 propagated high affected-package entries from two unpatched build/emulator root libraries, absent from the measured app bundle/copy inventory and archive dependency tree. **The production npm gate and both exact-source Windows CI runs fail at dependency checking.** This is an explicitly requested private update, not a production waiver or clean full-CI claim. No severity suppression, dependency pin change, public distribution, production fuse/provider rollout or certification occurs. Initial redirected backup/path-separator/hidden-window failures remain recorded separately from their corrected normal-context checks. Earlier source-only checkpoints below are historical and superseded for installed scope by this release.
+
 ## October 2 complete time-zone catalog (source and test package)
 
 The requested [time-zone expansion](TIME_ZONE_OPTIONS_PLAN.md) replaces the 16 suggestions with the pinned runtime's complete geographic catalog plus UTC/fixed-offset zones. The Windows package exposes 447 options covering all 418 runtime-enumerated zones. Saved aliases remain selectable, and valid aliases can still be typed. The shared searchable datalist also serves onboarding, event/semester editors and import.
