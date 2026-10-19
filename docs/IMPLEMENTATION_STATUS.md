@@ -1,5 +1,12 @@
 # Implementation and verification evidence
 
+## October 19 installed 0.1.18 weekly scale and task tabs
+
+The owner-requested [0.1.18 update](RELEASE_0118_NOTES.md) is installed/reopened, with the [plan](RELEASE_0118_PLAN.md) and [four scoped dependency repairs](RELEASE_0118_DEPENDENCIES.md) retained. My Tasks now has To do/Completed; old in-progress records remain actionable. Week view adds persisted 20–100% vertical spacing and Fit week, preserving all-day/sidebar/font/horizontal dimensions, scaled drag/resize and readable collision handling. A dialog-toast Save obstruction and the ordinary-height five-pixel overflow were repaired and retested.
+
+Final evidence: 369 source, 82 tooling pass/two existing privilege skips, 84 cloud, 48 independent renderer, 35 original desktop, eight combined-fuse copy cases. Actual installed distribution/profile/private configuration/startup preservation and fresh/restart email/Google/reset readiness pass; live disposable email sign-in/encrypted restart/sign-out/cleanup passes five checks. Google consent/physical OS checks remain separate. The full npm gate remains blocked at seven high/16 moderate propagated build-tool findings, absent from the measured app archive/inventory. MFA remains staged/default-off; no live rules/provider/signing/IAM/billing activation, public release, all-seven shipping policy or formal compliance claim.
+
+
 ## October 3 authenticator/passkey source candidate
 
 The owner-authorized plan and two-method source work are recorded in [the MFA implementation evidence](MFA_IMPLEMENTATION_EVIDENCE.md), with [the detailed pre-work plan](TOTP_PASSKEY_IMPLEMENTATION_PLAN.md) and [exact pending deployment/trust review](MFA_GATEWAY_DEPLOYMENT_REVIEW.md). Billing stays disabled; the owner needs a Cloudflare account. No version/install, live provider MFA/rules, administrator key, gateway deployment or owner-factor mutation is claimed. Locally measured engineering evidence and remaining physical/provider/hosting/recovery gates are separated in that register.
