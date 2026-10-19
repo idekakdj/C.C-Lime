@@ -1,7 +1,7 @@
 {
   "name": "cc-lime",
   "productName": "C.C. Lime",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "description": "A thoughtful calendar and task planner for university life.",
   "author": "idekakdj",
   "private": true,
@@ -67,7 +67,7 @@
     "qrcode": "1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
     "typescript": "7.0.2",
     "vite": "8.3.0",
     "vitest": "5.0.1",
@@ -82,7 +82,10 @@
       "extract-zip": "npm:@electron-internal/extract-zip@1.0.5"
     },
     "tmp": "0.2.7",
+    "http-cache-semantics": "4.3.0",
+    "source-map-js": "1.2.2",
     "firebase-tools": {
+      "@modelcontextprotocol/sdk": "1.31.0",
       "get-uri": {
         "basic-ftp": "6.2.1"
       },

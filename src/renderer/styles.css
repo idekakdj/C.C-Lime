@@ -44,3 +44,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .tasks-toolbar{flex-wrap:wrap}
 .task-range-label{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .task-range-label select{min-width:140px}
+
+/* Only hourly spacing changes; the all-day row, columns, sidebar and text retain their sizes. */
+.week-scale-controls{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px}
+.week-scale-controls label{font-size:11px;margin:0;white-space:nowrap}
+.week-scale-controls input[type=range]{width:120px;min-height:24px;padding:0;accent-color:var(--profile-accent,#a88add)}
+.week-scale-controls output{min-width:34px;font-variant-numeric:tabular-nums}
+.week-scale-controls .button{min-height:28px;padding:3px 9px;font-size:11px}
+.week-scale-controls .selected{border-color:var(--profile-accent,#a88add)}
+.week-fit-hint{font-size:10px;color:var(--muted)}
+.week-scroll{overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable}
+.week-time-grid{height:calc(var(--week-hour-height,56px)*24)}
+.time-axis>span{height:var(--week-hour-height,56px)}
+.week-day-track{background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--week-hour-height,56px) - 1px),var(--theme-31203b,#31203b) calc(var(--week-hour-height,56px) - 1px),var(--theme-31203b,#31203b) var(--week-hour-height,56px))}
+/* Dialog messages participate in layout so they cannot cover Save/Cancel. */
+.modal>.toast{position:static;inset:auto;transform:none;min-width:0;max-width:none;width:auto;animation:none;box-shadow:none}

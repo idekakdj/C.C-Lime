@@ -12,6 +12,16 @@ import type { CloudAdapter } from '../../src/main/cloud';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('defaults old device settings to original week scale, validates and restores custom or automatic fit across restart',async()=>{
+ const {service,root}=await setup();expect(service.device.weekScale).toBe(100);
+ await service.command('device',{weekScale:65});expect(service.snapshot().device.weekScale).toBe(65);
+ for(const weekScale of [0,21,101,22.5,'50',Number.NaN])await expect(service.command('device',{weekScale})).rejects.toThrow();
+ expect(service.device.weekScale).toBe(65);await service.command('device',{weekScale:null});
+ const host=(service as any).host as HostServices;await service.close();const restarted=new ApplicationService(root,null,host);entries.find(entry=>entry.service===service)!.service=restarted;
+ expect(restarted.device.weekScale).toBeNull();await restarted.command('localPreview',null);
+ const legacy={...restarted.device};delete (legacy as any).weekScale;await restarted.close();fs.writeFileSync(path.join(root,'device.json'),JSON.stringify(legacy));
+ const olderSettings=new ApplicationService(root,null,host);entries.find(entry=>entry.service===restarted)!.service=olderSettings;expect(olderSettings.device.weekScale).toBe(100);
+});
 it('hides dismissed and pending reminders before the inbox cap without deleting delivery history',async()=>{
  const {service}=await setup();service.scheduler!.stop();const store=service.store!,now=Date.now();
  const entry={id:randomUUID(),itemId:randomUUID(),occurrenceKey:randomUUID(),ruleId:randomUUID(),title:'Visible older reminder',dueMs:now-60000,anchorMs:now,endMs:now+60000,task:true,state:'emitted',snoozeMs:null,createdMs:now};

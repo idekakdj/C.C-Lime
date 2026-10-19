@@ -1,5 +1,9 @@
 # C.C. Lime data and retention inventory
 
+## October 19 weekly display preference
+
+Version 0.1.18 adds `weekScale` to local `device.json`: an integer percentage or `null` for automatic fit. It is retained with the device profile/backups, not an account/cloud record, and introduces no vendor, telemetry, permission or credential. Task-tab removal reads existing statuses without deleting or migrating records. Normal-profile backup/installation results are recorded in [release notes](RELEASE_0118_NOTES.md); operator-approved backup retention remains open.
+
 ## October 3 staged authenticator/passkey data flows
 
 The [MFA candidate](MFA_IMPLEMENTATION_EVIDENCE.md) introduces source support for Firebase native authenticator enrollment/sign-in and a proposed Cloudflare Workers/D1 passkey verifier. Cloudflare resources have not been created and the owner's data has not been sent there. Native TOTP setup key/session/QR stays temporarily in main/renderer memory, clears on completion/cancel/account change/expiry and never enters snapshots, SQLite, calendar backup, diagnostics or browser URLs. No remote QR service is used.
