@@ -1,5 +1,7 @@
 # Authenticator/passkey implementation evidence
 
+October 19 tooling refresh: the separate gateway's fresh audit initially found the sharp advisory through Miniflare/Wrangler. A scoped sharp 0.35.5 override removes all three propagated findings; only sharp/platform/libvips lock entries changed. Local gateway audit now has zero findings, syntax/production build pass with 27 notices, and all 20 browser/Workers-D1 tests pass again. No server protocol, deployment, trusted key, owner enrollment, live rules or billing changes occur. Desktop 0.1.18 preparation and its separate root dependency gate are recorded in [release notes](RELEASE_0118_NOTES.md). The October 3 observations below retain their original scope and package identity.
+
 October 3, 2026. Source candidate under the [pre-work plan](TOTP_PASSKEY_IMPLEMENTATION_PLAN.md), with [deployment/trust review](MFA_GATEWAY_DEPLOYMENT_REVIEW.md). The owner has not yet created the Cloudflare account. **Installed 0.1.17, live MFA, live rules, billing and private runtime configuration are unchanged.** No signing credential or hosted gateway exists.
 
 ## Implemented source controls
