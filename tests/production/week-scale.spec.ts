@@ -6,6 +6,29 @@ import { DateTime } from 'luxon';
 import { makeItem,type Snapshot } from '../../src/shared/model';
 import { rendererCopy,startDesktop } from './desktop.mjs';
 
+test('weekly hourly box is 50% taller, all-day visibility defaults shown and persists without losing records',async({},info)=>{
+ const copy=await rendererCopy(),profile=path.join(copy.root,'weekly-visibility');let desktop=await startDesktop(copy,profile);
+ try{
+  let page=desktop.page;await page.setViewportSize({width:1600,height:1000});
+  const date=(await page.locator('.day-cell.today [data-day]').getAttribute('data-day'))!,state=await page.evaluate(()=>window.lime.call<Snapshot>('snapshot')),zone=state.displayZone!;
+  const task={...makeItem(randomUUID(),date,zone,'task'),title:'Toggle preserves this task',timing:{mode:'deadline' as const,date,time:null,zone,anchorTime:'09:00'}};
+  await page.evaluate(item=>window.lime.call('save',item),task);await page.getByRole('button',{name:'Week',exact:true}).click();
+  const geometry=()=>page.locator('.week-scroll').evaluate(el=>{const area=el.closest('.calendar-area')!,layout=area.closest('.calendar-layout')!,footer=area.querySelector('.calendar-footer')!;const room=Math.floor(innerHeight-(el.getBoundingClientRect().top+scrollY)-footer.getBoundingClientRect().height-(parseFloat(getComputedStyle(layout).paddingBottom)||0)-3);return {actual:el.getBoundingClientRect().height,expected:Math.max(268.8,Math.floor(room*1.5)),width:el.getBoundingClientRect().width,hour:document.querySelector('.time-axis>span')!.getBoundingClientRect().height};});
+  const hide=()=>page.getByRole('button',{name:'Hide all day & due',exact:true}),show=()=>page.getByRole('button',{name:'Show all day & due',exact:true});
+  await expect(hide()).toHaveAttribute('aria-expanded','true');await expect(page.locator('#week-all-day')).toBeVisible();
+  await expect.poll(async()=>{const g=await geometry();return Math.abs(g.actual-g.expected);}).toBeLessThan(.1);
+  const before=await geometry();expect(before.hour).toBe(56);await hide().click();await expect(show()).toHaveAttribute('aria-expanded','false');await expect(show()).toHaveAttribute('aria-controls','week-all-day');await expect(page.locator('#week-all-day')).toBeHidden();
+  await expect.poll(async()=>(await geometry()).actual).toBeGreaterThan(before.actual);expect((await geometry()).width).toBe(before.width);expect((await geometry()).hour).toBe(56);
+  expect((await page.evaluate(()=>window.lime.call<Snapshot>('snapshot'))).records.some(record=>record.id===task.id)).toBe(true);
+  await desktop.close();desktop=await startDesktop(copy,profile);page=desktop.page;await expect(show()).toBeVisible();await expect(page.locator('#week-all-day')).toBeHidden();
+  await show().focus();await page.keyboard.press('Enter');await expect(hide()).toHaveAttribute('aria-expanded','true');await expect(page.locator('#week-all-day').getByRole('button',{name:task.title,exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Fit week',exact:true}).click();const fitted=Number(await page.getByRole('slider',{name:'Time-slot scale',exact:true}).inputValue());await hide().click();await expect.poll(async()=>Number(await page.getByRole('slider',{name:'Time-slot scale',exact:true}).inputValue())).toBeGreaterThan(fitted);
+  await show().click();await page.locator('#week-all-day').getByRole('button',{name:task.title,exact:true}).click();await expect(page.getByRole('dialog',{name:'Edit your plan',exact:true})).toBeVisible();await page.getByRole('button',{name:'Cancel',exact:true}).click();
+  await page.screenshot({path:info.outputPath('taller-week-all-day-shown.png')});
+ }finally{await desktop.close();}
+ await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,viewport150Percent:true,manualHourSpacingUnchanged:true,visibilityDefaultShown:true,visibilityRestart:true,hiddenRecordsPreserved:true,keyboardToggle:true,fitRemeasures:true,normalExit:true},null,2));
+});
+
 test('weekly fit preserves all-day/sidebar/column/text sizes, handles short collisions and persists without hiding in-progress tasks',async({},info)=>{
   const copy=await rendererCopy(),profile=path.join(copy.root,'week-scale');let desktop=await startDesktop(copy,profile);
   try{
@@ -21,7 +44,7 @@ test('weekly fit preserves all-day/sidebar/column/text sizes, handles short coll
     const fits=async()=>page.locator('.week-scroll').evaluate(el=>({scrollHeight:el.scrollHeight,height:el.clientHeight,top:el.scrollTop}));
     await expect.poll(async()=>{const result=await fits();return result.scrollHeight-result.height;}).toBeLessThanOrEqual(1);
     const fit=await dimensions();expect(fit.allDay).toEqual(original.allDay);expect(fit.allDayButton).toEqual(original.allDayButton);expect(fit.sidebar).toEqual(original.sidebar);expect(fit.grid.width).toBe(original.grid.width);expect(fit.track.width).toBe(original.track.width);expect(fit.font).toBe(original.font);expect(fit.grid.height).toBeLessThan(original.grid.height);expect((await fits()).top).toBe(0);
-    for(const value of values)await expect(page.locator('.week-block').filter({hasText:value.title}).getByRole('button').first()).toBeInViewport();
+    for(const value of values){const block=page.locator('.week-block').filter({hasText:value.title});expect(await block.evaluateAll(elements=>elements.length>0&&elements.every(el=>{const box=el.getBoundingClientRect(),grid=el.closest('.week-time-grid')!.getBoundingClientRect();return box.top>=grid.top&&box.bottom<=grid.bottom+.1;}))).toBe(true);}
     const first=await page.locator('.week-block').filter({hasText:values[0].title}).boundingBox(),second=await page.locator('.week-block').filter({hasText:values[1].title}).boundingBox();expect(first!.x+first!.width).toBeLessThanOrEqual(second!.x+.1);
     await page.screenshot({path:info.outputPath('weekly-fit.png')});
     await page.setViewportSize({width:1600,height:900});await expect.poll(async()=>{const result=await fits();return result.scrollHeight-result.height;}).toBeLessThanOrEqual(1);expect((await dimensions()).allDay).toEqual(original.allDay);
@@ -43,7 +66,7 @@ test('compressed weekly dragging and resizing use scaled time, retain cancel/key
     const value=makeItem(randomUUID(),date,zone);value.title='Scaled movement';
     await page.evaluate(item=>window.lime.call('save',item),value);await page.getByRole('button',{name:'Week',exact:true}).click();await page.getByRole('button',{name:'Fit week',exact:true}).click();
     const track=page.locator(`[data-week-date="${date}"]`),block=track.locator('.week-block'),editor=page.getByRole('dialog',{name:'Edit your plan',exact:true});
-    const hour=await page.locator('.time-axis>span').first().evaluate(el=>el.getBoundingClientRect().height),target=await track.boundingBox(),source=await block.boundingBox();
+    await block.scrollIntoViewIfNeeded();const hour=await page.locator('.time-axis>span').first().evaluate(el=>el.getBoundingClientRect().height),target=await track.boundingBox(),source=await block.boundingBox();
     expect(hour).toBeLessThan(56);expect(target).not.toBeNull();expect(source).not.toBeNull();
     const offset=8;await page.mouse.move(source!.x+source!.width/2,source!.y+offset);await page.mouse.down();await page.mouse.move(source!.x+source!.width/2+8,source!.y+offset,{steps:3});
     await page.mouse.move(target!.x+target!.width/2,target!.y+10.25*hour+offset,{steps:8});await page.mouse.up();
@@ -69,7 +92,7 @@ test('five all-day items retain their full size while fit responds to header hei
     const measure=async()=>page.locator('.week-all-day').evaluate(el=>({height:el.getBoundingClientRect().height,buttonHeight:el.querySelector('button')!.getBoundingClientRect().height,font:getComputedStyle(el.querySelector('button')!).fontSize}));
     const fit=await measure();await expect.poll(()=>page.locator('.week-scroll').evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);await page.screenshot({path:info.outputPath('five-all-day-fit.png')});
     await page.getByRole('button',{name:'100%',exact:true}).click();expect(await measure()).toEqual(fit);
-    await page.getByRole('button',{name:'Fit week',exact:true}).click();await page.setViewportSize({width:1480,height:930});await expect(page.locator('.week-fit-hint')).toHaveCount(0);await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollHeight-innerHeight)).toBeLessThanOrEqual(0);await expect.poll(()=>page.locator('.week-scroll').evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+    await page.getByRole('button',{name:'Fit week',exact:true}).click();await page.setViewportSize({width:1480,height:930});await expect(page.locator('.week-fit-hint')).toHaveCount(0);await expect.poll(()=>page.locator('.week-scroll').evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
     await page.setViewportSize({width:1600,height:650});await expect(page.locator('.week-fit-hint')).toBeVisible();expect(await measure()).toEqual(fit);await expect(page.getByRole('slider',{name:'Time-slot scale',exact:true})).toHaveValue('20');
   }finally{await desktop.close();}
   await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,fixturePolicy:copy.policy,fiveAllDayItemsUnchanged:true,automaticHeaderReflow:true,shortWindowReadableFallback:true,normalExit:true},null,2));

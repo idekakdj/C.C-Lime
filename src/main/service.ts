@@ -22,7 +22,7 @@ import { createBackup, readBackup, remapBackup, previewImport, type ParsedCalend
 import { seriesImpact, seriesChanges, semesterClass, type SchedulePreview, type RecordChange } from '../domain/schedule-changes';
 import { defaultDeviceSettings, parseRecord, preferencesSchema, itemSchema, semesterSchema, localDate, localTime, uid, zone as zoneSchema, type CloudConfiguration, type DeviceSettings, type DomainRecord, type ImportPreview, type Preferences, type Snapshot, type CalendarItem, type Semester, type NotificationTest } from '../shared/model';
 
-const deviceSchema=z.object({notifications:z.boolean(),startAtLogin:z.boolean(),closeToTray:z.boolean(),quietStart:localTime.nullable(),quietEnd:localTime.nullable(),privacy:z.boolean(),followZone:z.boolean(),onboardingDone:z.boolean(),view:z.enum(['month','week','agenda']),month:z.string().regex(/^\d{4}-\d{2}$/).nullable(),hideCompleted:z.boolean(),weekScale:z.number().int().min(20).max(100).nullable()}).strict();
+const deviceSchema=z.object({notifications:z.boolean(),startAtLogin:z.boolean(),closeToTray:z.boolean(),quietStart:localTime.nullable(),quietEnd:localTime.nullable(),privacy:z.boolean(),followZone:z.boolean(),onboardingDone:z.boolean(),view:z.enum(['month','week','agenda']),month:z.string().regex(/^\d{4}-\d{2}$/).nullable(),hideCompleted:z.boolean(),weekScale:z.number().int().min(20).max(100).nullable(),showWeekAllDay:z.boolean()}).strict();
 export interface HostServices {
   chooseAvatar?():Promise<PreparedAvatar|null>;
   secure:SecureStorage; openBrowser(url:string):Promise<void>; changed():void; notify(notice:ReminderNotice):void;

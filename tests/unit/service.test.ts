@@ -12,6 +12,17 @@ import type { CloudAdapter } from '../../src/main/cloud';
 const entries:Array<{root:string;service:ApplicationService}>=[];
 async function setup(file?:string){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cc-lime-service-'));const host:HostServices={secure:{isEncryptionAvailable:()=>false,encryptString:()=>Buffer.alloc(0),decryptString:()=>''},openBrowser:async()=>{},changed:()=>{},notify:()=>{},openFile:async()=>file??null,saveFile:async()=>null,setStartup:()=>{},startupStatus:()=>({enabled:false,wasOpenedAtLogin:false}),dataFolder:()=>{},version:'test'};const service=new ApplicationService(root,null,host);entries.push({root,service});await service.command('localPreview',null);return{root,service};}
 afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.close();if(root.startsWith(path.join(os.tmpdir(),'cc-lime-service-')))fs.rmSync(root,{recursive:true,force:true});}});
+it('defaults weekly all-day visibility to shown, validates boolean changes and restores hidden visibility across restart',async()=>{
+ const {service,root}=await setup();expect(service.device.showWeekAllDay).toBe(true);
+ await service.command('device',{showWeekAllDay:false});
+ for(const showWeekAllDay of ['false',0,null,{},[]])await expect(service.command('device',{showWeekAllDay})).rejects.toThrow();
+ expect(service.device.showWeekAllDay).toBe(false);
+ const host=(service as any).host as HostServices;await service.close();const restarted=new ApplicationService(root,null,host);entries.find(entry=>entry.service===service)!.service=restarted;
+ expect(restarted.device.showWeekAllDay).toBe(false);
+ await restarted.command('device',{showWeekAllDay:true});expect(restarted.device.showWeekAllDay).toBe(true);
+ const legacy={...restarted.device};delete (legacy as any).showWeekAllDay;await restarted.close();fs.writeFileSync(path.join(root,'device.json'),JSON.stringify(legacy));
+ const olderSettings=new ApplicationService(root,null,host);entries.find(entry=>entry.service===restarted)!.service=olderSettings;expect(olderSettings.device.showWeekAllDay).toBe(true);
+});
 it('defaults old device settings to original week scale, validates and restores custom or automatic fit across restart',async()=>{
  const {service,root}=await setup();expect(service.device.weekScale).toBe(100);
  await service.command('device',{weekScale:65});expect(service.snapshot().device.weekScale).toBe(65);

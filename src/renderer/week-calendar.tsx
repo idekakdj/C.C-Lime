@@ -7,11 +7,11 @@ import { typeColors } from './ui';
 type ResizeGesture={key:string;pointer:number;y:number};
 interface Props {
   dates:string[];today:string;prefs:Preferences;itemsByDate:Map<string,Occurrence[]>;courses:Map<string,Course>;
-  scale:number|null;onScale:(scale:number|null)=>void;onDate:(date:string)=>void;onOpen:(item:Occurrence)=>void;
+  scale:number|null;onScale:(scale:number|null)=>void;showAllDay:boolean;onShowAllDay:(show:boolean)=>void;onDate:(date:string)=>void;onOpen:(item:Occurrence)=>void;
   onMove:(item:Occurrence,date:string,minutes:number)=>void;onResize:(item:Occurrence,minutes:number)=>void;
   dragged:RefObject<Occurrence|null>;dragOffset:RefObject<number>;resizeStart:RefObject<ResizeGesture|null>;
 }
-export function WeekCalendar({dates,today,prefs,itemsByDate,courses,scale,onScale,onDate,onOpen,onMove,onResize,dragged,dragOffset,resizeStart}:Props){
+export function WeekCalendar({dates,today,prefs,itemsByDate,courses,scale,onScale,showAllDay,onShowAllDay,onDate,onOpen,onMove,onResize,dragged,dragOffset,resizeStart}:Props){
   const scroll=useRef<HTMLDivElement>(null),previousHour=useRef<number|null>(null);
   const [available,setAvailable]=useState(620),[limited,setLimited]=useState(false);
   // Reserve the unchanged headers/all-day section, footer and page padding. Re-measure
@@ -24,14 +24,15 @@ export function WeekCalendar({dates,today,prefs,itemsByDate,courses,scale,onScal
       const bottom=Number.parseFloat(getComputedStyle(layout).paddingBottom)||0;
       const room=Math.floor(window.innerHeight-(element.getBoundingClientRect().top+window.scrollY)-(footer?.getBoundingClientRect().height??34)-bottom-3);
       const minimum=24*WEEK_HOUR_HEIGHT*WEEK_MIN_SCALE/100;
-      setAvailable(Math.max(minimum,room));setLimited(room<minimum);
+      const tallerRoom=Math.floor(room*1.5);
+      setAvailable(Math.max(minimum,tallerRoom));setLimited(tallerRoom<minimum);
     };
     const schedule=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(measure);};
     const observer=new ResizeObserver(schedule);
     for(const node of document.querySelectorAll('.topbar,.page-heading,.verification-banner,.calendar-toolbar,.calendar-filters,.week-scale-controls,.week-date-head,.week-all-day,.calendar-footer'))observer.observe(node);
     window.addEventListener('resize',schedule);measure();
     return()=>{observer.disconnect();window.removeEventListener('resize',schedule);cancelAnimationFrame(frame);};
-  },[]);
+  },[showAllDay]);
   const percent=weekScale(scale,available),hourHeight=WEEK_HOUR_HEIGHT*percent/100;
   useLayoutEffect(()=>{
     const element=scroll.current;if(!element)return;
@@ -45,10 +46,11 @@ export function WeekCalendar({dates,today,prefs,itemsByDate,courses,scale,onScal
       <output htmlFor="week-scale">{percent}%</output>
       <button className={`button secondary ${scale===null?'selected':''}`} aria-pressed={scale===null} onClick={()=>onScale(null)}>Fit week</button>
       <button className="text-button" onClick={()=>onScale(100)}>100%</button>
+      <button className="button secondary" aria-expanded={showAllDay} aria-controls="week-all-day" onClick={()=>onShowAllDay(!showAllDay)}>{showAllDay?'Hide':'Show'} all day & due</button>
       {limited&&<span className="week-fit-hint">Increase window height for a full-day fit.</span>}
     </div>
     <div className="week-date-head"><span/>{dates.map(date=><button key={date} onClick={()=>onDate(date)}><small>{day(date).toFormat('ccc')}</small><b className={date===today?'today-number':''}>{day(date).day}</b></button>)}</div>
-    <div className="week-all-day"><span>All day<br/>& due</span>{dates.map(date=><div key={date}>{(itemsByDate.get(date)??[]).filter(o=>o.timing.mode!=='timed').map(o=><button key={o.occurrenceKey} onClick={()=>onOpen(o)}>{o.title}</button>)}</div>)}</div>
+    <div id="week-all-day" className="week-all-day" hidden={!showAllDay}><span>All day<br/>& due</span>{dates.map(date=><div key={date}>{(itemsByDate.get(date)??[]).filter(o=>o.timing.mode!=='timed').map(o=><button key={o.occurrenceKey} onClick={()=>onOpen(o)}>{o.title}</button>)}</div>)}</div>
     <div className="week-scroll" ref={scroll} style={{height:available}}>
       <div className="week-time-grid">
         <div className="time-axis">{Array.from({length:24},(_,h)=><span key={h}>{prefs.timeFormat==='24'?`${String(h).padStart(2,'0')}:00`:`${h%12||12}${h<12?'am':'pm'}`}</span>)}</div>

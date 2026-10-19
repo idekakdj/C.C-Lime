@@ -59,3 +59,5 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .week-day-track{background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--week-hour-height,56px) - 1px),var(--theme-31203b,#31203b) calc(var(--week-hour-height,56px) - 1px),var(--theme-31203b,#31203b) var(--week-hour-height,56px))}
 /* Dialog messages participate in layout so they cannot cover Save/Cancel. */
 .modal>.toast{position:static;inset:auto;transform:none;min-width:0;max-width:none;width:auto;animation:none;box-shadow:none}
+
+.week-all-day[hidden]{display:none}
