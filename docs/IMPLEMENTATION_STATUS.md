@@ -1,5 +1,9 @@
 # Implementation and verification evidence
 
+## October 19 installed 0.1.19 hourly viewport and all-day toggle
+
+The [0.1.19 update](RELEASE_0119_NOTES.md) is installed/reopened under its [plan](RELEASE_0119_PLAN.md): a 50% taller hourly viewport, default-visible All day & due toggle, local restart persistence and remeasurement. Manual spacing, text and widths remain unchanged. All 370 source, 49 independent renderer, 35 original desktop and nine combined-fuse copy checks pass. Ordinary profile/private configuration/startup and installed distribution are preserved; installed fresh/restart controls and cleaned-up live disposable email acceptance pass. No dependency/provider/MFA/hosting/compliance status change is claimed.
+
 ## October 19 installed 0.1.18 weekly scale and task tabs
 
 The owner-requested [0.1.18 update](RELEASE_0118_NOTES.md) is installed/reopened, with the [plan](RELEASE_0118_PLAN.md) and [four scoped dependency repairs](RELEASE_0118_DEPENDENCIES.md) retained. My Tasks now has To do/Completed; old in-progress records remain actionable. Week view adds persisted 20–100% vertical spacing and Fit week, preserving all-day/sidebar/font/horizontal dimensions, scaled drag/resize and readable collision handling. A dialog-toast Save obstruction and the ordinary-height five-pixel overflow were repaired and retested.

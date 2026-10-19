@@ -1,5 +1,9 @@
 # C.C. Lime data and retention inventory
 
+## October 19 weekly all-day visibility preference
+
+Version 0.1.19 adds the boolean `showWeekAllDay` to local `device.json`, defaulting to true for new/upgraded profiles. It follows the existing device profile/backup retention and is not synced as an account record. Hiding the all-day section changes presentation without deleting tasks/events. No new personal-data category, vendor, telemetry, permission or credential is introduced. [Installation evidence](RELEASE_0119_NOTES.md) records preservation checks; operator backup-retention decisions remain open.
+
 ## October 19 weekly display preference
 
 Version 0.1.18 adds `weekScale` to local `device.json`: an integer percentage or `null` for automatic fit. It is retained with the device profile/backups, not an account/cloud record, and introduces no vendor, telemetry, permission or credential. Task-tab removal reads existing statuses without deleting or migrating records. Normal-profile backup/installation results are recorded in [release notes](RELEASE_0118_NOTES.md); operator-approved backup retention remains open.
