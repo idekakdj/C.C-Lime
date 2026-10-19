@@ -15,8 +15,8 @@ afterEach(async()=>{for(const{root,service}of entries.splice(0)){await service.c
 it('defaults old device settings to original week scale, validates and restores custom or automatic fit across restart',async()=>{
  const {service,root}=await setup();expect(service.device.weekScale).toBe(100);
  await service.command('device',{weekScale:65});expect(service.snapshot().device.weekScale).toBe(65);
- for(const weekScale of [0,21,101,22.5,'50',Number.NaN])await expect(service.command('device',{weekScale})).rejects.toThrow();
- expect(service.device.weekScale).toBe(65);await service.command('device',{weekScale:null});
+ for(const weekScale of [0,19,101,20.5,'50',Number.NaN])await expect(service.command('device',{weekScale})).rejects.toThrow();
+ expect(service.device.weekScale).toBe(65);await service.command('device',{weekScale:20});expect(service.device.weekScale).toBe(20);await service.command('device',{weekScale:null});
  const host=(service as any).host as HostServices;await service.close();const restarted=new ApplicationService(root,null,host);entries.find(entry=>entry.service===service)!.service=restarted;
  expect(restarted.device.weekScale).toBeNull();await restarted.command('localPreview',null);
  const legacy={...restarted.device};delete (legacy as any).weekScale;await restarted.close();fs.writeFileSync(path.join(root,'device.json'),JSON.stringify(legacy));

@@ -69,7 +69,8 @@ test('five all-day items retain their full size while fit responds to header hei
     const measure=async()=>page.locator('.week-all-day').evaluate(el=>({height:el.getBoundingClientRect().height,buttonHeight:el.querySelector('button')!.getBoundingClientRect().height,font:getComputedStyle(el.querySelector('button')!).fontSize}));
     const fit=await measure();await expect.poll(()=>page.locator('.week-scroll').evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);await page.screenshot({path:info.outputPath('five-all-day-fit.png')});
     await page.getByRole('button',{name:'100%',exact:true}).click();expect(await measure()).toEqual(fit);
-    await page.getByRole('button',{name:'Fit week',exact:true}).click();await page.setViewportSize({width:1600,height:650});await expect(page.locator('.week-fit-hint')).toBeVisible();expect(await measure()).toEqual(fit);await expect(page.getByRole('slider',{name:'Time-slot scale',exact:true})).toHaveValue('22');
+    await page.getByRole('button',{name:'Fit week',exact:true}).click();await page.setViewportSize({width:1480,height:930});await expect(page.locator('.week-fit-hint')).toHaveCount(0);await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollHeight-innerHeight)).toBeLessThanOrEqual(0);await expect.poll(()=>page.locator('.week-scroll').evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+    await page.setViewportSize({width:1600,height:650});await expect(page.locator('.week-fit-hint')).toBeVisible();expect(await measure()).toEqual(fit);await expect(page.getByRole('slider',{name:'Time-slot scale',exact:true})).toHaveValue('20');
   }finally{await desktop.close();}
   await fs.writeFile(info.outputPath('summary.json'),JSON.stringify({version:copy.version,packageSha256:copy.packageSha256,fixturePolicy:copy.policy,fiveAllDayItemsUnchanged:true,automaticHeaderReflow:true,shortWindowReadableFallback:true,normalExit:true},null,2));
 });

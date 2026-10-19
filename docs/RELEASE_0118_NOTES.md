@@ -5,7 +5,7 @@ October 19, 2026. Requested private Windows update under the [release plan](RELE
 ## Calendar and tasks
 
 - My Tasks has **To do** and **Completed** tabs. Previously saved in-progress items remain available in To do; existing records, completion history and weekly progress are preserved.
-- Week view has a keyboard-accessible **Time-slot scale** slider (22–100%), **Fit week**, and an original-size **100%** reset. The original 56 pixels/hour is the maximum. Scale and automatic-fit choice persist on this device across app restarts.
+- Week view has a keyboard-accessible **Time-slot scale** slider (20–100%), **Fit week**, and an original-size **100%** reset. The original 56 pixels/hour is the maximum. Scale and automatic-fit choice persist on this device across app restarts.
 - Fit week measures the available height and responds to viewport/header changes. Seven columns, horizontal layout, fonts, **All day & due** and **Upcoming Tasks** retain their existing dimensions. Only hourly spacing and timed-event placement/duration geometry change. Event text keeps its size, with a 26-pixel readable minimum; visual collision lanes keep short adjacent items clickable.
 - Early/late, cross-midnight and daylight-saving layouts use the displayed local-hour grid. Dragging/resizing uses the selected scale; changes still require editor review/save and Escape cancels gestures.
 - When the unchanged headers leave too little room for the minimum readable 24-hour grid, the app explains that a taller window is needed and retains scrolling rather than clipping or shrinking text. Unlimited all-day rows/dense events cannot be guaranteed to fit every physical screen.

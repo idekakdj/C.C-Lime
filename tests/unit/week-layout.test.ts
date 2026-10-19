@@ -11,12 +11,12 @@ it('shares lanes across connected overlaps and reuses full width after a group e
 });
 it('fits 24 hours without exceeding the original scale or reducing hourly labels below the readable floor',()=>{
   expect(weekScale(null,500)).toBe(37);expect(24*WEEK_HOUR_HEIGHT*weekScale(null,500)/100).toBeLessThanOrEqual(500);
-  expect(weekScale(null,3000)).toBe(100);expect(weekScale(null,100)).toBe(22);
+  expect(weekScale(null,3000)).toBe(100);expect(weekScale(null,100)).toBe(20);
   expect(weekScale(75,500)).toBe(75);expect(weekScale(100,500)).toBe(100);
 });
 it('keeps early/late and cross-midnight blocks within the compressed grid and separates visual collisions',()=>{
   const values=[['00:00','00:05'],['00:10','00:15'],['23:59','00:04']].map(([start,end],i)=>item({timing:{mode:'timed',start:`2026-09-18T${start}:00Z`,end:`2026-09-${i===2?'19':'18'}T${end}:00Z`,zone:'UTC'}}));
-  const items=expand(values,'2026-09-18','2026-09-19','UTC'),hour=56*.22;
+  const items=expand(values,'2026-09-18','2026-09-19','UTC'),hour=56*.2;
   const bounds=new Map(items.map(value=>[value.occurrenceKey,weekBlock(value,'2026-09-18','UTC',hour)]));
   for(const bound of bounds.values()){expect(bound.top).toBeGreaterThanOrEqual(0);expect(bound.height).toBeGreaterThanOrEqual(26);expect(bound.top+bound.height).toBeLessThanOrEqual(24*hour);}
   expect(bounds.get(values[2].id)!.startTop).toBeGreaterThan(bounds.get(values[2].id)!.top);

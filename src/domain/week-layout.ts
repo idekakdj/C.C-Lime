@@ -1,7 +1,7 @@
 import type { Occurrence } from '../shared/model';
 import { DateTime } from 'luxon';
 export const WEEK_HOUR_HEIGHT=56;
-export const WEEK_MIN_SCALE=22;
+export const WEEK_MIN_SCALE=20;
 export const WEEK_BLOCK_MIN_HEIGHT=26;
 export function weekScale(setting:number|null,availableHeight:number):number {
   return setting===null?Math.max(WEEK_MIN_SCALE,Math.min(100,Math.floor(availableHeight/(24*WEEK_HOUR_HEIGHT)*100))):Math.max(WEEK_MIN_SCALE,Math.min(100,setting));
