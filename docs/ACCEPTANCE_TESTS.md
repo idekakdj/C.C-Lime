@@ -2,7 +2,7 @@
 
 **Baseline:** [project specification](../PROJECT_PLAN.md). **Work order:** [implementation task register](IMPLEMENTATION_TASKS.md).
 
-All tests in this document are **not run** at the end of the planning phase. Expected results are requirements, not reported observations. During implementation, record actual build/version, environment, date, result, and supporting evidence. An emulator or browser preview cannot substitute for a test explicitly requiring the installed app or a live identity provider.
+Expected results are requirements, not reported observations. Actual coverage and outstanding checks for all 52 scenarios are recorded in [implementation evidence](IMPLEMENTATION_STATUS.md). An emulator or browser preview cannot substitute for a test explicitly requiring the installed app or a live identity provider.
 
 ## Test environments and shared fixtures
 
@@ -444,7 +444,17 @@ Reconcile R-01–R-14 with completed tasks and actual tests. Verify the download
 
 **Pass:** the handover distinguishes tested functionality from unavailable/not-run dependencies, provides the real installer, identifies unsigned/public-hosting status accurately, lists known limitations, and does not call a mock sign-in or local demo a completed cloud-enabled app.
 
-## Release report format
+## Added acceptance scenarios: A-53–A-64
+
+The [security/privacy extension](SECURITY_PRIVACY_PLAN.md#acceptance-extensions) specifies A-53 action throttles; A-54 cooldown/queue safety; A-55 hostile server quota/race/migration checks; A-56 actual 404/recovery/security; A-57 remote abuse defenses; A-58 operator/scope/risk mapping; A-59 privacy rights/lifecycle; A-60 administrative and development safeguards; A-61 incident exercise; A-62 restore/continuity; A-63 independent assurance; A-64 final truthful claims. These supplement A-01–A-52. Templates, local throttles or unit tests cannot substitute for the stated live/organizational/independent evidence.
+
+## Profile and appearance scenarios: A-65–A-67
+
+- **A-65 Profile and progress:** Select a valid local PNG/JPEG and change the display name. Verify the converted icon/name across real restart and another signed-in device. Reject malformed/oversized uploads without losing the prior photo; cancel without changes. Show actual provider joined date or an honest unavailable/local-tracking label. Complete, reopen, re-complete and delete tasks/recurring study occurrences; count each identity once across sync and restart. Deny other-account reads, resolve concurrent profile changes without duplicate profiles and remove synthetic identities/data afterward. Disclose unavailable pre-tracking deleted history.
+- **A-66 Appearance:** Apply all three presets; create/apply/edit/delete three custom palettes and reject a fourth through both UI and cloud writes. Verify selection/palettes after restart and cross-device sync, cancellation without saving, keyboard/narrow layout and automated contrast checks for presets plus a custom light palette. This is bounded accessibility evidence, not comprehensive certification.
+- **A-67 Feature installation:** Follow the [upgrade plan](UPGRADE_0110_PLAN.md), compare real owner data/settings and a populated synthetic migration separately, verify installer/ASAR/notices/shortcut identity and all installed desktop checks. Clearly distinguish package, installed and CI evidence. Resume security work only after the requested update; no compliance certification follows from installation.
+
+## Release report format for all scenarios
 
 Create `docs/RELEASE_VERIFICATION.md` during implementation. For each A-ID, include actual result, environment/build, evidence reference, defect reference if any, and retest outcome. Include a separate tested-platform table and the actual free-tier operation measurements. Do not prefill results with “pass.”
 

@@ -15,8 +15,12 @@ cloud/client.json
 cloud-client.json
 .env
 .env.*
+.dev.vars
+.dev.vars.*
+.wrangler/
 !.env.example
 !.env.*.example
+!.dev.vars.example
 *.pem
 *.key
 *service-account*.json

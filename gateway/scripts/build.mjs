@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+import { build } from 'esbuild';
+import { collectNotices } from '../../scripts/third-party-notices.mjs';
+import { privateValues } from '../../scripts/private-values.mjs';
+await fs.mkdir('dist',{recursive:true});
+const result=await build({entryPoints:['src/worker.mjs'],bundle:true,platform:'browser',format:'esm',target:'es2022',outfile:'dist/worker.mjs',metafile:true});
+const inputs=Object.values(result.metafile.outputs).flatMap(output=>Object.keys(output.inputs));
+if(inputs.some(file=>/(^|\/)tests\//.test(file)))throw Error('Test identity code must never enter the production Worker.');
+const output=await fs.readFile('dist/worker.mjs','utf8');
+if(['synthetic-runtime-token','synthetic-verified-totp',...privateValues()].some(value=>output.includes(value)))throw Error('Test credentials or private local configuration entered the Worker bundle. Values not printed.');
+const notices=collectNotices(process.cwd(),{'Workers gateway':inputs});
+if(notices.sources.length)throw Error('Review gateway covered-source obligations before distribution.');
+await fs.writeFile('dist/THIRD_PARTY_NOTICES.txt',notices.text);await fs.writeFile('dist/third-party-inventory.json',JSON.stringify(notices.inventory,null,2));
+console.log(`Workers bundle built; retained notices for ${notices.inventory.packages.length} dependencies.`);

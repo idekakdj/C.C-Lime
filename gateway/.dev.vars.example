@@ -1,0 +1,5 @@
+# Blank examples only. Real local values belong in ignored .dev.vars/.local files.
+RATE_LIMIT_SECRET=
+FIREBASE_SIGNER_EMAIL=
+FIREBASE_SIGNER_PRIVATE_KEY=
+PILOT_UIDS=

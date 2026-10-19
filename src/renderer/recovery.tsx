@@ -1,0 +1,7 @@
+import { useEffect, useState } from 'react';
+import { Modal } from './ui';
+export function RecoveryDialog({run,onClose}:{run:(command:string,payload?:unknown,message?:string)=>Promise<any>;onClose:()=>void}){
+  const [snapshots,setSnapshots]=useState<Array<{name:string;modifiedAt:string}>>([]),[selected,setSelected]=useState(''),[confirmation,setConfirmation]=useState('');
+  useEffect(()=>{void run('recovery.list').then(list=>{if(list){setSnapshots(list);setSelected(list[0]?.name??'');}});},[run]);
+  return <Modal title="Recover your saved calendar" subtitle="The current database will be preserved. A snapshot may be missing changes made after its date." onClose={onClose}><form className="editor" onSubmit={async e=>{e.preventDefault();if(await run('recovery.restore',{name:selected,confirmation},'Calendar recovered'))onClose();}}><label>Recovery snapshot<select value={selected} onChange={e=>setSelected(e.target.value)}>{snapshots.map(s=><option key={s.name} value={s.name}>{new Date(s.modifiedAt).toLocaleString()} · {s.name.split('-')[0]}</option>)}</select></label>{!snapshots.length&&<p>No automatic snapshot is available. Open the data folder to preserve these files before asking for help.</p>}<label>Type RESTORE to confirm<input value={confirmation} onChange={e=>setConfirmation(e.target.value)}/></label><footer className="modal-actions"><button type="button" className="button secondary" onClick={onClose}>Cancel</button><button className="button primary" disabled={!selected||confirmation!=='RESTORE'}>Restore snapshot</button></footer></form></Modal>;
+}
